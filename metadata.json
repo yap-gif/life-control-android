@@ -1,0 +1,6 @@
+{
+  "name": "Life Control",
+  "description": "A personal growth and independence tracker to manage daily tasks, learning progress, income, expenses, savings goals, and daily reflections.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
