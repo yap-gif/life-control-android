@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.widget.Toast
 import android.app.DatePickerDialog
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -302,6 +303,37 @@ fun TasksScreen(
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 lineHeight = 20.sp
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "💡 Practical Next Step",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "Tap the Floating Action Button (+) below to schedule a new high-impact task. Focus on critical, daily objectives to drive personal growth!",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -500,13 +532,16 @@ fun TaskDialog(
     var priority by remember { mutableStateOf(task?.priority ?: "Medium") }
     var dueDate by remember { mutableStateOf(task?.dueDate ?: viewModel.getTodayDateString()) }
 
+    var isTitleError by remember { mutableStateOf(false) }
+    var isDueDateError by remember { mutableStateOf(false) }
+
     val categories = listOf("Study", "Work", "Health", "Personal Project", "Life Admin")
     val priorities = listOf("Low", "Medium", "High")
 
     var categoryExpanded by remember { mutableStateOf(false) }
     var priorityExpanded by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
+    val localContext = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -518,8 +553,19 @@ fun TaskDialog(
             ) {
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = { 
+                        title = it 
+                        if (isTitleError && it.isNotBlank()) {
+                            isTitleError = false
+                        }
+                    },
                     label = { Text("Task Title") },
+                    isError = isTitleError,
+                    supportingText = {
+                        if (isTitleError) {
+                            Text("Title is required", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().testTag("dialog_task_title_input"),
                     singleLine = true
                 )
@@ -589,9 +635,20 @@ fun TaskDialog(
                 // Due Date Picker Field
                 OutlinedTextField(
                     value = dueDate,
-                    onValueChange = {},
+                    onValueChange = { 
+                        dueDate = it
+                        if (isDueDateError && it.isNotBlank() && it.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
+                            isDueDateError = false
+                        }
+                    },
                     readOnly = true,
                     label = { Text("Due Date") },
+                    isError = isDueDateError,
+                    supportingText = {
+                        if (isDueDateError) {
+                            Text("Invalid due date format (YYYY-MM-DD)", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
                     trailingIcon = {
                         IconButton(onClick = {
                             val calendar = Calendar.getInstance()
@@ -605,9 +662,10 @@ fun TaskDialog(
                                 } catch (e: Exception) { /* use current */ }
                             }
                             DatePickerDialog(
-                                context,
+                                localContext,
                                 { _, year, month, dayOfMonth ->
                                     dueDate = String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, dayOfMonth)
+                                    isDueDateError = false
                                 },
                                 calendar.get(Calendar.YEAR),
                                 calendar.get(Calendar.MONTH),
@@ -624,22 +682,17 @@ fun TaskDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (title.isNotBlank()) {
-                        // Let's save!
-                        // To make it handle Edits correctly: we need to pass a complete object to the ViewModel.
-                        // Let's modify VM to have an editTask or let's call correct VM function!
-                        if (task != null) {
-                            // If editing, we need to preserve task.id and task.isCompleted
-                            // We can use custom ViewModel calls. We'll edit ViewModel in a moment to add a saveTask(TaskEntity) or editTask(TaskEntity).
-                            // But wait! We can also run standard coroutines directly in viewmodel scope from screen if VM has the repository exposed, or we can add a simple method to VM!
-                            // Let's update MainViewModel to add `saveTask(task: TaskEntity)` which handles both insert and update.
-                            // That is incredibly elegant. Let's write the screen call assuming viewModel has a method: `saveTask(TaskEntity)`.
-                        }
-                        // Let's write that logic.
-                        onSave(title, category, priority, dueDate)
+                    isTitleError = title.trim().isBlank()
+                    isDueDateError = dueDate.trim().isBlank() || !dueDate.trim().matches(Regex("\\d{4}-\\d{2}-\\d{2}"))
+
+                    if (isTitleError) {
+                        Toast.makeText(localContext, "Empty title", Toast.LENGTH_SHORT).show()
+                    } else if (isDueDateError) {
+                        Toast.makeText(localContext, "Invalid due date", Toast.LENGTH_SHORT).show()
+                    } else {
+                        onSave(title.trim(), category, priority, dueDate.trim())
                     }
                 },
-                enabled = title.isNotBlank(),
                 modifier = Modifier.testTag("dialog_save_task_button")
             ) {
                 Text("Save")

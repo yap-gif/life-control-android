@@ -17,8 +17,8 @@ android {
     applicationId = "com.aistudio.lifecontrol.tjkqwy"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "1.3.1"
+    versionCode = 11
+    versionName = "3.0.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

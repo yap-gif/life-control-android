@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import com.example.data.local.LearningPathEntity
 import com.example.data.local.LessonEntity
 import com.example.ui.MainViewModel
@@ -31,6 +33,7 @@ fun LearningScreen(
     viewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
+    val localContext = LocalContext.current
     val learningPaths by viewModel.learningPaths.collectAsState()
     val allLessons by viewModel.allLessons.collectAsState()
 
@@ -172,6 +175,37 @@ fun LearningScreen(
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             lineHeight = 20.sp
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "💡 Practical Next Step",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Navigate to Settings > Portfolio & Developer Tools > Seed Default Learning Data to instantly load the full Linux CLI, Cybersecurity basics, and Android curriculum!",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -204,6 +238,7 @@ fun LearningPathCard(
 ) {
     val lessonsFlow = remember(path.id) { viewModel.getLessonsForPath(path.id) }
     val lessons by lessonsFlow.collectAsState(initial = emptyList())
+    val localContext = LocalContext.current
 
     val totalLessons = lessons.size
     val completedLessons = lessons.count { it.isCompleted }
@@ -424,8 +459,11 @@ fun LearningPathCard(
 
                         Button(
                             onClick = {
-                                if (newLessonTitle.isNotBlank()) {
-                                    viewModel.addLesson(path.id, newLessonTitle)
+                                val trimmed = newLessonTitle.trim()
+                                if (trimmed.isBlank()) {
+                                    Toast.makeText(localContext, "Empty lesson title", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    viewModel.addLesson(path.id, trimmed)
                                     newLessonTitle = ""
                                 }
                             },

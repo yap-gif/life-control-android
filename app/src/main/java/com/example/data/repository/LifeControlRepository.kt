@@ -101,6 +101,72 @@ class LifeControlRepository(
         _screenshotModeEnabled.value = enabled
     }
 
+    // --- AI Coach Preferences ---
+    private val _aiCoachEnabled = MutableStateFlow(getAiCoachEnabledPref())
+    val aiCoachEnabled: StateFlow<Boolean> = _aiCoachEnabled.asStateFlow()
+
+    private val _aiAnalysisMode = MutableStateFlow(getAiAnalysisModePref())
+    val aiAnalysisMode: StateFlow<String> = _aiAnalysisMode.asStateFlow() // "local" or "gemini"
+
+    private val _aiConsentAccepted = MutableStateFlow(getAiConsentAcceptedPref())
+    val aiConsentAccepted: StateFlow<Boolean> = _aiConsentAccepted.asStateFlow()
+
+    private fun getAiCoachEnabledPref() = prefs.getBoolean("ai_coach_enabled", false)
+    private fun getAiAnalysisModePref() = prefs.getString("ai_analysis_mode", "local") ?: "local"
+    private fun getAiConsentAcceptedPref() = prefs.getBoolean("ai_consent_accepted", false)
+
+    fun saveAiCoachEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("ai_coach_enabled", enabled).apply()
+        _aiCoachEnabled.value = enabled
+    }
+
+    fun saveAiAnalysisMode(mode: String) {
+        prefs.edit().putString("ai_analysis_mode", mode).apply()
+        _aiAnalysisMode.value = mode
+    }
+
+    fun saveAiConsentAccepted(accepted: Boolean) {
+        prefs.edit().putBoolean("ai_consent_accepted", accepted).apply()
+        _aiConsentAccepted.value = accepted
+    }
+
+    // --- First Week Setup Checklist ---
+    private val _setupProfileGoal = MutableStateFlow(getChecklistItemPref("setup_profile_goal"))
+    val setupProfileGoal: StateFlow<Boolean> = _setupProfileGoal.asStateFlow()
+
+    private val _connectAiCoach = MutableStateFlow(getChecklistItemPref("connect_ai_coach"))
+    val connectAiCoach: StateFlow<Boolean> = _connectAiCoach.asStateFlow()
+
+    private val _customLearningPath = MutableStateFlow(getChecklistItemPref("custom_learning_path"))
+    val customLearningPath: StateFlow<Boolean> = _customLearningPath.asStateFlow()
+
+    private val _dailyReflection = MutableStateFlow(getChecklistItemPref("daily_reflection"))
+    val dailyReflection: StateFlow<Boolean> = _dailyReflection.asStateFlow()
+
+    private val _firstTransaction = MutableStateFlow(getChecklistItemPref("first_transaction"))
+    val firstTransaction: StateFlow<Boolean> = _firstTransaction.asStateFlow()
+
+    private val _triggerReminder = MutableStateFlow(getChecklistItemPref("trigger_reminder"))
+    val triggerReminder: StateFlow<Boolean> = _triggerReminder.asStateFlow()
+
+    private val _exportBackup = MutableStateFlow(getChecklistItemPref("export_backup"))
+    val exportBackup: StateFlow<Boolean> = _exportBackup.asStateFlow()
+
+    private fun getChecklistItemPref(key: String) = prefs.getBoolean("checklist_$key", false)
+
+    fun saveChecklistItem(key: String, completed: Boolean) {
+        prefs.edit().putBoolean("checklist_$key", completed).apply()
+        when (key) {
+            "setup_profile_goal" -> _setupProfileGoal.value = completed
+            "connect_ai_coach" -> _connectAiCoach.value = completed
+            "custom_learning_path" -> _customLearningPath.value = completed
+            "daily_reflection" -> _dailyReflection.value = completed
+            "first_transaction" -> _firstTransaction.value = completed
+            "trigger_reminder" -> _triggerReminder.value = completed
+            "export_backup" -> _exportBackup.value = completed
+        }
+    }
+
     // --- Reminder Preference Accessors ---
     fun getReminderEnabled(key: String, default: Boolean): Boolean = prefs.getBoolean(key, default)
     fun saveReminderEnabled(key: String, enabled: Boolean) = prefs.edit().putBoolean(key, enabled).apply()
@@ -122,6 +188,16 @@ class LifeControlRepository(
         _monthlyIncomeTarget.value = 1500.0
         _savingsGoal.value = 5000.0
         _dailyStudyTargetMinutes.value = 60
+        saveAiCoachEnabled(false)
+        saveAiAnalysisMode("local")
+        saveAiConsentAccepted(false)
+        saveChecklistItem("setup_profile_goal", false)
+        saveChecklistItem("connect_ai_coach", false)
+        saveChecklistItem("custom_learning_path", false)
+        saveChecklistItem("daily_reflection", false)
+        saveChecklistItem("first_transaction", false)
+        saveChecklistItem("trigger_reminder", false)
+        saveChecklistItem("export_backup", false)
     }
 
     suspend fun seedDefaultData() {

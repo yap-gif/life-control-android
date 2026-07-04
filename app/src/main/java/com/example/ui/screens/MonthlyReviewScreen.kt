@@ -3,6 +3,7 @@ package com.example.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,11 @@ fun MonthlyReviewScreen(
     val lessons by viewModel.allLessons.collectAsState()
     val journalReflections by viewModel.journalReflections.collectAsState()
     val learningPaths by viewModel.learningPaths.collectAsState()
+
+    val aiCoachEnabled by viewModel.aiCoachEnabled.collectAsState(initial = false)
+    val aiConsentAccepted by viewModel.aiConsentAccepted.collectAsState(initial = false)
+    val monthlyAiState by viewModel.monthlyAiState.collectAsState()
+    var showConsentDialog by remember { mutableStateOf(false) }
 
     // Generate last 30 days dates (including today)
     val last30Days = remember {
@@ -451,6 +457,171 @@ fun MonthlyReviewScreen(
                 }
             }
 
+            // AI Coaching section
+            Text(
+                text = "AI Coaching",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("ai_coach_card"),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Unlock smart, multi-dimensional monthly diagnostics on your goals, saving margins, and learning paths from the past 30 days.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = {
+                            val metrics = mapOf(
+                                "totalTasks" to totalTasksCreated,
+                                "completedTasks" to totalTasksCompleted,
+                                "completionRate" to taskCompletionPercentage,
+                                "totalIncome" to totalIncome,
+                                "totalExpenses" to totalExpenses,
+                                "netSavings" to netSavings,
+                                "completedLessons" to completedLessonsCount,
+                                "journalCount" to journalCount,
+                                "bestCategory" to bestCategory,
+                                "weakestCategory" to weakestCategory,
+                                "monthlySummary" to monthlySummary,
+                                "wentWell" to wentWell,
+                                "needsImprovement" to needsImprovement,
+                                "suggestedFocus" to suggestedFocus
+                            )
+
+                            if (aiCoachEnabled && !aiConsentAccepted) {
+                                showConsentDialog = true
+                            } else {
+                                viewModel.analyzeMonthly(metrics)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("analyze_month_button"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Analyze Month with AI", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            // AI State renderer
+            when (val state = monthlyAiState) {
+                is MainViewModel.AiState.Idle -> {
+                    // Do nothing
+                }
+                is MainViewModel.AiState.Loading -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().testTag("ai_coach_loading_card"),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = "AI Coach is diagnosing your month...",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+                is MainViewModel.AiState.Success -> {
+                    AiResultCard(result = state.result, onDismiss = { viewModel.resetMonthlyAiState() })
+                }
+                is MainViewModel.AiState.Error -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "AI Coaching Diagnosis Failed: ${state.errorMessage}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = "Showing local fallback diagnostics below. You can try the remote analysis again.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = {
+                                        val metrics = mapOf(
+                                            "totalTasks" to totalTasksCreated,
+                                            "completedTasks" to totalTasksCompleted,
+                                            "completionRate" to taskCompletionPercentage,
+                                            "totalIncome" to totalIncome,
+                                            "totalExpenses" to totalExpenses,
+                                            "netSavings" to netSavings,
+                                            "completedLessons" to completedLessonsCount,
+                                            "journalCount" to journalCount,
+                                            "bestCategory" to bestCategory,
+                                            "weakestCategory" to weakestCategory,
+                                            "monthlySummary" to monthlySummary,
+                                            "wentWell" to wentWell,
+                                            "needsImprovement" to needsImprovement,
+                                            "suggestedFocus" to suggestedFocus
+                                        )
+                                        viewModel.analyzeMonthly(metrics)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                    modifier = Modifier.align(Alignment.End).testTag("retry_monthly_analysis_button")
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = "Retry", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Retry Analysis", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                        if (state.fallbackResult != null) {
+                            AiResultCard(result = state.fallbackResult, onDismiss = { viewModel.resetMonthlyAiState() })
+                        }
+                    }
+                }
+            }
+
+            // Local Performance Diagnostics Title
+            Text(
+                text = "Performance Diagnostics",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             // Local Monthly Audit Summary Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -550,5 +721,32 @@ fun MonthlyReviewScreen(
                 }
             }
         }
+    }
+
+    if (showConsentDialog) {
+        AiConsentDialog(
+            onDismiss = { showConsentDialog = false },
+            onConfirm = {
+                showConsentDialog = false
+                viewModel.updateAiConsentAccepted(true)
+                val metrics = mapOf(
+                    "totalTasks" to totalTasksCreated,
+                    "completedTasks" to totalTasksCompleted,
+                    "completionRate" to taskCompletionPercentage,
+                    "totalIncome" to totalIncome,
+                    "totalExpenses" to totalExpenses,
+                    "netSavings" to netSavings,
+                    "completedLessons" to completedLessonsCount,
+                    "journalCount" to journalCount,
+                    "bestCategory" to bestCategory,
+                    "weakestCategory" to weakestCategory,
+                    "monthlySummary" to monthlySummary,
+                    "wentWell" to wentWell,
+                    "needsImprovement" to needsImprovement,
+                    "suggestedFocus" to suggestedFocus
+                )
+                viewModel.analyzeMonthly(metrics)
+            }
+        )
     }
 }

@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -24,6 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +36,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
+    onNavigateToAnalytics: () -> Unit = {},
+    onNavigateToUserGuide: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val mainLifeGoal by viewModel.mainLifeGoal.collectAsState()
@@ -66,13 +71,32 @@ fun SettingsScreen(
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var restoreJsonToConfirm by remember { mutableStateOf<String?>(null) }
 
+    // Encrypted Backup/Restore States
+    var tempEncryptionPassword by remember { mutableStateOf("") }
+    var showExportPasswordDialog by remember { mutableStateOf(false) }
+    var exportPassword by remember { mutableStateOf("") }
+    var exportPasswordConfirm by remember { mutableStateOf("") }
+    var exportPasswordVisible by remember { mutableStateOf(false) }
+    var exportPasswordConfirmVisible by remember { mutableStateOf(false) }
+    var exportPasswordError by remember { mutableStateOf<String?>(null) }
+
+    var showEncryptedRestorePasswordDialog by remember { mutableStateOf(false) }
+    var encryptedRestorePassword by remember { mutableStateOf("") }
+    var encryptedRestorePasswordVisible by remember { mutableStateOf(false) }
+    var encryptedBackupJsonToRestore by remember { mutableStateOf<String?>(null) }
+    var restorePasswordError by remember { mutableStateOf<String?>(null) }
+
     var showResetConfirmDialog by remember { mutableStateOf(false) }
     var resetTypeToConfirm by remember { mutableStateOf<String?>(null) } // "all", "tasks", "finances", "journal", "learning"
 
     val screenshotModeEnabled by viewModel.screenshotModeEnabled.collectAsState()
     val onboardingCompleted by viewModel.onboardingCompleted.collectAsState()
 
-    var activeSettingsSubpage by remember { mutableStateOf<String?>(null) } // null, "about", "privacy", "readme"
+    var activeSettingsSubpage by remember { mutableStateOf<String?>(null) } // null, "about", "privacy", "readme", "checklist", "permissions"
+
+    BackHandler(enabled = activeSettingsSubpage != null) {
+        activeSettingsSubpage = null
+    }
 
     var showDemoInsertConfirm by remember { mutableStateOf(false) }
     var showDemoClearConfirm by remember { mutableStateOf(false) }
@@ -113,6 +137,11 @@ fun SettingsScreen(
                     onBack = { activeSettingsSubpage = null }
                 )
             }
+            "permissions" -> {
+                PermissionsSubpage(
+                    onBack = { activeSettingsSubpage = null }
+                )
+            }
         }
         return
     }
@@ -148,6 +177,62 @@ fun SettingsScreen(
                     showRestoreConfirmDialog = true
                 } else {
                     Toast.makeText(context, "Failed to read backup file", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Import failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val exportEncryptedBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        uri?.let {
+            try {
+                if (tempEncryptionPassword.length >= 8) {
+                    val passwordChars = tempEncryptionPassword.toCharArray()
+                    val encryptedJson = viewModel.getEncryptedBackupJson(passwordChars)
+                    context.contentResolver.openOutputStream(it)?.use { stream ->
+                        stream.write(encryptedJson.toByteArray())
+                    }
+                    // clear sensitive password variables
+                    for (i in passwordChars.indices) {
+                        passwordChars[i] = '0'
+                    }
+                    tempEncryptionPassword = ""
+                    Toast.makeText(context, "Encrypted backup exported successfully!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Export failed: Password must be at least 8 characters.", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, "Export failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+            } finally {
+                tempEncryptionPassword = ""
+            }
+        }
+    }
+
+    val importEncryptedBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            try {
+                val json = context.contentResolver.openInputStream(it)?.use { stream ->
+                    stream.bufferedReader().readText()
+                }
+                if (json != null) {
+                    val container = com.example.data.repository.BackupEncryption.jsonToContainer(json)
+                    val validation = com.example.data.repository.BackupEncryption.validateContainer(container)
+                    if (validation.first) {
+                        encryptedBackupJsonToRestore = json
+                        showEncryptedRestorePasswordDialog = true
+                    } else {
+                        Toast.makeText(context, validation.second ?: "Invalid encrypted backup file structure.", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Toast.makeText(context, "Failed to read backup file.", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -210,6 +295,16 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        // ====================================================================
+        // SECTION 1: PROFILE & GOALS
+        // ====================================================================
+        Text(
+            text = "Profile & Goals",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
         // 1. Benchmarks Configuration Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -236,7 +331,7 @@ fun SettingsScreen(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Independence Parameters",
+                        text = "Profile Parameters & Benchmarks",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -349,9 +444,193 @@ fun SettingsScreen(
             Text("Save Configurations", fontWeight = FontWeight.Bold)
         }
 
-        // --- Presentation & Demo Mode Section ---
+        // ====================================================================
+        // SECTION 2: AI COACH
+        // ====================================================================
         Text(
-            text = "Presentation & Portfolio Tools",
+            text = "AI Coach",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        val aiCoachEnabled by viewModel.aiCoachEnabled.collectAsState()
+        val aiAnalysisMode by viewModel.aiAnalysisMode.collectAsState()
+        val aiConsentAccepted by viewModel.aiConsentAccepted.collectAsState()
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Enable AI Coach",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Enable smart reflection analysis and customized guidance logs.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = aiCoachEnabled,
+                        onCheckedChange = { viewModel.updateAiCoachEnabled(it) },
+                        modifier = Modifier.testTag("ai_coach_enabled_switch")
+                    )
+                }
+
+                if (aiCoachEnabled) {
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+
+                    Text(
+                        text = "AI Analysis Mode",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.updateAiAnalysisMode("local") }
+                        ) {
+                            RadioButton(
+                                selected = aiAnalysisMode == "local",
+                                onClick = { viewModel.updateAiAnalysisMode("local") },
+                                modifier = Modifier.testTag("ai_mode_local_radio")
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Local Only",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Uses on-device rule engine. Works 100% offline with zero data leaving the device.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.updateAiAnalysisMode("gemini") }
+                        ) {
+                            RadioButton(
+                                selected = aiAnalysisMode == "gemini",
+                                onClick = { viewModel.updateAiAnalysisMode("gemini") },
+                                modifier = Modifier.testTag("ai_mode_gemini_radio")
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Gemini AI when available",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Sends selected reflection texts to Gemini for high-impact tailored coaching feedback.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Consent Status",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (aiConsentAccepted) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Privacy Consent Accepted",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "Consent is required before first Gemini use.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        if (aiConsentAccepted) {
+                            TextButton(
+                                onClick = {
+                                    viewModel.updateAiConsentAccepted(false)
+                                    Toast.makeText(context, "AI consent reset. You will see the prompt again on next analysis.", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.testTag("reset_consent_button")
+                            ) {
+                                Text("Reset Consent", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ====================================================================
+        // SECTION 5: DEMO & PORTFOLIO TOOLS
+        // ====================================================================
+        Text(
+            text = "Demo & Portfolio Tools",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -467,9 +746,11 @@ fun SettingsScreen(
             }
         }
 
-        // --- App Info & Documentation Section ---
+        // ====================================================================
+        // SECTION 6: USER GUIDE
+        // ====================================================================
         Text(
-            text = "App Resources",
+            text = "User Guide",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -490,70 +771,33 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Row 1: About App
+                // Row 1: User Guide Hub launcher
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { activeSettingsSubpage = "about" }
-                        .padding(vertical = 8.dp),
+                        .clickable { onNavigateToUserGuide() }
+                        .padding(vertical = 8.dp)
+                        .testTag("settings_user_guide_hub_row"),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(imageVector = Icons.Default.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("About Life Control", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("Developer info, tech stack, and build details.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("User Guide Hub & First Week Setup", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Access offline explanations for task rules, savings formulas, and learning tracks.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.05f))
 
-                // Row 2: Privacy & Data
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { activeSettingsSubpage = "privacy" }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Privacy & Data Transparency", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("Verify local storage, offline execution, and tracking details.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.05f))
-
-                // Row 3: Project Summary (README Generator)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { activeSettingsSubpage = "readme" }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Portfolio Project README Generator", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("Generate and copy clean Markdown overview for GitHub.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-
-                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.05f))
-
-                // Row 4: Reset Onboarding / View tutorial
+                // Row 2: Re-watch Tutorial Onboarding
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
                             viewModel.updateOnboardingCompleted(false)
-                            Toast.makeText(context, "Onboarding re-enabled!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Onboarding tutorial re-enabled!", Toast.LENGTH_SHORT).show()
                         }
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -566,10 +810,159 @@ fun SettingsScreen(
                     }
                     Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+            }
+        }
+
+        // ====================================================================
+        // SECTION 7: PRIVACY & DATA
+        // ====================================================================
+        Text(
+            text = "Privacy & Data",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeSettingsSubpage = "privacy" }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Privacy & Data Transparency", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Verify local storage, offline execution, and optional cloud consent.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // ====================================================================
+        // SECTION 8: ABOUT APP
+        // ====================================================================
+        Text(
+            text = "About App",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Row 1: About Life Control
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeSettingsSubpage = "about" }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("About Life Control", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Developer info, tech stack blueprints, and license details.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
 
                 Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.05f))
 
-                // Row 5: Manual Release QA Checklist
+                // Row 2: README Generator
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeSettingsSubpage = "readme" }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Portfolio Project README Generator", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Generate and copy clean Markdown description for GitHub profiles.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.05f))
+
+                // Row 3: App Permissions & Capabilities
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { activeSettingsSubpage = "permissions" }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("App Permissions & Privacy Audit", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("Verify clean system permission access footprint and offline status.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // ====================================================================
+        // SECTION 9: DEVELOPER / QA TOOLS
+        // ====================================================================
+        Text(
+            text = "Developer / QA Tools",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -588,9 +981,11 @@ fun SettingsScreen(
             }
         }
 
-        // 2. Local Reminders Configuration Card
+        // ====================================================================
+        // SECTION 4: REMINDERS
+        // ====================================================================
         Text(
-            text = "Local Reminders",
+            text = "Reminders",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -745,7 +1140,9 @@ fun SettingsScreen(
             }
         }
 
-        // 3. Backup & Restore Data Card
+        // ====================================================================
+        // SECTION 3: BACKUP & RESTORE
+        // ====================================================================
         Text(
             text = "Backup & Restore",
             style = MaterialTheme.typography.titleMedium,
@@ -766,53 +1163,170 @@ fun SettingsScreen(
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "Full App Data Backup",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Export and import a complete JSON backup file containing all tasks, financial transactions, learning paths, lessons, journal reflections, and benchmark settings.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            val dateStr = java.text.SimpleDateFormat("yyyy_MM_dd", java.util.Locale.US).format(java.util.Date())
-                            exportBackupLauncher.launch("life_control_backup_$dateStr.json")
-                        },
-                        modifier = Modifier.weight(1f).height(48.dp).testTag("export_json_backup_button"),
+                // Section 1: Plain JSON Backup
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Plain JSON Backup",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Export and import a complete unencrypted JSON backup file containing all tasks, financial transactions, learning paths, lessons, journal reflections, and benchmark settings.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    // Warning banner
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.3f)
                         )
                     ) {
-                        Icon(imageVector = Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Export Backup", fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Warning",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "This file is readable by anyone who can access it.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
 
-                    Button(
-                        onClick = {
-                            importBackupLauncher.launch(arrayOf("application/json", "text/*"))
-                        },
-                        modifier = Modifier.weight(1f).height(48.dp).testTag("import_json_backup_button"),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val dateStr = java.text.SimpleDateFormat("yyyy_MM_dd", java.util.Locale.US).format(java.util.Date())
+                                exportBackupLauncher.launch("life_control_backup_$dateStr.json")
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp).testTag("export_json_backup_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Export Plain", fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                importBackupLauncher.launch(arrayOf("application/json", "text/*"))
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp).testTag("import_json_backup_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Restore Plain", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+
+                // Section 2: Encrypted Backup
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Encrypted Backup",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "This file is encrypted and requires a password to restore.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    // Information banner
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                         )
                     ) {
-                        Icon(imageVector = Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Restore Backup", fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Security,
+                                contentDescription = "Security",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Secured with military-grade AES-GCM encryption and PBKDF2 key derivation.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                exportPassword = ""
+                                exportPasswordConfirm = ""
+                                showExportPasswordDialog = true
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp).testTag("export_encrypted_backup_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Export Encrypted", fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                importEncryptedBackupLauncher.launch(arrayOf("*/*"))
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp).testTag("import_encrypted_backup_button"),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Restore Encrypted", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -904,19 +1418,32 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Use this non-intrusive checklist to verify key stability and core features of Life Control v1.2.1.",
+                    text = "Use this non-intrusive checklist to verify key stability and core features of Life Control v3.0.0 Public Portfolio Release.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // Checklist Items
                 val qaItems = listOf(
-                    "JSON Backup & Restore" to "Go to Backup & Restore, click Export Backup. Ensure a JSON file is written. Try importing a backup to verify restoration.",
-                    "Local Alarms & Reminders" to "Enable any alarm. On Android 13+, check that the system permission rationale dialog correctly requests permission.",
-                    "Dynamic Performance Audits" to "Go to Home Dashboard, check Weekly Performance and Monthly Performance Reviews to ensure calculations load correctly.",
-                    "Danger Zone Safety" to "Try clicking FULL APP RESET. Verify that the button is disabled until you type 'RESET' exactly.",
-                    "Persistence & Database Safety" to "Go to Learning tab, make some lessons completed. Restart the app or reset the database to verify persistence and default seeds.",
-                    "UI Adaptability" to "Verify that all screens scroll nicely on compact or folded screens, and text maintains modern readable contrast."
+                    "Export Encrypted Backup" to "Go to Backup & Restore, click Export Encrypted, enter a password of at least 8 characters, confirm it, and export. Verify a valid .lcbackup file is written to device storage.",
+                    "Restore with Correct Password" to "Click Restore Encrypted, select your .lcbackup file, enter the correct password, and click Decrypt & Verify. Then verify the final data restore confirmation behaves atomically.",
+                    "Restore with Wrong Password" to "Try restoring an encrypted backup using an incorrect password. Verify the app displays a clear, friendly error, does not crash, and does not alter or delete current data.",
+                    "Restore Corrupted Encrypted Backup" to "Try restoring a backup file with corrupted or modified payload contents. Verify it fails gracefully with clear validation/decryption warnings.",
+                    "Restore Empty File" to "Select an empty file for restoration and verify that it fails immediately with a clear 'Empty file' or invalid container error.",
+                    "Plain JSON in Encrypted Path" to "Try importing an unencrypted plain JSON file through the Restore Encrypted path. Verify the app detects the invalid container structure instantly and prevents password prompt or restoration.",
+                    "Restore After Full Reset" to "Wipe the app data via FULL APP RESET, then import and restore your .lcbackup file. Verify that all records (tasks, ledger, study, journal, settings) are fully recovered.",
+                    "No Data Loss on Failures" to "Confirm that any failed decryption or validation step completely aborts the restore process and keeps your current on-device data untouched.",
+                    "Confirm Password is Not Stored" to "Check that passwords are never retained, logged, or shown in error dialogs, maintaining perfect cryptographic safety.",
+                    "Restore After Reinstall" to "Verify that encrypted backups can be restored seamlessly on a fresh install or another device, since key derivation (PBKDF2) is entirely self-contained.",
+                    "Plain JSON Backup Works" to "Ensure plain JSON exports and imports continue to function exactly as before, maintaining backward compatibility.",
+                    "Privacy Page Explanation" to "Open the Privacy page and verify it details the AES-GCM and PBKDF2 parameters clearly, outlining user responsibility for the local password.",
+                    "UI Small Screen Layout" to "Verify that all screens and cards render nicely on small and compact screen layouts, with everything wrapped in scrollable containers.",
+                    "Text Wrapping & Large Values" to "Check long titles, category names, and large RM currency values. Verify they wrap safely without text overlapping or clipping cards.",
+                    "Dark Theme & High Contrast" to "Verify that color scheme adheres to our Deep Slate theme, ensuring text and important status badges are highly readable under all lighting conditions.",
+                    "Accessibility Tap Targets" to "Verify that all clickable rows, check circles, and action buttons have at least 48dp x 48dp of touch area for easy finger taps.",
+                    "Screen Reader Support" to "Ensure all main action buttons and meaningful icons have clear, concise content descriptions, while purely decorative icons are set to null.",
+                    "AI Consent & Danger Zone Dialogs" to "Verify that AI Consent dialog, Backup Password input dialogs, and Danger Zone Full Reset dialog have clear headers, distinct active/cancel buttons, and destructive warnings.",
+                    "Screenshot Mode Privacy" to "Turn on Screenshot Mode. Verify that all sensitive personal journal reflections and specific transaction notes are fully redacted/hidden, while keeping analytics useful with demo data labels."
                 )
 
                 var expandedItemIndex by remember { mutableStateOf<Int?>(null) }
@@ -970,9 +1497,11 @@ fun SettingsScreen(
             }
         }
 
-        // 5. Advanced / Danger Zone Card
+        // ====================================================================
+        // SECTION 10: DANGER ZONE
+        // ====================================================================
         Text(
-            text = "Advanced Tools",
+            text = "Danger Zone",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -1091,7 +1620,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = "Life Control v1.3.1 Final Release Candidate",
+                text = "Life Control v3.0.0 Public Portfolio Release",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1134,6 +1663,230 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRestoreConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showExportPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showExportPasswordDialog = false
+                exportPassword = ""
+                exportPasswordConfirm = ""
+                exportPasswordError = null
+            },
+            title = { Text("Export Encrypted Backup", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Set a secure password for this backup file. If you lose this password, the backup file can never be decrypted or restored.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    // Warning banner inside the dialog
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Warning: The app does not store your password. Lost passwords cannot be recovered.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = exportPassword,
+                        onValueChange = { 
+                            exportPassword = it
+                            exportPasswordError = null
+                        },
+                        label = { Text("Enter Password (min 8 chars)") },
+                        isError = exportPasswordError != null,
+                        modifier = Modifier.fillMaxWidth().testTag("export_password_input"),
+                        singleLine = true,
+                        visualTransformation = if (exportPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { exportPasswordVisible = !exportPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (exportPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = "Toggle password visibility"
+                                )
+                            }
+                        }
+                    )
+
+                    OutlinedTextField(
+                        value = exportPasswordConfirm,
+                        onValueChange = { 
+                            exportPasswordConfirm = it
+                            exportPasswordError = null
+                        },
+                        label = { Text("Confirm Password") },
+                        isError = exportPasswordError != null,
+                        supportingText = {
+                            if (exportPasswordError != null) {
+                                Text(exportPasswordError!!, color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().testTag("export_password_confirm_input"),
+                        singleLine = true,
+                        visualTransformation = if (exportPasswordConfirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { exportPasswordConfirmVisible = !exportPasswordConfirmVisible }) {
+                                Icon(
+                                    imageVector = if (exportPasswordConfirmVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = "Toggle password visibility"
+                                )
+                            }
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (exportPassword.length < 8) {
+                            exportPasswordError = "Password must be at least 8 characters"
+                            Toast.makeText(context, "Password must be at least 8 characters", Toast.LENGTH_LONG).show()
+                        } else if (exportPassword != exportPasswordConfirm) {
+                            exportPasswordError = "Passwords do not match"
+                            Toast.makeText(context, "Passwords do not match", Toast.LENGTH_LONG).show()
+                        } else {
+                            tempEncryptionPassword = exportPassword
+                            exportPassword = ""
+                            exportPasswordConfirm = ""
+                            exportPasswordError = null
+                            showExportPasswordDialog = false
+                            
+                            val dateStr = java.text.SimpleDateFormat("yyyy_MM_dd", java.util.Locale.US).format(java.util.Date())
+                            exportEncryptedBackupLauncher.launch("life_control_encrypted_backup_$dateStr.lcbackup")
+                        }
+                    },
+                    modifier = Modifier.testTag("confirm_export_encrypted_button")
+                ) {
+                    Text("Continue")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showExportPasswordDialog = false
+                    exportPassword = ""
+                    exportPasswordConfirm = ""
+                    exportPasswordError = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showEncryptedRestorePasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showEncryptedRestorePasswordDialog = false
+                encryptedRestorePassword = ""
+                restorePasswordError = null
+            },
+            title = { Text("Restore Encrypted Backup", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "This file is password-protected. Please enter the correct password to decrypt and restore your data.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Warning: Lost passwords cannot be recovered. Decryption will fail without the exact password.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = encryptedRestorePassword,
+                        onValueChange = { 
+                            encryptedRestorePassword = it
+                            restorePasswordError = null
+                        },
+                        label = { Text("Backup Password") },
+                        isError = restorePasswordError != null,
+                        supportingText = {
+                            if (restorePasswordError != null) {
+                                Text(restorePasswordError!!, color = MaterialTheme.colorScheme.error)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().testTag("encrypted_restore_password_input"),
+                        singleLine = true,
+                        visualTransformation = if (encryptedRestorePasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { encryptedRestorePasswordVisible = !encryptedRestorePasswordVisible }) {
+                                Icon(
+                                    imageVector = if (encryptedRestorePasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = "Toggle password visibility"
+                                )
+                            }
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    onClick = {
+                        if (encryptedRestorePassword.isEmpty()) {
+                            restorePasswordError = "Password cannot be empty"
+                            Toast.makeText(context, "Password cannot be empty", Toast.LENGTH_SHORT).show()
+                        } else {
+                            val passwordChars = encryptedRestorePassword.toCharArray()
+                            val (decryptedJson, errorMsg) = viewModel.decryptAndValidateBackup(encryptedBackupJsonToRestore ?: "", passwordChars)
+                            for (i in passwordChars.indices) {
+                                passwordChars[i] = '0'
+                            }
+                            if (decryptedJson != null) {
+                                encryptedRestorePassword = ""
+                                restorePasswordError = null
+                                showEncryptedRestorePasswordDialog = false
+                                encryptedBackupJsonToRestore = null
+                                restoreJsonToConfirm = decryptedJson
+                                showRestoreConfirmDialog = true
+                            } else {
+                                restorePasswordError = errorMsg ?: "Decryption failed"
+                                Toast.makeText(context, errorMsg ?: "Restore failed: Decryption failure", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("confirm_encrypted_restore_button")
+                ) {
+                    Text("Decrypt & Verify")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showEncryptedRestorePasswordDialog = false
+                    encryptedRestorePassword = ""
+                    restorePasswordError = null
+                }) {
                     Text("Cancel")
                 }
             }
@@ -1489,7 +2242,7 @@ private fun AboutSubpage(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Version 1.3.1 Final Release Candidate",
+                        text = "Life Control v3.0.0 Public Portfolio Release",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
@@ -1526,7 +2279,7 @@ private fun AboutSubpage(
             ) {
                 val bluePrintItems = listOf(
                     "App Name" to "Life Control",
-                    "Version" to "1.3.1 Final Release Candidate",
+                    "Version" to "Life Control v3.0.0 Public Portfolio Release",
                     "Developer" to "YAP SHI XIAN",
                     "Project Type" to "Offline-first Android personal growth management app",
                     "Architecture" to "Single-Activity (Clean MVVM + UDF)",
@@ -1617,11 +2370,11 @@ private fun PrivacySubpage(
             Triple(Icons.Default.Lock, "No Login Required", "No accounts, registrations, or login screens exist. You start managing your growth instantly without providing email addresses or passwords."),
             Triple(Icons.Default.Security, "No Google Firebase", "Google Firebase integration, Crashlytics SDK, and remote performance monitoring are completely excluded to guarantee local application purity."),
             Triple(Icons.Default.CloudOff, "No Cloud Database", "Your routines and records are never sent to remote storage. There are no backend syncing systems or remote servers storing your data."),
-            Triple(Icons.Default.OfflineBolt, "No Gemini API in This Version", "This release runs entirely offline with zero external large language model (LLM) or Gemini generative API dependencies."),
+            Triple(Icons.Default.AutoAwesome, "Optional Gemini AI Coach (v2.0.1)", "The AI Coach is disabled by default and 100% optional. No background AI uploads occur, and no login or cloud databases are used. AI requests only happen after manual user action. Journal AI sends only your selected journal text, while Weekly and Monthly AI send aggregated retrospective metrics only (never your full database). You can disable the AI Coach at any time and reset your consent preferences in Settings."),
             Triple(Icons.Default.BugReport, "No Remote Analytics", "No telemetry, behavioral metrics, or analytics tracking SDKs are included. Your personal growth patterns are private to you."),
             Triple(Icons.Default.Storage, "Core Data Stored Natively on Device", "All daily tasks, financial transactions, learning tracks, and journal entries are securely written to your local physical device sandbox in a private Room SQLite file."),
             Triple(Icons.Default.Share, "User-Controlled CSV Export", "CSV spreadsheets containing your historic records are only compiled and shared when you manually trigger the export tool. No background data mining exists."),
-            Triple(Icons.Default.Save, "User-Controlled JSON Backup & Restore", "Full JSON database backup exports and recovery restores are strictly on-demand operations executed under your direct oversight."),
+            Triple(Icons.Default.Save, "User-Controlled Backup & Restore", "Plain JSON backup files are unencrypted and readable by anyone who accesses them. The new Encrypted Backup option protects your data using a secure, password-based AES-GCM key derived from a password you choose. This password is never stored, displayed, or logged by the app. If you lose your password, the backup file can never be recovered or restored. All backup, decryption, and restoration flows are entirely local, atomic, and user-controlled."),
             Triple(Icons.Default.Notifications, "Local Reminders System", "Accountability notifications use the Android system WorkManager or AlarmManager framework. Reminders are generated locally on-device without contacting cloud servers."),
             Triple(Icons.Default.DeleteForever, "User-Controlled Data Reset", "Purging individual sections or executing a complete application wipe is restricted to your confirmation and will never happen automatically.")
         )
@@ -1675,14 +2428,9 @@ private fun ReadmeSubpage(
     onBack: () -> Unit
 ) {
     val readmeContent = """
-    # ⚡ Life Control v1.3.1 (Final Release Candidate)
+    # ⚡ Life Control v3.0.0 (Public Portfolio Release)
     
-    Life Control is a production-ready, local-first Android personal growth and self-management application designed to help individuals track their daily tasks, finances, study routines, and cognitive reflections. Built with a robust offline-first architecture, the application champions complete user privacy and frictionless utility without relying on remote cloud servers, login procedures, or tracking analytics.
-    
-    ---
-    
-    ## 👨‍💻 Developer
-    Developed by **YAP SHI XIAN** as a pristine demonstration of professional, modern Android software development principles.
+    Life Control is a production-ready, local-first Android personal growth and self-management application designed to help individuals track their daily tasks, finances, study routines, and cognitive reflections, now augmented with an optional, secure Gemini AI Performance Coach. Built with a robust offline-first architecture, the application champions complete user privacy and frictionless utility without relying on remote cloud servers, login procedures, or tracking analytics.
     
     ---
     
@@ -1695,18 +2443,20 @@ private fun ReadmeSubpage(
     5. **Retrospective Review Engines**: Analytical weekly and monthly audits of your growth.
     
     ---
+
+    ## 📸 App Screenshots
+    *Add your custom portfolio screenshots here to showcase the beautiful interface.*
     
-    ## 📱 Screens & Core Modules
-    - **Main Dashboard (Home)**: Aggregates active status percentages, habit counts, and weekly progress charts using custom canvas visualizations.
-    - **Task Manager**: Organize tasks by category with interactive checkboxes and floating state cards.
-    - **Money Tracker**: Track RM ledger with category chips, spending targets, and balance calculations.
-    - **Learning Hub**: Focus on specific tracks like Linux, Cyber Security, Android Dev, or AI Tools with live progress trackers.
-    - **Reflection Journal**: Maintain a safe local diary with distraction-obstacle analyzers.
-    - **Weekly & Monthly Retrospective**: Audit historic completed tasks and aggregate finances.
-    - **Presentation & Demo Mode Panel**: Allows immediate injection of mock records for quick testing and screenshot curation.
+    | Home Dashboard | Task Manager | Money Tracker |
+    | :---: | :---: | :---: |
+    | `[Placeholder: Home]` | `[Placeholder: Tasks]` | `[Placeholder: Money]` |
     
+    | Learning Hub | Reflection Journal | Analytics Hub |
+    | :---: | :---: | :---: |
+    | `[Placeholder: Learning]` | `[Placeholder: Journal]` | `[Placeholder: Analytics]` |
+
     ---
-    
+
     ## 🚀 Key Features
     - **100% Offline-First Persistence**: Powered by structured SQLite databases.
     - **Portfolio-Ready Custom Tools**: Features interactive README generator, visual presentation modes, and CSV export.
@@ -1715,7 +2465,18 @@ private fun ReadmeSubpage(
     - **Screenshot / Portfolio Mode**: Intelligently masks private data and notes with placeholders for safe online showcase.
     
     ---
+
+    ## 📱 Screens & Core Modules
+    - **Main Dashboard (Home)**: Aggregates active status percentages, habit counts, and weekly progress charts using custom canvas visualizations.
+    - **Task Manager**: Organize tasks by category with interactive checkboxes and floating state cards.
+    - **Money Tracker**: Track RM ledger with category chips, spending targets, and balance calculations.
+    - **Learning Hub**: Focus on specific tracks like Linux, Cyber Security, Android Dev, or AI Tools with live progress trackers.
+    - **Reflection Journal**: Maintain a safe local diary with distraction-obstacle analyzer.
+    - **Weekly & Monthly Retrospective**: Audit historic completed tasks and aggregate finances.
+    - **Presentation & Demo Mode Panel**: Allows immediate injection of mock records for quick testing and screenshot curation.
     
+    ---
+
     ## 🛠️ Modern Tech Stack
     - **Language**: Kotlin (100% modern programming)
     - **UI Architecture**: Jetpack Compose (Material 3 declarative design)
@@ -1726,7 +2487,7 @@ private fun ReadmeSubpage(
     - **Verification Engine**: Robolectric for local JVM unit and screenshot verification
     
     ---
-    
+
     ## 🏗️ Architecture & Blueprint
     Adheres strictly to the principles of Clean Architecture and Unidirectional Data Flow (UDF) within a Single-Activity framework:
     - **Presentation Layer**: Custom Jetpack Compose views observing immutable, reactive UI state from centralized ViewModels.
@@ -1734,21 +2495,138 @@ private fun ReadmeSubpage(
     - **Data Layer**: Encapsulates data retrieval via DAOs, unified under repository abstractions for database records and local shared preferences.
     
     ---
-    
+
     ## 🔒 Offline-First Privacy Model
     - **Zero Login Required**: Instant initialization without credentials.
     - **Absolute Local Storage**: Sandboxed database file on physical hardware.
     - **No Third-Party Analytics**: Completely excludes Firebase, Crashlytics, and tracking trackers.
-    - **Zero AI Cloud Leaks**: Generates all local analysis locally without external LLM API calls.
     
     ---
+
+    ## 🧠 Optional AI Coach Privacy Model
+    - **Explicit Opt-In Only**: Disabled by default. Requires explicit visual privacy consent before any AI interaction.
+    - **User-Directed Analysis**: Gemini AI is called strictly on manual trigger; no background data uploading.
+    - **Minimal Footprint Transmission**: Sends only selected journal text or high-level aggregated metrics.
+    - **Graceful On-Device Fallback**: If the Gemini API key is unconfigured or unavailable, the app instantly transitions to high-quality local template analysis.
     
+    ---
+
+    ## 🗄️ Backup and Restore Model
+    - **Plain JSON Backup**: Clear, readable unencrypted JSON export for easy data portability and custom inspections.
+    - **Encrypted .lcbackup**: Password-protected backup secured on-device using AES-256-GCM.
+    - **Key Derivation safety**: Uses PBKDF2 with HMAC-SHA256 and 150,000 iterations to derive keys locally.
+    - **Atomic Integrity Validation**: Fully validates payload keys, iterations, and Base64 structures prior to writing to Room database within a single transaction. Incorrect passwords abort cleanly leaving local data untouched.
+    
+    ---
+
+    ## 📦 APK Preparation & Release Guide
+    The Life Control project is fully structured for simple compilation and production deployment. Follow these procedures to compile the application binary:
+
+    ### 1. Compiling a Debug APK
+    The Debug APK is fully suitable for local testing, presentation, and side-loading. It does not require code-signing credentials.
+    * **Linux / macOS Bash**:
+      ```bash
+      ./gradlew assembleDebug
+      ```
+    * **Windows CMD / PowerShell**:
+      ```cmd
+      gradlew.bat assembleDebug
+      ```
+    * **Compiled Output Path**: `app/build/outputs/apk/debug/app-debug.apk`
+
+    ### 2. Compiling a Release APK / App Bundle (AAB)
+    Production distribution on the Google Play Store or formal hosting requires an encrypted release keystore.
+    * **Compilation Command**:
+      ```bash
+      ./gradlew assembleRelease
+      ```
+    * **Security Guardrails**:
+      * Never commit your `.jks` keystore files to the repository.
+      * Never hardcode or commit keystore passwords in `build.gradle.kts` files. Ensure they are injected at compilation time using system environment variables (e.g., `KEYSTORE_PATH`, `STORE_PASSWORD`).
+    
+    ---
+
+    ## 📌 Current Release Status
+    **Active Public Portfolio Release**: Optimized for GitHub showcase, technical presentation, and APK side-loading. Tested successfully against rigorous Android SDK 24–36 targets.
+    
+    ---
+
     ## 📈 Version History & Changelog
     
-    ### V1.3.1 (Current Version)
-    - **Final Release Preparation**: Safe versioning increments and documentation polish.
-    - **Packaging Refinements**: High-fidelity UI styling with clean blueprint definitions.
-    - **Manual QA Checklist**: Interactive, integrated release checklist subpage.
+    ### V3.0.0 (Current Version)
+    - **Public Portfolio Release**: Refined user guidelines and prepared technical assets for public GitHub hosting and side-load demonstrations.
+    - **Prinstine UI & Polished Layouts**: Validated typography sizing, spacing densities, and scroll behaviors for compact and tablet screen targets.
+    - **Screenshot & Portfolio Masking**: Reinforced automated placeholder data replacement to hide private information while keeping graphs visually rich.
+    - **Enhanced Manual QA checklist**: Added final repository safety and build verification checklists with visual progress indicators.
+    - **Complete Offline Audit Screen**: Added an on-device privacy panel explicitly showcasing zero location, microphone, camera, or contacts exposure.
+
+    ### V2.5.0
+    - **Final Release QA Dashboard**: Added a comprehensive Release Verification subpage in Settings grouped into seven distinct verification categories with real-time completion tracking and progress visualizers.
+    - **Permission & Capability Audit**: Introduced an explicit offline safety auditor screen clarifying minimal system access permissions and detailing strictly excluded hardware tracking hooks (no GPS, microphone, camera, or SMS).
+    - **APK Preparation Guide**: Added fully documented build commands for generating both local Debug APKs and formal signed production Release APKs.
+    - **Final Test Matrix**: Embedded a comprehensive, real-time-executable test execution plan containing 14 rigorous verification procedures for pristine app assurance.
+    - **Repository Safety Audit**: Audited repository-facing configurations to guarantee zero local API keys are hardcoded, and validated `.env`/`local.properties` Git ignoring rules.
+
+    ### V2.4.0
+    - **UI Consistency Polish**: Harmonized vertical spacing, corner radii, padding, empty states, and typography sizes across all screens for a pristine layout.
+    - **Accessibility Improvements**: Added semantic content descriptions, touch-target expansion (48dp+), and supportive text for status-labels (On Track, Needs Attention, At Risk) to improve screen reader support.
+    - **Responsive Layout Stability**: Wrapped overflow-prone layouts in scrollable containers, fixed dialog height overflows, and ensured safe wrapping of long titles and currency values.
+    - **Navigation Polish**: Streamlined Back-handling, resolved subpage routing, and ensured seamless transitions to and from the Analytics Hub and User Guide subpages.
+    - **Dialog & Form Validation Polish**: Hardened inputs with short, clear user-facing validation errors for empty fields, invalid amounts, and short passwords.
+    - **Screenshot & Portfolio Readiness**: Hidden personal journal entries and ledger notes in Screenshot Mode to enable pristine showcasing.
+
+    ### V2.3.0
+    - **User Guide Hub**: A comprehensive, offline documentation center accessible from the dashboard and Settings, covering daily tasks, financial logs, structured learning paths, reflection diaries, and analytics features.
+    - **First Week Setup Checklist**: A step-by-step onboarding wizard showing real-time setup completion progress (%) and persisting task status locally in persistent shared preferences.
+    - **Improved Empty State Actions**: Contextual call-to-actions on empty screens providing friendly guidance, helpful reminders, and instant access to default portfolio seedings.
+    - **Backup, AI Coach & Privacy Guides**: Full, offline-safe explanation sub-sections detailed inside the main user guide explaining local storage limits, optional cloud integrations, and password-backed AES-GCM recovery rules.
+    - **Settings Screen Reorganization**: Clearer modular groupings of settings options divided into ten clean, highly scan-friendly visual cards.
+
+    ### V2.2.1
+    - **Encrypted Backup Validation Hardening**: Validates presence of all keys, verifies iterations safety threshold, and confirms Base64 validity of salt, IV, and payload before decrypting.
+    - **Wrong Password Restore Safety**: Wrong passwords abort immediately and cleanly without crashing or corrupting current on-device data.
+    - **Corrupted File Handling**: Gracefully catches modified, truncated, plain JSON, or empty files during restoration, presenting concise user-friendly error banners.
+    - **Atomic Restore Flow Verification**: Moves decryption and structure validation ahead of database mutation, keeping all operations strictly in atomic Room SQLite transactions.
+    - **Backup Compatibility**: Fully supports plain JSON and legacy unencrypted configurations alongside robust .lcbackup imports.
+    - **Password UX & Warning Hardening**: Expanded dialogue alert callouts on both export and import screens to prevent password recovery issues.
+    - **Encryption QA Checklist Updates**: Complete manual checklist update covering 12 edge cases.
+
+    ### V2.2.0
+    - **Optional Encrypted Backup**: Protect your database backup with an AES-GCM password-encrypted payload.
+    - **PBKDF2 Key Derivation**: Derives high-entropy 256-bit AES encryption keys locally using PBKDF2 with HMAC-SHA256 and 150,000 iterations.
+    - **Secure User Password Input**: Password input validation checks and visibility toggles on both export and restore dialogs.
+    - **Atomic Restoration Integrity**: Restoration requires decryption verification and full schema validation before writing. Runs atomically in single database transactions.
+    - **Enhanced Privacy Page**: Reflected encrypted backup warnings, explaining local password policy and security parameters.
+
+    ### V2.1.1
+    - **Analytics calculation hardening**: Audited and hardened all local metrics calculations in the Analytics Hub.
+    - **Date range accuracy improvements**: Restructured 7-day and 30-day calculations to strictly include today and respective previous days.
+    - **Savings forecast edge-case handling**: Resolved timeline projections for zero goals, deficit spending, or stagnant income rates.
+    - **Journal streak validation**: Verified correct streak calculation handling duplicate entries, leap years, and missing timestamps.
+    - **Goal Forecast explanation labels**: Added detailed local reasoning texts for "On Track", "Needs Attention", and "At Risk" statuses.
+    - **Analytics QA checklist updates**: Expanded offline diagnostics and verification criteria for local calculation logic.
+
+    ### V2.1.0
+    - **Analytics Hub**: New offline-first visual dashboard analyzing tasks, financials, study paths, and journal streaks.
+    - **Task Trend Insights**: Computes 7d & 30d completion rates, category stats, priority rates, and suggests local growth areas.
+    - **Money Trend Insights**: Projections, average daily spending, and category spend summaries.
+    - **Learning Progress Analytics**: Syllabus completion indicators with lesson fraction displays.
+    - **Journal Consistency Analytics**: Longest and current streak tracking using safe, local metadata.
+    - **Savings Goal Forecast**: Multi-week timelines estimating savings milestones.
+    - **Local-only visual analytics**: 100% on-device data computation prioritizing user privacy.
+
+    ### V2.0.1
+    - **AI Privacy Audit & Hardening**: Reviewed the AI privacy consent flow. Confirmed AI Coach is disabled by default, requiring manual opt-in. Aggregated reviews are manual and transmit only selected metrics or text under manual user action.
+    - **Configuration Safety**: Cleaned up API key exposure vectors. Added a graceful warning if Gemini API keys are unconfigured and automatically transitioned requests to local fallbacks.
+    - **Gemini Request Safety**: Enhanced request logic with explicit timeout handling, Retry options in Journal, Weekly, and Monthly states, robust JSON validation, and score range constraints.
+    - **Prompt & Output Sanitization**: Improved prompts with strict medical, legal, and financial guardrails. Sanitized and clamped response values to prevent UI disruptions.
+    
+    ### V2.0
+    - **Optional Gemini AI Coaching**: Multi-dimensional diagnostic reviews for Journal, Weekly, and Monthly retrospectives.
+    - **Security & Privacy Safeguards**: Explicit privacy consent dialogs and automatic offline local analytics fallback.
+    - **Gradle Wrapper & Secrets**: Upgraded system parameters, build automation wrapper, and secure BuildConfig credentials.
+    
+    ### V1.3.1
     
     ### V1.3
     - **Portfolio Additions**: Integrated About, Privacy details, and Markdown README generator.
@@ -1777,6 +2655,11 @@ private fun ReadmeSubpage(
     1. **Local Gemini AI Integration**: Incorporate local, on-device Gemini Nano execution for offline journal synthesis.
     2. **Encrypted SQLite**: Integrate SQLCipher to encrypt the offline database file.
     3. **Advanced Widget Support**: Native home screen widgets for tracking task lists and RM limits.
+    
+    ---
+
+    ## 👨‍💻 Developer
+    Developed by **YAP SHI XIAN** as a pristine demonstration of professional, modern Android software development principles.
     """.trimIndent()
 
     Column(
@@ -1848,34 +2731,105 @@ private fun ReadmeSubpage(
     }
 }
 
+private data class ChecklistGroup(val name: String, val items: List<String>)
+
 @Composable
 private fun ChecklistSubpage(
     onBack: () -> Unit
 ) {
-    val checklistItems = listOf(
-        "App launches successfully",
-        "All bottom navigation tabs work",
-        "Tasks can be added, edited, completed, and deleted",
-        "Transactions can be added and deleted",
-        "Learning lessons can be completed",
-        "Journal entries can be created",
-        "Weekly review opens safely",
-        "Monthly review opens safely",
-        "CSV export works",
-        "JSON backup export works",
-        "JSON restore works",
-        "Local reminders can be enabled and disabled",
-        "Demo data can be inserted and cleared",
-        "Screenshot mode can be enabled and disabled",
-        "Full reset requires RESET confirmation",
-        "App works after full reset",
-        "No private demo data is exposed in screenshot mode"
-    )
+    val groups = remember {
+        listOf(
+            ChecklistGroup(
+                "A. Core App Modules",
+                listOf(
+                    "Fresh install (starts in clean state)",
+                    "Onboarding checklist works",
+                    "Home Dashboard (percentages and progress render)",
+                    "Task Manager (categories and task cards work)",
+                    "Money Tracker (RM balance ledger and categories work)",
+                    "Learning Hub (course tracks and lesson checklists work)",
+                    "Reflection Journal (diary entries and obstacles work)"
+                )
+            ),
+            ChecklistGroup(
+                "B. Reviews & Analytics",
+                listOf(
+                    "Weekly Review (loads historic stats correctly)",
+                    "Monthly Review (collates monthly metrics correctly)",
+                    "Analytics Hub (computes accurate 7d & 30d trends)",
+                    "Goal Forecast (timelines and status labels work)",
+                    "Empty states are safe and user-friendly"
+                )
+            ),
+            ChecklistGroup(
+                "C. AI Coach Security",
+                listOf(
+                    "AI Coach disabled by default",
+                    "AI privacy consent dialog appears before first use",
+                    "Local fallback works when Gemini is disconnected",
+                    "No background AI uploading",
+                    "Journal AI only sends selected entry text",
+                    "Weekly & Monthly AI use aggregated metrics only"
+                )
+            ),
+            ChecklistGroup(
+                "D. Backup & Restore",
+                listOf(
+                    "Plain JSON export works (readable on-device file)",
+                    "Plain JSON restore works",
+                    "Encrypted .lcbackup export works (AES-256-GCM)",
+                    "Encrypted .lcbackup restore works with correct password",
+                    "Wrong password decryption fails safely (data untouched)",
+                    "Corrupted file restore handled safely (no crashes)"
+                )
+            ),
+            ChecklistGroup(
+                "E. Privacy, Data & Reset",
+                listOf(
+                    "Privacy & Data page is clear and accurate",
+                    "No login required / completely local storage",
+                    "No cloud database / no remote analytics",
+                    "Passwords are never stored by the app",
+                    "User-controlled CSV export works",
+                    "Full App Reset wipes SQLite modules safely"
+                )
+            ),
+            ChecklistGroup(
+                "F. UI & Accessibility",
+                listOf(
+                    "Small screen layout responsiveness (no clipping)",
+                    "Dark theme contrast is highly readable",
+                    "Long text wraps safely in all cards",
+                    "Touch targets are at least 48dp x 48dp",
+                    "Screen reader content descriptions exist"
+                )
+            ),
+            ChecklistGroup(
+                "G. Repository Safety Checklist",
+                listOf(
+                    "README updated to v3.0.0 Public Portfolio Release",
+                    "Version history and changelog updated",
+                    "No real Gemini API key committed in source",
+                    "'.env' ignored in git",
+                    "'.env.example' has placeholders only",
+                    "'local.properties' ignored",
+                    "No real backup JSON files committed",
+                    "No real CSV exports committed",
+                    "No real '.lcbackup' files committed",
+                    "Gradle Wrapper files exist",
+                    "Debug build command documented (./gradlew assembleDebug)",
+                    "Release signing warning documented (never commit keys/passwords)",
+                    "Screenshots folder planned in repository",
+                    "GitHub Release notes ready"
+                )
+            )
+        )
+    }
 
-    // Store checklist states in a local state list
-    val checkedStates = remember { androidx.compose.runtime.mutableStateListOf(*Array(checklistItems.size) { false }) }
+    val totalItems = remember(groups) { groups.sumOf { it.items.size } }
+    val checkedStates = remember { androidx.compose.runtime.mutableStateListOf(*Array(totalItems) { false }) }
     val completedCount = checkedStates.count { it }
-    val progress = if (checklistItems.isNotEmpty()) completedCount.toFloat() / checklistItems.size else 0f
+    val progress = if (totalItems > 0) completedCount.toFloat() / totalItems else 0f
     val percentPercent = (progress * 100).toInt()
 
     Column(
@@ -1925,7 +2879,7 @@ private fun ChecklistSubpage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "$completedCount of ${checklistItems.size} verified",
+                        text = "$completedCount of $totalItems verified",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1956,42 +2910,78 @@ private fun ChecklistSubpage(
             }
         }
 
-        Text(
-            text = "Verification Criteria",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        groups.forEachIndexed { groupIdx, group ->
+            val startIdx = remember(groups, groupIdx) {
+                groups.take(groupIdx).sumOf { it.items.size }
+            }
+            val groupCheckedCount = group.items.indices.count { checkedStates[startIdx + it] }
+            val groupProgress = if (group.items.isNotEmpty()) groupCheckedCount.toFloat() / group.items.size else 0f
+            val groupPercent = (groupProgress * 100).toInt()
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            Text(
+                text = "${group.name} ($groupCheckedCount/${group.items.size} verified)",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
             ) {
-                checklistItems.forEachIndexed { index, item ->
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { checkedStates[index] = !checkedStates[index] }
-                            .padding(vertical = 6.dp),
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Checkbox(
-                            checked = checkedStates[index],
-                            onCheckedChange = { checkedStates[index] = it ?: false },
-                            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
+                        LinearProgressIndicator(
+                            progress = groupProgress,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.1f)
                         )
                         Text(
-                            text = item,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (checkedStates[index]) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (checkedStates[index]) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            text = "$groupPercent%",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
                         )
+                    }
+
+                    group.items.forEachIndexed { itemIdx, item ->
+                        val absoluteIdx = startIdx + itemIdx
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { checkedStates[absoluteIdx] = !checkedStates[absoluteIdx] }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Checkbox(
+                                checked = checkedStates[absoluteIdx],
+                                onCheckedChange = { checkedStates[absoluteIdx] = it ?: false },
+                                colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
+                            )
+                            Text(
+                                text = item,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (checkedStates[absoluteIdx]) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (checkedStates[absoluteIdx]) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
             }
@@ -2008,6 +2998,197 @@ private fun ChecklistSubpage(
             shape = RoundedCornerShape(12.dp)
         ) {
             Text("Reset Checklist", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun PermissionsSubpage(
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+            }
+            Text(
+                text = "Permissions & Privacy Audit",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = androidx.compose.foundation.BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Declared App Permissions",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Life Control requires a very narrow permissions footprint. We strictly utilize on-device, sandbox storage and standard notification capabilities.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Notification Permission",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Used exclusively for local reminders, routines, task accountability, and daily reflections. Rest assured, no cloud notification servers (FCM) are contacted.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Internet Access",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Used solely to send optional, user-initiated text/aggregated metrics to the Gemini AI Coach model. This capability is strictly opt-in and disabled by default.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Local Storage / SAF (Storage Access Framework)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Used only when the user requests manual CSV data export or triggers backup and restore operations (.lcbackup / plain JSON).",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = androidx.compose.foundation.BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Strictly Excluded Footprint",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = "To guarantee absolute local-first privacy, the following sensor and system access hooks are 100% excluded from the source code and manifest:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                val excludedCapabilities = listOf(
+                    "No Location Tracking" to "Geographic coordinates (GPS / WiFi location) are never requested or stored.",
+                    "No Contacts Access" to "We have absolutely no access to your address book, phone numbers, or social graphs.",
+                    "No Camera Access" to "Camera hardware permissions are omitted; no pictures, scanning, or recording.",
+                    "No Microphone / Voice" to "Audio recording and voice tracking are completely absent.",
+                    "No SMS or Cellular Access" to "We cannot read, send, or monitor your carrier network messages or call logs.",
+                    "No Background Trackers" to "Absolutely no remote analytics, telemetry tools, or crash reporting integrations exist."
+                )
+
+                excludedCapabilities.forEach { (title, description) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))

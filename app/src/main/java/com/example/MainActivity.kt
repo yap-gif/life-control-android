@@ -141,7 +141,15 @@ fun MainAppContainer(viewModel: MainViewModel) {
                             onNavigateToJournal = { navController.navigate(NavigationTab.Journal.route) },
                             onNavigateToSettings = { navController.navigate(NavigationTab.Settings.route) },
                             onNavigateToWeeklyReview = { navController.navigate("weekly_review") },
-                            onNavigateToMonthlyReview = { navController.navigate("monthly_review") }
+                            onNavigateToMonthlyReview = { navController.navigate("monthly_review") },
+                            onNavigateToAnalytics = { navController.navigate("analytics") },
+                            onNavigateToUserGuide = { navController.navigate("user_guide") }
+                        )
+                    }
+                    composable("analytics") {
+                        AnalyticsHubScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
                     composable("weekly_review") {
@@ -169,7 +177,17 @@ fun MainAppContainer(viewModel: MainViewModel) {
                         JournalScreen(viewModel = viewModel)
                     }
                     composable(NavigationTab.Settings.route) {
-                        SettingsScreen(viewModel = viewModel)
+                        SettingsScreen(
+                            viewModel = viewModel,
+                            onNavigateToAnalytics = { navController.navigate("analytics") },
+                            onNavigateToUserGuide = { navController.navigate("user_guide") }
+                        )
+                    }
+                    composable("user_guide") {
+                        UserGuideScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { navController.popBackStack() }
+                        )
                     }
                 }
                 

@@ -33,11 +33,28 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToWeeklyReview: () -> Unit,
     onNavigateToMonthlyReview: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
+    onNavigateToUserGuide: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val tasks by viewModel.tasks.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
     val learningPaths by viewModel.learningPaths.collectAsState()
+
+    val setupProfileGoal by viewModel.setupProfileGoal.collectAsState()
+    val connectAiCoach by viewModel.connectAiCoach.collectAsState()
+    val customLearningPath by viewModel.customLearningPath.collectAsState()
+    val dailyReflection by viewModel.dailyReflection.collectAsState()
+    val firstTransaction by viewModel.firstTransaction.collectAsState()
+    val triggerReminder by viewModel.triggerReminder.collectAsState()
+    val exportBackup by viewModel.exportBackup.collectAsState()
+
+    val completedChecklistCount = listOf(
+        setupProfileGoal, connectAiCoach, customLearningPath,
+        dailyReflection, firstTransaction, triggerReminder, exportBackup
+    ).count { it }
+    val setupProgressFraction = completedChecklistCount.toFloat() / 7f
+    val setupProgressPercent = (setupProgressFraction * 100).toInt()
     
     val mainLifeGoal by viewModel.mainLifeGoal.collectAsState()
     val savingsGoalPref by viewModel.savingsGoal.collectAsState()
@@ -273,6 +290,79 @@ fun HomeScreen(
             )
         }
 
+        // Analytics Hub Entry Card (v2.1 Premium Card)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("home_analytics_hub_card"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+            ),
+            onClick = onNavigateToAnalytics
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.TrendingUp,
+                        contentDescription = "Analytics Hub",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Visual Analytics Hub",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "v2.1",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Text(
+                        text = "Local trend projections, savings goals & study habits",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "View",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         // Weekly Performance Review Banner Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -375,6 +465,72 @@ fun HomeScreen(
                     imageVector = Icons.Default.ChevronRight,
                     contentDescription = "View",
                     tint = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
+
+        // User Guide & First Week Setup Hub Card (v2.3)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("home_user_guide_hub_card"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            ),
+            onClick = onNavigateToUserGuide
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MenuBook,
+                        contentDescription = "User Guide Hub",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "User Guide & Onboarding",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "First Week Setup: $setupProgressPercent% completed",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { setupProgressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "View",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

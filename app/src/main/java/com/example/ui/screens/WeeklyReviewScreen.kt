@@ -3,6 +3,7 @@ package com.example.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ fun WeeklyReviewScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showConsentDialog by remember { mutableStateOf(false) }
     val tasks by viewModel.tasks.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
     val lessons by viewModel.allLessons.collectAsState()
@@ -377,6 +379,180 @@ fun WeeklyReviewScreen(
                 }
             }
 
+            // --- AI Coach Section ---
+            val aiCoachEnabled by viewModel.aiCoachEnabled.collectAsState()
+            val aiConsentAccepted by viewModel.aiConsentAccepted.collectAsState()
+            val weeklyAiState by viewModel.weeklyAiState.collectAsState()
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "AI Cognitive Coaching",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                if (aiCoachEnabled && aiConsentAccepted) {
+                    Text(
+                        text = "Consent Active",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Unlock smart, multi-dimensional diagnostics on your task consistency, spending behavior, and study parameters from the past 7 days.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = {
+                            val metrics = mapOf(
+                                "totalTasks" to totalTasksCreated,
+                                "completedTasks" to totalTasksCompleted,
+                                "completionRate" to taskCompletionPercentage,
+                                "totalIncome" to totalIncome,
+                                "totalExpenses" to totalExpenses,
+                                "netSavings" to netSavings,
+                                "completedLessons" to completedLessonsCount,
+                                "journalCount" to journalCount,
+                                "bestCategory" to bestCategory,
+                                "weakestCategory" to weakestCategory,
+                                "weeklySummary" to weeklySummary,
+                                "wentWell" to wentWell,
+                                "needsImprovement" to needsImprovement,
+                                "suggestedFocus" to suggestedFocus
+                            )
+
+                            if (aiCoachEnabled && !aiConsentAccepted) {
+                                showConsentDialog = true
+                            } else {
+                                viewModel.analyzeWeekly(metrics)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("analyze_week_button"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Analyze Week with AI", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            // AI State renderer
+            when (val state = weeklyAiState) {
+                is MainViewModel.AiState.Idle -> {
+                    // Do nothing
+                }
+                is MainViewModel.AiState.Loading -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().testTag("ai_coach_loading_card"),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = "AI Coach is diagnosing your week...",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+                is MainViewModel.AiState.Success -> {
+                    AiResultCard(result = state.result, onDismiss = { viewModel.resetWeeklyAiState() })
+                }
+                is MainViewModel.AiState.Error -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(
+                                    text = "AI Coaching Diagnosis Failed: ${state.errorMessage}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = "Showing local fallback diagnostics below. You can try the remote analysis again.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = {
+                                        val metrics = mapOf(
+                                            "totalTasks" to totalTasksCreated,
+                                            "completedTasks" to totalTasksCompleted,
+                                            "completionRate" to taskCompletionPercentage,
+                                            "totalIncome" to totalIncome,
+                                            "totalExpenses" to totalExpenses,
+                                            "netSavings" to netSavings,
+                                            "completedLessons" to completedLessonsCount,
+                                            "journalCount" to journalCount,
+                                            "bestCategory" to bestCategory,
+                                            "weakestCategory" to weakestCategory,
+                                            "weeklySummary" to weeklySummary,
+                                            "wentWell" to wentWell,
+                                            "needsImprovement" to needsImprovement,
+                                            "suggestedFocus" to suggestedFocus
+                                        )
+                                        viewModel.analyzeWeekly(metrics)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                                    modifier = Modifier.align(Alignment.End).testTag("retry_weekly_analysis_button")
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = "Retry", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Retry Analysis", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                        if (state.fallbackResult != null) {
+                            AiResultCard(result = state.fallbackResult, onDismiss = { viewModel.resetWeeklyAiState() })
+                        }
+                    }
+                }
+            }
+
             // Offline Summary Title
             Text(
                 text = "Performance Diagnostics",
@@ -384,7 +560,7 @@ fun WeeklyReviewScreen(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
+ 
             // diagnostics sections
             DiagnosticSectionCard(
                 title = "Weekly Summary",
@@ -392,30 +568,57 @@ fun WeeklyReviewScreen(
                 icon = Icons.Default.Summarize,
                 color = MaterialTheme.colorScheme.primary
             )
-
+ 
             DiagnosticSectionCard(
                 title = "What Went Well",
                 content = wentWell,
                 icon = Icons.Default.ThumbUp,
                 color = Color(0xFF4CAF50)
             )
-
+ 
             DiagnosticSectionCard(
                 title = "What Needs Improvement",
                 content = needsImprovement,
                 icon = Icons.Default.Warning,
                 color = MaterialTheme.colorScheme.error
             )
-
+ 
             DiagnosticSectionCard(
                 title = "Suggested Focus for Next Week",
                 content = suggestedFocus,
                 icon = Icons.Default.Flag,
                 color = MaterialTheme.colorScheme.secondary
             )
-
+ 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    if (showConsentDialog) {
+        AiConsentDialog(
+            onDismiss = { showConsentDialog = false },
+            onConfirm = {
+                showConsentDialog = false
+                viewModel.updateAiConsentAccepted(true)
+                val metrics = mapOf(
+                    "totalTasks" to totalTasksCreated,
+                    "completedTasks" to totalTasksCompleted,
+                    "completionRate" to taskCompletionPercentage,
+                    "totalIncome" to totalIncome,
+                    "totalExpenses" to totalExpenses,
+                    "netSavings" to netSavings,
+                    "completedLessons" to completedLessonsCount,
+                    "journalCount" to journalCount,
+                    "bestCategory" to bestCategory,
+                    "weakestCategory" to weakestCategory,
+                    "weeklySummary" to weeklySummary,
+                    "wentWell" to wentWell,
+                    "needsImprovement" to needsImprovement,
+                    "suggestedFocus" to suggestedFocus
+                )
+                viewModel.analyzeWeekly(metrics)
+            }
+        )
     }
 }
 

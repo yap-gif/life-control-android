@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.widget.Toast
 import android.app.DatePickerDialog
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -415,6 +416,37 @@ fun MoneyScreen(
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 lineHeight = 20.sp
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = "💡 Practical Next Step",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = "Tap the Floating Action Button (+) below to record an income or expense. Log educational materials, study courses, or local bills to refine your savings margin!",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -607,6 +639,9 @@ fun AddTransactionDialog(
     var note by remember { mutableStateOf("") }
     var date by remember { mutableStateOf(viewModel.getTodayDateString()) }
 
+    var isAmountError by remember { mutableStateOf(false) }
+    var amountErrorMessage by remember { mutableStateOf("") }
+
     // Money categories
     val incomeCategories = listOf("Salary", "Freelance", "Other")
     val expenseCategories = listOf("Food", "Transport", "Education", "Tools", "Personal", "Other")
@@ -619,7 +654,7 @@ fun AddTransactionDialog(
     }
 
     var categoryExpanded by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val localContext = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -660,8 +695,20 @@ fun AddTransactionDialog(
                 // Amount Field
                 OutlinedTextField(
                     value = amount,
-                    onValueChange = { amount = it },
+                    onValueChange = { 
+                        amount = it 
+                        if (isAmountError) {
+                            isAmountError = false
+                            amountErrorMessage = ""
+                        }
+                    },
                     label = { Text("Amount (RM)") },
+                    isError = isAmountError,
+                    supportingText = {
+                        if (isAmountError) {
+                            Text(amountErrorMessage, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().testTag("dialog_transaction_amount_input")
@@ -725,7 +772,7 @@ fun AddTransactionDialog(
                                 } catch (e: Exception) { /* use current */ }
                             }
                             DatePickerDialog(
-                                context,
+                                localContext,
                                 { _, year, month, dayOfMonth ->
                                     date = String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, dayOfMonth)
                                 },
@@ -744,12 +791,32 @@ fun AddTransactionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val parsedAmt = amount.toDoubleOrNull()
-                    if (parsedAmt != null && parsedAmt > 0) {
-                        onSave(parsedAmt, type, category, note, date)
+                    val trimmed = amount.trim()
+                    if (trimmed.isEmpty()) {
+                        isAmountError = true
+                        amountErrorMessage = "Amount is required"
+                        Toast.makeText(localContext, "Empty amount", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val parsedAmt = trimmed.toDoubleOrNull()
+                        if (parsedAmt == null) {
+                            isAmountError = true
+                            amountErrorMessage = "Invalid numeric format"
+                            Toast.makeText(localContext, "Invalid amount", Toast.LENGTH_SHORT).show()
+                        } else if (parsedAmt < 0) {
+                            isAmountError = true
+                            amountErrorMessage = "Amount cannot be negative"
+                            Toast.makeText(localContext, "Negative amount not allowed", Toast.LENGTH_SHORT).show()
+                        } else if (parsedAmt == 0.0) {
+                            isAmountError = true
+                            amountErrorMessage = "Amount must be greater than zero"
+                            Toast.makeText(localContext, "Amount must be positive", Toast.LENGTH_SHORT).show()
+                        } else if (category.trim().isEmpty()) {
+                            Toast.makeText(localContext, "Missing category", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onSave(parsedAmt, type, category, note, date)
+                        }
                     }
                 },
-                enabled = amount.toDoubleOrNull() != null && amount.toDouble() > 0,
                 modifier = Modifier.testTag("dialog_save_transaction_button")
             ) {
                 Text("Save")

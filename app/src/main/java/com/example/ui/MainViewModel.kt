@@ -6,6 +6,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
 import com.example.data.local.*
 import com.example.data.repository.LifeControlRepository
+import com.example.data.ai.AiCoachResult
+import com.example.data.ai.AiCoachService
+import com.example.data.ai.LocalCoachService
+import com.example.data.ai.GeminiCoachService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -15,7 +19,10 @@ import java.util.Locale
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: LifeControlRepository
+    private val repository: LifeControlRepository = LifeControlRepository(
+        LifeControlDatabase.getDatabase(application, viewModelScope).dao(),
+        application
+    )
 
     // --- Reminder States ---
     val reminderTasksEnabled = MutableStateFlow(false)
@@ -30,10 +37,110 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val reminderWeeklyEnabled = MutableStateFlow(false)
     val reminderWeeklyTime = MutableStateFlow("10:00")
 
-    init {
-        val database = LifeControlDatabase.getDatabase(application, viewModelScope)
-        repository = LifeControlRepository(database.dao(), application)
+    // --- AI Coach Services & Settings ---
+    val localCoachService = LocalCoachService()
+    val geminiCoachService = GeminiCoachService(localCoachService)
 
+    val aiCoachEnabled = repository.aiCoachEnabled
+    val aiAnalysisMode = repository.aiAnalysisMode
+    val aiConsentAccepted = repository.aiConsentAccepted
+
+    // --- First Week Setup Checklist ---
+    val setupProfileGoal = repository.setupProfileGoal
+    val connectAiCoach = repository.connectAiCoach
+    val customLearningPath = repository.customLearningPath
+    val dailyReflection = repository.dailyReflection
+    val firstTransaction = repository.firstTransaction
+    val triggerReminder = repository.triggerReminder
+    val exportBackup = repository.exportBackup
+
+    fun updateChecklistItem(key: String, completed: Boolean) {
+        repository.saveChecklistItem(key, completed)
+    }
+
+    fun updateAiCoachEnabled(enabled: Boolean) {
+        repository.saveAiCoachEnabled(enabled)
+        if (enabled) {
+            updateChecklistItem("connect_ai_coach", true)
+        }
+    }
+    fun updateAiAnalysisMode(mode: String) = repository.saveAiAnalysisMode(mode)
+    fun updateAiConsentAccepted(accepted: Boolean) = repository.saveAiConsentAccepted(accepted)
+
+    sealed class AiState {
+        object Idle : AiState()
+        object Loading : AiState()
+        data class Success(val result: com.example.data.ai.AiCoachResult) : AiState()
+        data class Error(val errorMessage: String, val fallbackResult: com.example.data.ai.AiCoachResult?) : AiState()
+    }
+
+    val journalAiState = MutableStateFlow<AiState>(AiState.Idle)
+    val weeklyAiState = MutableStateFlow<AiState>(AiState.Idle)
+    val monthlyAiState = MutableStateFlow<AiState>(AiState.Idle)
+
+    fun resetJournalAiState() { journalAiState.value = AiState.Idle }
+    fun resetWeeklyAiState() { weeklyAiState.value = AiState.Idle }
+    fun resetMonthlyAiState() { monthlyAiState.value = AiState.Idle }
+
+    fun analyzeJournal(journal: JournalEntity?, metrics: Map<String, Any>) {
+        viewModelScope.launch {
+            journalAiState.value = AiState.Loading
+            if (journal == null) {
+                journalAiState.value = AiState.Error("Journal entry is empty.", null)
+                return@launch
+            }
+            try {
+                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiCoachService else localCoachService
+                val result = serviceToUse.generateJournalAnalysis(
+                    whatIDid = journal.whatIDid,
+                    whatWentWell = journal.whatWentWell,
+                    whatToImprove = journal.whatToImprove,
+                    tomorrowPriorities = journal.tomorrowPriorities,
+                    metrics = metrics
+                )
+                journalAiState.value = AiState.Success(result)
+            } catch (e: Exception) {
+                val localFallback = localCoachService.generateJournalAnalysis(
+                    whatIDid = journal.whatIDid,
+                    whatWentWell = journal.whatWentWell,
+                    whatToImprove = journal.whatToImprove,
+                    tomorrowPriorities = journal.tomorrowPriorities,
+                    metrics = metrics
+                )
+                journalAiState.value = AiState.Error(e.localizedMessage ?: "Unknown error occurred.", localFallback)
+            }
+        }
+    }
+
+    fun analyzeWeekly(metrics: Map<String, Any>) {
+        viewModelScope.launch {
+            weeklyAiState.value = AiState.Loading
+            try {
+                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiCoachService else localCoachService
+                val result = serviceToUse.generateWeeklyAnalysis(metrics)
+                weeklyAiState.value = AiState.Success(result)
+            } catch (e: Exception) {
+                val localFallback = localCoachService.generateWeeklyAnalysis(metrics)
+                weeklyAiState.value = AiState.Error(e.localizedMessage ?: "Unknown error occurred.", localFallback)
+            }
+        }
+    }
+
+    fun analyzeMonthly(metrics: Map<String, Any>) {
+        viewModelScope.launch {
+            monthlyAiState.value = AiState.Loading
+            try {
+                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiCoachService else localCoachService
+                val result = serviceToUse.generateMonthlyAnalysis(metrics)
+                monthlyAiState.value = AiState.Success(result)
+            } catch (e: Exception) {
+                val localFallback = localCoachService.generateMonthlyAnalysis(metrics)
+                monthlyAiState.value = AiState.Error(e.localizedMessage ?: "Unknown error occurred.", localFallback)
+            }
+        }
+    }
+
+    init {
         // Load reminder preferences
         reminderTasksEnabled.value = repository.getReminderEnabled("reminder_tasks_enabled", false)
         reminderTasksTime.value = repository.getReminderTime("reminder_tasks_time", "09:00")
@@ -56,6 +163,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "journal" -> reminderJournalEnabled.value = enabled
             "study" -> reminderStudyEnabled.value = enabled
             "weekly" -> reminderWeeklyEnabled.value = enabled
+        }
+        if (enabled) {
+            updateChecklistItem("trigger_reminder", true)
         }
         com.example.data.receiver.ReminderManager.scheduleAll(getApplication())
     }
@@ -148,6 +258,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     date = date
                 )
             )
+            updateChecklistItem("first_transaction", true)
         }
     }
 
@@ -171,6 +282,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     isCompleted = false
                 )
             )
+            updateChecklistItem("custom_learning_path", true)
             // Increment/Update path last studied or keep streak updated if needed
             updatePathStreakIfNeeded(pathId)
         }
@@ -225,11 +337,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     tomorrowPriorities = tomorrowPriorities
                 )
             )
+            updateChecklistItem("daily_reflection", true)
         }
     }
 
     // --- Settings Savers ---
-    fun updateMainLifeGoal(goal: String) = repository.saveMainLifeGoal(goal)
+    fun updateMainLifeGoal(goal: String) {
+        repository.saveMainLifeGoal(goal)
+        if (goal.isNotBlank()) {
+            updateChecklistItem("setup_profile_goal", true)
+        }
+    }
     fun updateMonthlyIncomeTarget(target: Double) = repository.saveMonthlyIncomeTarget(target)
     fun updateSavingsGoal(goal: Double) = repository.saveSavingsGoal(goal)
     fun updateDailyStudyTargetMinutes(minutes: Int) = repository.saveDailyStudyTargetMinutes(minutes)
@@ -309,6 +427,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Backup & Restore (Moshi JSON format) ---
     fun getBackupJson(): String {
+        updateChecklistItem("export_backup", true)
         val moshi = com.squareup.moshi.Moshi.Builder()
             .addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
             .build()
@@ -436,6 +555,84 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+
+    fun getEncryptedBackupJson(password: CharArray): String {
+        updateChecklistItem("export_backup", true)
+        val plainText = getBackupJson()
+        val container = com.example.data.repository.BackupEncryption.encrypt(plainText, password)
+        return com.example.data.repository.BackupEncryption.containerToJson(container)
+    }
+
+    fun decryptAndValidateBackup(encryptedJson: String, password: CharArray): Pair<String?, String?> {
+        return try {
+            if (encryptedJson.isBlank()) {
+                return Pair(null, "Invalid backup: Backup file is empty.")
+            }
+            val container = com.example.data.repository.BackupEncryption.jsonToContainer(encryptedJson)
+                ?: return Pair(null, "Invalid backup: File is not a valid JSON structure.")
+            
+            val validation = com.example.data.repository.BackupEncryption.validateContainer(container)
+            if (!validation.first) {
+                return Pair(null, validation.second ?: "Invalid encrypted backup container.")
+            }
+            
+            val decryptedJson = try {
+                com.example.data.repository.BackupEncryption.decrypt(container, password)
+            } catch (e: javax.crypto.AEADBadTagException) {
+                return Pair(null, "Incorrect password or corrupted data (decryption failure).")
+            } catch (e: Exception) {
+                return Pair(null, "Incorrect password or corrupted backup file.")
+            }
+            
+            // Validate the decrypted JSON structure
+            val moshi = com.squareup.moshi.Moshi.Builder()
+                .addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
+                .build()
+            
+            var backupData: com.example.data.repository.BackupData? = null
+            try {
+                val containerAdapter = moshi.adapter(com.example.data.repository.BackupContainer::class.java)
+                val parsedContainer = containerAdapter.fromJson(decryptedJson)
+                if (parsedContainer != null) {
+                    backupData = parsedContainer.data
+                }
+            } catch (e: Exception) {
+                // Not the BackupContainer format, try raw BackupData
+            }
+
+            if (backupData == null) {
+                try {
+                    val legacyAdapter = moshi.adapter(com.example.data.repository.BackupData::class.java)
+                    backupData = legacyAdapter.fromJson(decryptedJson)
+                } catch (e: Exception) {
+                    return Pair(null, "Restore failed: Decrypted backup JSON structure is invalid.")
+                }
+            }
+
+            val data = backupData ?: return Pair(null, "Restore failed: Decrypted backup contains no valid data.")
+            if (data.tasks == null && data.transactions == null && data.learningPaths == null && data.journalEntries == null) {
+                return Pair(null, "Restore failed: Decrypted backup contains no valid records.")
+            }
+            
+            Pair(decryptedJson, null)
+        } catch (e: Exception) {
+            Pair(null, "Validation failed: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun restoreFromEncryptedJson(encryptedJson: String, password: CharArray): Pair<Boolean, String?> {
+        val (decryptedJson, errorMsg) = decryptAndValidateBackup(encryptedJson, password)
+        if (decryptedJson == null) {
+            return Pair(false, errorMsg)
+        }
+        
+        val success = restoreFromJson(decryptedJson)
+        return if (success) {
+            Pair(true, null)
+        } else {
+            Pair(false, "Restore failed: Atomic database restoration failed.")
         }
     }
 
