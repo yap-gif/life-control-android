@@ -2370,7 +2370,7 @@ private fun PrivacySubpage(
             Triple(Icons.Default.Lock, "No Login Required", "No accounts, registrations, or login screens exist. You start managing your growth instantly without providing email addresses or passwords."),
             Triple(Icons.Default.Security, "No Google Firebase", "Google Firebase integration, Crashlytics SDK, and remote performance monitoring are completely excluded to guarantee local application purity."),
             Triple(Icons.Default.CloudOff, "No Cloud Database", "Your routines and records are never sent to remote storage. There are no backend syncing systems or remote servers storing your data."),
-            Triple(Icons.Default.AutoAwesome, "Optional Gemini AI Coach (v2.0.1)", "The AI Coach is disabled by default and 100% optional. No background AI uploads occur, and no login or cloud databases are used. AI requests only happen after manual user action. Journal AI sends only your selected journal text, while Weekly and Monthly AI send aggregated retrospective metrics only (never your full database). You can disable the AI Coach at any time and reset your consent preferences in Settings."),
+            Triple(Icons.Default.AutoAwesome, "Optional Gemini AI Coach", "The AI Coach is disabled by default and 100% optional. No background AI uploads occur, and no login or cloud databases are used. AI privacy consent is required before any interaction, and requests only happen after manual user action. Journal AI sends only your selected journal text, while Weekly and Monthly AI send aggregated retrospective metrics only (never your full database). You can disable the AI Coach at any time and reset your consent preferences in Settings."),
             Triple(Icons.Default.BugReport, "No Remote Analytics", "No telemetry, behavioral metrics, or analytics tracking SDKs are included. Your personal growth patterns are private to you."),
             Triple(Icons.Default.Storage, "Core Data Stored Natively on Device", "All daily tasks, financial transactions, learning tracks, and journal entries are securely written to your local physical device sandbox in a private Room SQLite file."),
             Triple(Icons.Default.Share, "User-Controlled CSV Export", "CSV spreadsheets containing your historic records are only compiled and shared when you manually trigger the export tool. No background data mining exists."),
@@ -2744,6 +2744,8 @@ private fun ChecklistSubpage(
                 listOf(
                     "Fresh install (starts in clean state)",
                     "Onboarding checklist works",
+                    "Demo data insertion (rich sample state loaded)",
+                    "Screenshot Mode active (perfect redacted placeholders)",
                     "Home Dashboard (percentages and progress render)",
                     "Task Manager (categories and task cards work)",
                     "Money Tracker (RM balance ledger and categories work)",
@@ -2791,7 +2793,8 @@ private fun ChecklistSubpage(
                     "No cloud database / no remote analytics",
                     "Passwords are never stored by the app",
                     "User-controlled CSV export works",
-                    "Full App Reset wipes SQLite modules safely"
+                    "Full App Reset wipes SQLite modules safely",
+                    "Permissions & Privacy Audit screen is fully accurate"
                 )
             ),
             ChecklistGroup(

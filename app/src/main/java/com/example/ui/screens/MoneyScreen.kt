@@ -569,7 +569,18 @@ fun TransactionItem(
             // Transaction Info
             Column(modifier = Modifier.weight(1f)) {
                 val displayNote = if (screenshotModeEnabled) {
-                    if (transaction.type == "income") "Confidential Revenue" else "Confidential Expense"
+                    when (transaction.category) {
+                        "Freelance" -> "Software Development Consulting"
+                        "Salary" -> "Regular Monthly Inflow"
+                        "Food" -> "Team Dinner / Groceries"
+                        "Transport" -> "Public Transit Ride"
+                        "Tools" -> "Cloud Service Subscription"
+                        "Education" -> "Professional Training Course"
+                        "Personal" -> "Personal Wellness Supplies"
+                        else -> {
+                            if (transaction.type == "income") "Demo Source Revenue" else "Demo Expense Record"
+                        }
+                    }
                 } else {
                     if (transaction.note.isNotBlank()) transaction.note else transaction.category
                 }

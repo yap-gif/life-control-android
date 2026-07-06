@@ -23,7 +23,7 @@ class BackupEncryptionTest {
         val container = BackupEncryption.encrypt(testPayload, testPassword)
         assertNotNull(container)
         assertEquals(2, container.backupVersion)
-        assertEquals("2.3.0", container.appVersion)
+        assertEquals("3.0.0", container.appVersion)
         assertNotNull(container.createdAt)
         assertEquals("AES-GCM", container.encryption?.algorithm)
         assertEquals("PBKDF2WithHmacSHA256", container.encryption?.kdf)
