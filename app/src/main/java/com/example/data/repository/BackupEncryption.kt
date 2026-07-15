@@ -13,15 +13,15 @@ import javax.crypto.spec.SecretKeySpec
 
 object BackupEncryption {
 
-    private const val ALGORITHM = "AES-GCM"
-    private const val KDF = "PBKDF2WithHmacSHA256"
-    private const val ITERATIONS = 150000
+    private const val ENCRYPTION_ALGORITHM = "AES-GCM"
+    private const val KEY_DERIVATION_ALGORITHM = "PBKDF2-HMAC-SHA256"
+    private const val DEFAULT_PBKDF2_ITERATIONS = 250000
     private const val KEY_LENGTH_BITS = 256
     private const val SALT_LENGTH_BYTES = 16
     private const val IV_LENGTH_BYTES = 12
     private const val GCM_TAG_LENGTH_BITS = 128
 
-    fun encrypt(plainText: String, password: CharArray): EncryptedBackupContainer {
+    fun encrypt(plainText: String, password: CharArray, iterations: Int = DEFAULT_PBKDF2_ITERATIONS): EncryptedBackupContainer {
         val random = SecureRandom()
         
         // Generate random salt
@@ -32,9 +32,10 @@ object BackupEncryption {
         val iv = ByteArray(IV_LENGTH_BYTES)
         random.nextBytes(iv)
         
-        // Derive AES key
-        val spec = PBEKeySpec(password, salt, ITERATIONS, KEY_LENGTH_BITS)
-        val skf = SecretKeyFactory.getInstance(KDF)
+        // Derive AES key using PBKDF2 with specified iterations
+        val spec = PBEKeySpec(password, salt, iterations, KEY_LENGTH_BITS)
+        // Internal JVM SecretKeyFactory algorithm name is "PBKDF2WithHmacSHA256"
+        val skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val keyBytes = skf.generateSecret(spec).encoded
         spec.clearPassword()
         
@@ -47,7 +48,7 @@ object BackupEncryption {
         
         val encryptedBytes = cipher.doFinal(plainText.toByteArray(Charsets.UTF_8))
         
-        // Zero out key bytes
+        // Zero out key bytes to prevent lingering in memory where practical
         for (i in keyBytes.indices) {
             keyBytes[i] = 0
         }
@@ -62,12 +63,17 @@ object BackupEncryption {
         
         return EncryptedBackupContainer(
             backupVersion = 2,
-            appVersion = "3.0.0",
+            appVersion = "2.4.0",
             createdAt = createdAtStr,
             encryption = EncryptionMetadata(
-                algorithm = ALGORITHM,
-                kdf = KDF,
-                iterations = ITERATIONS,
+                algorithm = ENCRYPTION_ALGORITHM,
+                kdf = "PBKDF2WithHmacSHA256",
+                iterations = iterations,
+                encryptionAlgorithm = ENCRYPTION_ALGORITHM,
+                keyDerivationAlgorithm = KEY_DERIVATION_ALGORITHM,
+                iterationCount = iterations,
+                keyLengthBits = KEY_LENGTH_BITS,
+                gcmTagLengthBits = GCM_TAG_LENGTH_BITS,
                 salt = saltBase64,
                 iv = ivBase64
             ),
@@ -86,9 +92,18 @@ object BackupEncryption {
         val iv = Base64.decode(encryption.iv, Base64.NO_WRAP)
         val encryptedBytes = Base64.decode(container.payload, Base64.NO_WRAP)
         
-        // Derive AES key using the container's parameters
-        val spec = PBEKeySpec(password, salt, encryption.iterations ?: ITERATIONS, KEY_LENGTH_BITS)
-        val skf = SecretKeyFactory.getInstance(encryption.kdf ?: KDF)
+        val iterationCount = encryption.iterationCount ?: encryption.iterations
+            ?: throw IllegalArgumentException("Missing PBKDF2 iterations in metadata")
+        
+        val kdfAlgo = encryption.keyDerivationAlgorithm ?: encryption.kdf ?: "PBKDF2WithHmacSHA256"
+        val jvmKdf = if (kdfAlgo == "PBKDF2-HMAC-SHA256") "PBKDF2WithHmacSHA256" else kdfAlgo
+
+        val keyLength = encryption.keyLengthBits ?: KEY_LENGTH_BITS
+        val gcmTagLength = encryption.gcmTagLengthBits ?: GCM_TAG_LENGTH_BITS
+
+        // Derive AES key
+        val spec = PBEKeySpec(password, salt, iterationCount, keyLength)
+        val skf = SecretKeyFactory.getInstance(jvmKdf)
         val keyBytes = skf.generateSecret(spec).encoded
         spec.clearPassword()
         
@@ -96,7 +111,7 @@ object BackupEncryption {
         
         // Decrypt using AES-GCM
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv)
+        val gcmSpec = GCMParameterSpec(gcmTagLength, iv)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
         
         val decryptedBytes = cipher.doFinal(encryptedBytes)
@@ -135,27 +150,29 @@ object BackupEncryption {
         val encryption = container.encryption
             ?: return Pair(false, "Invalid backup: Missing 'encryption' metadata block.")
             
-        if (encryption.algorithm.isNullOrBlank()) {
-            return Pair(false, "Invalid backup: Missing encryption 'algorithm' field.")
+        val encryptionAlgorithm = encryption.encryptionAlgorithm ?: encryption.algorithm
+        if (encryptionAlgorithm.isNullOrBlank()) {
+            return Pair(false, "Invalid backup: Missing encryption 'encryptionAlgorithm' field.")
         }
-        if (encryption.algorithm != ALGORITHM) {
-            return Pair(false, "Unsupported backup: Encryption algorithm '${encryption.algorithm}' is not supported. Only '$ALGORITHM' is allowed.")
-        }
-        
-        if (encryption.kdf.isNullOrBlank()) {
-            return Pair(false, "Invalid backup: Missing encryption 'kdf' (key derivation function) field.")
-        }
-        if (encryption.kdf != KDF) {
-            return Pair(false, "Unsupported backup: Key derivation function '${encryption.kdf}' is not supported. Only '$KDF' is allowed.")
+        if (encryptionAlgorithm != ENCRYPTION_ALGORITHM) {
+            return Pair(false, "Unsupported backup: Encryption algorithm '$encryptionAlgorithm' is not supported. Only '$ENCRYPTION_ALGORITHM' is allowed.")
         }
         
-        val iterations = encryption.iterations
-            ?: return Pair(false, "Invalid backup: Missing PBKDF2 'iterations' field.")
-        if (iterations <= 0) {
+        val keyDerivationAlgorithm = encryption.keyDerivationAlgorithm ?: encryption.kdf
+        if (keyDerivationAlgorithm.isNullOrBlank()) {
+            return Pair(false, "Invalid backup: Missing encryption 'keyDerivationAlgorithm' field.")
+        }
+        if (keyDerivationAlgorithm != KEY_DERIVATION_ALGORITHM && keyDerivationAlgorithm != "PBKDF2WithHmacSHA256") {
+            return Pair(false, "Unsupported backup: Key derivation function '$keyDerivationAlgorithm' is not supported. Only '$KEY_DERIVATION_ALGORITHM' or 'PBKDF2WithHmacSHA256' is allowed.")
+        }
+        
+        val iterationCount = encryption.iterationCount ?: encryption.iterations
+            ?: return Pair(false, "Invalid backup: Missing PBKDF2 'iterationCount' field.")
+        if (iterationCount <= 0) {
             return Pair(false, "Invalid backup: PBKDF2 iterations must be a positive integer.")
         }
-        if (iterations < 10000) {
-            return Pair(false, "Unsupported backup: PBKDF2 iterations count ($iterations) is below the minimum safety threshold (10,000).")
+        if (iterationCount < 10000) {
+            return Pair(false, "Unsupported backup: PBKDF2 iterations count ($iterationCount) is below the minimum safety threshold (10,000).")
         }
         
         if (encryption.salt.isNullOrBlank()) {
@@ -236,9 +253,14 @@ data class EncryptedBackupContainer(
 )
 
 data class EncryptionMetadata(
-    val algorithm: String?,
-    val kdf: String?,
-    val iterations: Int?,
-    val salt: String?,
-    val iv: String?
+    val algorithm: String? = null,
+    val kdf: String? = null,
+    val iterations: Int? = null,
+    val encryptionAlgorithm: String? = null,
+    val keyDerivationAlgorithm: String? = null,
+    val iterationCount: Int? = null,
+    val keyLengthBits: Int? = null,
+    val gcmTagLengthBits: Int? = null,
+    val salt: String? = null,
+    val iv: String? = null
 )

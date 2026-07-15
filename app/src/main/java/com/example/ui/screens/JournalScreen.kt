@@ -505,7 +505,7 @@ fun AiConsentDialog(
 
 @Composable
 fun AiResultCard(
-    result: com.example.data.ai.AiCoachResult,
+    result: com.example.data.ai.PortfolioAnalysisResult,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {

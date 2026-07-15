@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.MainViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.example.R
 
 @Composable
 fun SettingsScreen(
@@ -91,6 +93,11 @@ fun SettingsScreen(
 
     val screenshotModeEnabled by viewModel.screenshotModeEnabled.collectAsState()
     val onboardingCompleted by viewModel.onboardingCompleted.collectAsState()
+    val appLanguage by viewModel.appLanguage.collectAsState()
+    val generatedContentLanguage by viewModel.generatedContentLanguage.collectAsState()
+
+    var showAppLangDialog by remember { mutableStateOf(false) }
+    var showGenLangDialog by remember { mutableStateOf(false) }
 
     var activeSettingsSubpage by remember { mutableStateOf<String?>(null) } // null, "about", "privacy", "readme", "checklist", "permissions"
 
@@ -445,10 +452,10 @@ fun SettingsScreen(
         }
 
         // ====================================================================
-        // SECTION 2: AI COACH
+        // SECTION 2: AI PORTFOLIO REVIEWER
         // ====================================================================
         Text(
-            text = "AI Coach",
+            text = "AI Portfolio Reviewer",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -480,13 +487,13 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Enable AI Coach",
+                            text = "Enable AI Portfolio Reviewer",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Enable smart reflection analysis and customized guidance logs.",
+                            text = "Enable smart portfolio analysis and customized reflection guidance logs.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -559,7 +566,7 @@ fun SettingsScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Sends selected reflection texts to Gemini for high-impact tailored coaching feedback.",
+                                    text = "Sends selected reflection texts to Gemini for high-impact tailored portfolio reviews and analysis.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -814,6 +821,181 @@ fun SettingsScreen(
         }
 
         // ====================================================================
+        // SECTION 6.5: LANGUAGE SETTINGS
+        // ====================================================================
+        Text(
+            text = stringResource(R.string.settings_section_lang),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth().testTag("language_settings_card"),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // App Language
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showAppLangDialog = true }
+                        .padding(vertical = 8.dp)
+                        .testTag("app_language_row"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_app_lang), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        val currentAppLangText = when (appLanguage) {
+                            "system" -> stringResource(R.string.settings_lang_system)
+                            "en" -> stringResource(R.string.settings_lang_en)
+                            "zh" -> stringResource(R.string.settings_lang_zh)
+                            "ms" -> stringResource(R.string.settings_lang_ms)
+                            else -> appLanguage
+                        }
+                        Text(currentAppLangText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+
+                // Generated Content Language
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showGenLangDialog = true }
+                        .padding(vertical = 8.dp)
+                        .testTag("gen_language_row"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_gen_lang), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        val currentGenLangText = when (generatedContentLanguage) {
+                            "follow" -> stringResource(R.string.settings_lang_follow)
+                            "en" -> stringResource(R.string.settings_lang_en)
+                            "zh" -> stringResource(R.string.settings_lang_zh)
+                            "ms" -> stringResource(R.string.settings_lang_ms)
+                            else -> generatedContentLanguage
+                        }
+                        Text(currentGenLangText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+
+        // App Language Dialog
+        if (showAppLangDialog) {
+            AlertDialog(
+                onDismissRequest = { showAppLangDialog = false },
+                title = { Text(stringResource(R.string.settings_app_lang)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val languages = listOf("system", "en", "zh", "ms")
+                        languages.forEach { lang ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.updateAppLanguage(lang)
+                                        showAppLangDialog = false
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = appLanguage == lang,
+                                    onClick = {
+                                        viewModel.updateAppLanguage(lang)
+                                        showAppLangDialog = false
+                                    },
+                                    modifier = Modifier.testTag("app_lang_radio_$lang")
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                val label = when (lang) {
+                                    "system" -> stringResource(R.string.settings_lang_system)
+                                    "en" -> stringResource(R.string.settings_lang_en)
+                                    "zh" -> stringResource(R.string.settings_lang_zh)
+                                    "ms" -> stringResource(R.string.settings_lang_ms)
+                                    else -> lang
+                                }
+                                Text(label, style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAppLangDialog = false }) {
+                        Text(stringResource(R.string.action_close))
+                    }
+                }
+            )
+        }
+
+        // Generated Content Language Dialog
+        if (showGenLangDialog) {
+            AlertDialog(
+                onDismissRequest = { showGenLangDialog = false },
+                title = { Text(stringResource(R.string.settings_gen_lang)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val languages = listOf("follow", "en", "zh", "ms")
+                        languages.forEach { lang ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.updateGeneratedContentLanguage(lang)
+                                        showGenLangDialog = false
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = generatedContentLanguage == lang,
+                                    onClick = {
+                                        viewModel.updateGeneratedContentLanguage(lang)
+                                        showGenLangDialog = false
+                                    },
+                                    modifier = Modifier.testTag("gen_lang_radio_$lang")
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                val label = when (lang) {
+                                    "follow" -> stringResource(R.string.settings_lang_follow)
+                                    "en" -> stringResource(R.string.settings_lang_en)
+                                    "zh" -> stringResource(R.string.settings_lang_zh)
+                                    "ms" -> stringResource(R.string.settings_lang_ms)
+                                    else -> lang
+                                }
+                                Text(label, style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showGenLangDialog = false }) {
+                        Text(stringResource(R.string.action_close))
+                    }
+                }
+            )
+        }
+
+        // ====================================================================
         // SECTION 7: PRIVACY & DATA
         // ====================================================================
         Text(
@@ -881,7 +1063,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Row 1: About Life Control
+                // Row 1: About ProjectForge AI
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -892,7 +1074,7 @@ fun SettingsScreen(
                 ) {
                     Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("About Life Control", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text("About ProjectForge AI", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                         Text("Developer info, tech stack blueprints, and license details.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1284,7 +1466,7 @@ fun SettingsScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Secured with military-grade AES-GCM encryption and PBKDF2 key derivation.",
+                                text = "Secured via password-based encrypted backup using AES-GCM authenticated encryption and PBKDF2-HMAC-SHA256 key derivation.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.SemiBold
@@ -1418,7 +1600,7 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Use this non-intrusive checklist to verify key stability and core features of Life Control v3.0.0 Public Portfolio Release.",
+                    text = "Use this non-intrusive checklist to verify key stability and core features of ProjectForge AI v2.4.0 Multilingual Release.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1620,7 +1802,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                text = "Life Control v3.0.0 Public Portfolio Release",
+                text = "ProjectForge AI v2.4.0 Multilingual Release",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2159,7 +2341,7 @@ private fun exportAllToCsv(
             }
         }
 
-        val authority = "com.example.fileprovider"
+        val authority = "${context.packageName}.fileprovider"
         val uris = arrayListOf<android.net.Uri>(
             androidx.core.content.FileProvider.getUriForFile(context, authority, tasksFile),
             androidx.core.content.FileProvider.getUriForFile(context, authority, transactionsFile),
@@ -2173,7 +2355,7 @@ private fun exportAllToCsv(
             putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
             addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(android.content.Intent.createChooser(intent, "Export Life Control CSV Data"))
+        context.startActivity(android.content.Intent.createChooser(intent, "Export ProjectForge AI CSV Data"))
         Toast.makeText(context, "CSV data packages prepared successfully!", Toast.LENGTH_SHORT).show()
     } catch (e: Exception) {
         e.printStackTrace()
@@ -2202,7 +2384,7 @@ private fun AboutSubpage(
                 Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
             }
             Text(
-                text = "About Life Control",
+                text = "About ProjectForge AI",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -2236,13 +2418,13 @@ private fun AboutSubpage(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Life Control",
+                        text = "ProjectForge AI",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Life Control v3.0.0 Public Portfolio Release",
+                        text = "ProjectForge AI v2.4.0 Multilingual Release",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
@@ -2252,7 +2434,7 @@ private fun AboutSubpage(
                 Divider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
 
                 Text(
-                    text = "Life Control is a personal growth and independence tracker designed to help users manage tasks, finances, learning progress, and daily reflection through a focused offline-first Android experience.",
+                    text = "ProjectForge AI is a portfolio documentation and release management workspace using Kotlin, Jetpack Compose, Material 3, Room, MVVM, and offline services.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -2278,10 +2460,10 @@ private fun AboutSubpage(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 val bluePrintItems = listOf(
-                    "App Name" to "Life Control",
-                    "Version" to "Life Control v3.0.0 Public Portfolio Release",
+                    "App Name" to "ProjectForge AI",
+                    "Version" to "ProjectForge AI v2.4.0 Multilingual Release",
                     "Developer" to "YAP SHI XIAN",
-                    "Project Type" to "Offline-first Android personal growth management app",
+                    "Project Type" to "Portfolio documentation and release management workspace",
                     "Architecture" to "Single-Activity (Clean MVVM + UDF)",
                     "UI Framework" to "Jetpack Compose (Material 3)",
                     "Data Layer" to "Room Database SQLite (DAO + Repository Pattern)",
@@ -2326,7 +2508,7 @@ private fun AboutSubpage(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Text(
-                text = "Life Control uses a local-first architecture with Room SQLite persistence, structured repositories, and Jetpack Compose UI screens. It does not require login, cloud storage, or external AI APIs in this release.",
+                text = "ProjectForge AI uses a local-first architecture with Room SQLite persistence, structured repositories, and Jetpack Compose UI screens. It does not require login, cloud storage, or external AI APIs in this release.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.dp),
@@ -2370,7 +2552,7 @@ private fun PrivacySubpage(
             Triple(Icons.Default.Lock, "No Login Required", "No accounts, registrations, or login screens exist. You start managing your growth instantly without providing email addresses or passwords."),
             Triple(Icons.Default.Security, "No Google Firebase", "Google Firebase integration, Crashlytics SDK, and remote performance monitoring are completely excluded to guarantee local application purity."),
             Triple(Icons.Default.CloudOff, "No Cloud Database", "Your routines and records are never sent to remote storage. There are no backend syncing systems or remote servers storing your data."),
-            Triple(Icons.Default.AutoAwesome, "Optional Gemini AI Coach", "The AI Coach is disabled by default and 100% optional. No background AI uploads occur, and no login or cloud databases are used. AI privacy consent is required before any interaction, and requests only happen after manual user action. Journal AI sends only your selected journal text, while Weekly and Monthly AI send aggregated retrospective metrics only (never your full database). You can disable the AI Coach at any time and reset your consent preferences in Settings."),
+            Triple(Icons.Default.AutoAwesome, "Optional Gemini AI Reviewer", "The AI Reviewer is disabled by default and 100% optional. No background AI uploads occur, and no login or cloud databases are used. AI privacy consent is required before any interaction, and requests only happen after manual user action. Journal AI sends only your selected journal text, while Weekly and Monthly AI send aggregated retrospective metrics only (never your full database). You can disable the AI Reviewer at any time and reset your consent preferences in Settings."),
             Triple(Icons.Default.BugReport, "No Remote Analytics", "No telemetry, behavioral metrics, or analytics tracking SDKs are included. Your personal growth patterns are private to you."),
             Triple(Icons.Default.Storage, "Core Data Stored Natively on Device", "All daily tasks, financial transactions, learning tracks, and journal entries are securely written to your local physical device sandbox in a private Room SQLite file."),
             Triple(Icons.Default.Share, "User-Controlled CSV Export", "CSV spreadsheets containing your historic records are only compiled and shared when you manually trigger the export tool. No background data mining exists."),
@@ -2428,14 +2610,14 @@ private fun ReadmeSubpage(
     onBack: () -> Unit
 ) {
     val readmeContent = """
-    # ⚡ Life Control v3.0.0 (Public Portfolio Release)
+    # ⚡ ProjectForge AI v2.4.0 (Multilingual Release)
     
-    Life Control is a production-ready, local-first Android personal growth and self-management application designed to help individuals track their daily tasks, finances, study routines, and cognitive reflections, now augmented with an optional, secure Gemini AI Performance Coach. Built with a robust offline-first architecture, the application champions complete user privacy and frictionless utility without relying on remote cloud servers, login procedures, or tracking analytics.
+    ProjectForge AI is a portfolio documentation and release management workspace using Kotlin, Jetpack Compose, Material 3, Room, MVVM, and offline services, now augmented with an optional, secure Gemini AI Portfolio Reviewer. Built with a robust offline-first architecture, the application champions complete user privacy and frictionless utility without relying on remote cloud servers, login procedures, or tracking analytics.
     
     ---
     
     ## 🎯 Project Overview
-    In a world dominated by constant online distraction, cloud subscription lock-ins, and data-privacy compromises, **Life Control** offers a highly structured, local-only sanctuary. It consolidates five core self-improvement modules into a singular, high-performance, and beautifully themed system:
+    In a world dominated by constant online distraction, cloud subscription lock-ins, and data-privacy compromises, **ProjectForge AI** offers a highly structured, local-only sanctuary. It consolidates five core self-improvement modules into a singular, high-performance, and beautifully themed system:
     1. **Task & Action Items Management**: Structured prioritizing of your daily operations.
     2. **Financial Ledger & Money Ledger**: Localized RM transaction manager with goal milestones.
     3. **Daily Study & Continuous Education**: Interactive discipline-builder with focused lessons.
@@ -2514,13 +2696,13 @@ private fun ReadmeSubpage(
     ## 🗄️ Backup and Restore Model
     - **Plain JSON Backup**: Clear, readable unencrypted JSON export for easy data portability and custom inspections.
     - **Encrypted .lcbackup**: Password-protected backup secured on-device using AES-256-GCM.
-    - **Key Derivation safety**: Uses PBKDF2 with HMAC-SHA256 and 150,000 iterations to derive keys locally.
+    - **Key Derivation safety**: Uses PBKDF2-HMAC-SHA256 with 250,000 iterations for new backups to derive keys locally.
     - **Atomic Integrity Validation**: Fully validates payload keys, iterations, and Base64 structures prior to writing to Room database within a single transaction. Incorrect passwords abort cleanly leaving local data untouched.
     
     ---
 
     ## 📦 APK Preparation & Release Guide
-    The Life Control project is fully structured for simple compilation and production deployment. Follow these procedures to compile the application binary:
+    The ProjectForge AI project is fully structured for simple compilation and production deployment. Follow these procedures to compile the application binary:
 
     ### 1. Compiling a Debug APK
     The Debug APK is fully suitable for local testing, presentation, and side-loading. It does not require code-signing credentials.
@@ -2593,7 +2775,7 @@ private fun ReadmeSubpage(
 
     ### V2.2.0
     - **Optional Encrypted Backup**: Protect your database backup with an AES-GCM password-encrypted payload.
-    - **PBKDF2 Key Derivation**: Derives high-entropy 256-bit AES encryption keys locally using PBKDF2 with HMAC-SHA256 and 150,000 iterations.
+    - **PBKDF2 Key Derivation**: Derives high-entropy 256-bit AES encryption keys locally using PBKDF2-HMAC-SHA256 with 250,000 iterations for new backups.
     - **Secure User Password Input**: Password input validation checks and visibility toggles on both export and restore dialogs.
     - **Atomic Restoration Integrity**: Restoration requires decryption verification and full schema validation before writing. Runs atomically in single database transactions.
     - **Enhanced Privacy Page**: Reflected encrypted backup warnings, explaining local password policy and security parameters.
@@ -2695,7 +2877,7 @@ private fun ReadmeSubpage(
         Button(
             onClick = {
                 val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                val clip = android.content.ClipData.newPlainText("Life Control README", readmeContent)
+                val clip = android.content.ClipData.newPlainText("ProjectForge AI README", readmeContent)
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(context, "README Markdown copied to clipboard!", Toast.LENGTH_SHORT).show()
             },
@@ -3052,7 +3234,7 @@ private fun PermissionsSubpage(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Life Control requires a very narrow permissions footprint. We strictly utilize on-device, sandbox storage and standard notification capabilities.",
+                    text = "ProjectForge AI requires a very narrow permissions footprint. We strictly utilize on-device, sandbox storage and standard notification capabilities.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

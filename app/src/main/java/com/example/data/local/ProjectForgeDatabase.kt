@@ -20,19 +20,19 @@ import kotlinx.coroutines.launch
     version = 1,
     exportSchema = false
 )
-abstract class LifeControlDatabase : RoomDatabase() {
+abstract class ProjectForgeDatabase : RoomDatabase() {
 
-    abstract fun dao(): LifeControlDao
+    abstract fun dao(): ProjectForgeDao
 
     companion object {
         @Volatile
-        private var INSTANCE: LifeControlDatabase? = null
+        private var INSTANCE: ProjectForgeDatabase? = null
 
-        fun getDatabase(context: Context, scope: CoroutineScope): LifeControlDatabase {
+        fun getDatabase(context: Context, scope: CoroutineScope): ProjectForgeDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    LifeControlDatabase::class.java,
+                    ProjectForgeDatabase::class.java,
                     "life_control_database"
                 )
                 .addCallback(DatabaseCallback(scope))
@@ -54,7 +54,7 @@ abstract class LifeControlDatabase : RoomDatabase() {
                 }
             }
 
-            private suspend fun prepopulateDatabase(dao: LifeControlDao) {
+            private suspend fun prepopulateDatabase(dao: ProjectForgeDao) {
                 // Prepopulate default learning paths
                 val pathLinux = dao.insertLearningPath(
                     LearningPathEntity(title = "Linux", streak = 3, lastStudiedDate = "2026-07-01")

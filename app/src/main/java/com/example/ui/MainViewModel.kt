@@ -5,11 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
 import com.example.data.local.*
-import com.example.data.repository.LifeControlRepository
-import com.example.data.ai.AiCoachResult
-import com.example.data.ai.AiCoachService
-import com.example.data.ai.LocalCoachService
-import com.example.data.ai.GeminiCoachService
+import com.example.data.repository.ProjectForgeRepository
+import com.example.data.ai.PortfolioAnalysisResult
+import com.example.data.ai.PortfolioReviewService
+import com.example.data.ai.LocalPortfolioReviewService
+import com.example.data.ai.GeminiPortfolioReviewService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -19,8 +19,8 @@ import java.util.Locale
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: LifeControlRepository = LifeControlRepository(
-        LifeControlDatabase.getDatabase(application, viewModelScope).dao(),
+    private val repository: ProjectForgeRepository = ProjectForgeRepository(
+        ProjectForgeDatabase.getDatabase(application, viewModelScope).dao(),
         application
     )
 
@@ -38,8 +38,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val reminderWeeklyTime = MutableStateFlow("10:00")
 
     // --- AI Coach Services & Settings ---
-    val localCoachService = LocalCoachService()
-    val geminiCoachService = GeminiCoachService(localCoachService)
+    val localPortfolioReviewService = LocalPortfolioReviewService()
+    val geminiPortfolioReviewService = GeminiPortfolioReviewService(localPortfolioReviewService)
 
     val aiCoachEnabled = repository.aiCoachEnabled
     val aiAnalysisMode = repository.aiAnalysisMode
@@ -70,8 +70,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     sealed class AiState {
         object Idle : AiState()
         object Loading : AiState()
-        data class Success(val result: com.example.data.ai.AiCoachResult) : AiState()
-        data class Error(val errorMessage: String, val fallbackResult: com.example.data.ai.AiCoachResult?) : AiState()
+        data class Success(val result: com.example.data.ai.PortfolioAnalysisResult) : AiState()
+        data class Error(val errorMessage: String, val fallbackResult: com.example.data.ai.PortfolioAnalysisResult?) : AiState()
     }
 
     val journalAiState = MutableStateFlow<AiState>(AiState.Idle)
@@ -82,6 +82,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun resetWeeklyAiState() { weeklyAiState.value = AiState.Idle }
     fun resetMonthlyAiState() { monthlyAiState.value = AiState.Idle }
 
+    fun getOutputLanguageCode(): String {
+        val genLang = generatedContentLanguage.value
+        val appLang = appLanguage.value
+        return if (genLang == "follow") {
+            if (appLang == "system") {
+                val deviceLocale = java.util.Locale.getDefault().language
+                if (deviceLocale == "zh" || deviceLocale == "ms") deviceLocale else "en"
+            } else {
+                appLang
+            }
+        } else {
+            genLang
+        }
+    }
+
     fun analyzeJournal(journal: JournalEntity?, metrics: Map<String, Any>) {
         viewModelScope.launch {
             journalAiState.value = AiState.Loading
@@ -89,23 +104,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 journalAiState.value = AiState.Error("Journal entry is empty.", null)
                 return@launch
             }
+            val lang = getOutputLanguageCode()
             try {
-                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiCoachService else localCoachService
-                val result = serviceToUse.generateJournalAnalysis(
+                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiPortfolioReviewService else localPortfolioReviewService
+                val result = serviceToUse.analyzeProjectActivity(
                     whatIDid = journal.whatIDid,
                     whatWentWell = journal.whatWentWell,
                     whatToImprove = journal.whatToImprove,
                     tomorrowPriorities = journal.tomorrowPriorities,
-                    metrics = metrics
+                    metrics = metrics,
+                    languageCode = lang
                 )
                 journalAiState.value = AiState.Success(result)
             } catch (e: Exception) {
-                val localFallback = localCoachService.generateJournalAnalysis(
+                val localFallback = localPortfolioReviewService.analyzeProjectActivity(
                     whatIDid = journal.whatIDid,
                     whatWentWell = journal.whatWentWell,
                     whatToImprove = journal.whatToImprove,
                     tomorrowPriorities = journal.tomorrowPriorities,
-                    metrics = metrics
+                    metrics = metrics,
+                    languageCode = lang
                 )
                 journalAiState.value = AiState.Error(e.localizedMessage ?: "Unknown error occurred.", localFallback)
             }
@@ -115,12 +133,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun analyzeWeekly(metrics: Map<String, Any>) {
         viewModelScope.launch {
             weeklyAiState.value = AiState.Loading
+            val lang = getOutputLanguageCode()
             try {
-                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiCoachService else localCoachService
-                val result = serviceToUse.generateWeeklyAnalysis(metrics)
+                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiPortfolioReviewService else localPortfolioReviewService
+                val result = serviceToUse.reviewDocumentationQuality(metrics, lang)
                 weeklyAiState.value = AiState.Success(result)
             } catch (e: Exception) {
-                val localFallback = localCoachService.generateWeeklyAnalysis(metrics)
+                val localFallback = localPortfolioReviewService.reviewDocumentationQuality(metrics, lang)
                 weeklyAiState.value = AiState.Error(e.localizedMessage ?: "Unknown error occurred.", localFallback)
             }
         }
@@ -129,12 +148,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun analyzeMonthly(metrics: Map<String, Any>) {
         viewModelScope.launch {
             monthlyAiState.value = AiState.Loading
+            val lang = getOutputLanguageCode()
             try {
-                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiCoachService else localCoachService
-                val result = serviceToUse.generateMonthlyAnalysis(metrics)
+                val serviceToUse = if (aiCoachEnabled.value && aiAnalysisMode.value == "gemini") geminiPortfolioReviewService else localPortfolioReviewService
+                val result = serviceToUse.generatePortfolioInsights(metrics, lang)
                 monthlyAiState.value = AiState.Success(result)
             } catch (e: Exception) {
-                val localFallback = localCoachService.generateMonthlyAnalysis(metrics)
+                val localFallback = localPortfolioReviewService.generatePortfolioInsights(metrics, lang)
                 monthlyAiState.value = AiState.Error(e.localizedMessage ?: "Unknown error occurred.", localFallback)
             }
         }
@@ -354,6 +374,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val onboardingCompleted = repository.onboardingCompleted
     val screenshotModeEnabled = repository.screenshotModeEnabled
+    val appLanguage = repository.appLanguage
+    val generatedContentLanguage = repository.generatedContentLanguage
 
     fun updateOnboardingCompleted(completed: Boolean) {
         repository.saveOnboardingCompleted(completed)
@@ -361,6 +383,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateScreenshotModeEnabled(enabled: Boolean) {
         repository.saveScreenshotModeEnabled(enabled)
+    }
+
+    fun updateAppLanguage(lang: String) {
+        repository.saveAppLanguage(lang)
+    }
+
+    fun updateGeneratedContentLanguage(lang: String) {
+        repository.saveGeneratedContentLanguage(lang)
     }
 
 
@@ -445,7 +475,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "reminder_study_enabled" to reminderStudyEnabled.value.toString(),
             "reminder_study_time" to reminderStudyTime.value,
             "reminder_weekly_enabled" to reminderWeeklyEnabled.value.toString(),
-            "reminder_weekly_time" to reminderWeeklyTime.value
+            "reminder_weekly_time" to reminderWeeklyTime.value,
+            "app_language" to appLanguage.value,
+            "generated_content_language" to generatedContentLanguage.value
         )
 
         val backupData = com.example.data.repository.BackupData(
@@ -516,7 +548,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // Database restore inside a Room transaction to ensure atomicity
-            val db = LifeControlDatabase.getDatabase(getApplication(), viewModelScope)
+            val db = ProjectForgeDatabase.getDatabase(getApplication(), viewModelScope)
             db.withTransaction {
                 // Clear tables first
                 db.dao().deleteAllTasks()
@@ -548,6 +580,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 settings["reminder_study_time"]?.let { setReminderTime("study", it) }
                 settings["reminder_weekly_enabled"]?.toBooleanStrictOrNull()?.let { setReminderEnabled("weekly", it) }
                 settings["reminder_weekly_time"]?.let { setReminderTime("weekly", it) }
+
+                settings["app_language"]?.let { repository.saveAppLanguage(it) }
+                settings["generated_content_language"]?.let { repository.saveGeneratedContentLanguage(it) }
             }
 
             com.example.data.receiver.ReminderManager.scheduleAll(getApplication())
@@ -646,7 +681,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            val db = LifeControlDatabase.getDatabase(getApplication(), viewModelScope)
+            val db = ProjectForgeDatabase.getDatabase(getApplication(), viewModelScope)
             db.withTransaction {
                 if (clearFirst) {
                     db.dao().deleteAllTasks()

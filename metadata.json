@@ -1,6 +1,6 @@
 {
-  "name": "Life Control",
-  "description": "A personal growth and independence tracker to manage daily tasks, learning progress, income, expenses, savings goals, and daily reflections.",
+  "name": "ProjectForge AI",
+  "description": "A local-first portfolio documentation, multilingual localization, and release package workspace.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

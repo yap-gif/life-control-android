@@ -23,11 +23,21 @@ class BackupEncryptionTest {
         val container = BackupEncryption.encrypt(testPayload, testPassword)
         assertNotNull(container)
         assertEquals(2, container.backupVersion)
-        assertEquals("3.0.0", container.appVersion)
+        assertEquals("2.4.0", container.appVersion)
         assertNotNull(container.createdAt)
+        
+        // Assert new specification fields are fully present
+        assertEquals("AES-GCM", container.encryption?.encryptionAlgorithm)
+        assertEquals("PBKDF2-HMAC-SHA256", container.encryption?.keyDerivationAlgorithm)
+        assertEquals(250000, container.encryption?.iterationCount)
+        assertEquals(256, container.encryption?.keyLengthBits)
+        assertEquals(128, container.encryption?.gcmTagLengthBits)
+        
+        // Assert legacy fields are populated for compatibility
         assertEquals("AES-GCM", container.encryption?.algorithm)
         assertEquals("PBKDF2WithHmacSHA256", container.encryption?.kdf)
-        assertEquals(150000, container.encryption?.iterations)
+        assertEquals(250000, container.encryption?.iterations)
+        
         assertNotNull(container.encryption?.salt)
         assertNotNull(container.encryption?.iv)
         assertNotNull(container.payload)
@@ -35,6 +45,58 @@ class BackupEncryptionTest {
         // 2. Decrypt payload
         val decrypted = BackupEncryption.decrypt(container, testPassword)
         assertEquals(testPayload, decrypted)
+    }
+
+    @Test
+    fun test_legacy_metadata_iterations_honored() {
+        // Create a legacy container with 150,000 iterations and old fields only
+        val legacyContainer = BackupEncryption.encrypt(testPayload, testPassword, iterations = 150000)
+        val modifiedContainer = legacyContainer.copy(
+            encryption = EncryptionMetadata(
+                algorithm = "AES-GCM",
+                kdf = "PBKDF2WithHmacSHA256",
+                iterations = 150000, // Legacy 150k
+                salt = legacyContainer.encryption?.salt,
+                iv = legacyContainer.encryption?.iv
+            )
+        )
+        
+        // Decrypt should succeed honoring the 150k iterations stored in legacy metadata
+        val decrypted = BackupEncryption.decrypt(modifiedContainer, testPassword)
+        assertEquals(testPayload, decrypted)
+    }
+
+    @Test
+    fun test_missing_iteration_metadata_fails_safely() {
+        val validContainer = BackupEncryption.encrypt(testPayload, testPassword)
+        
+        // Strip out both iterationCount and iterations
+        val badContainer = validContainer.copy(
+            encryption = validContainer.encryption?.copy(
+                iterationCount = null,
+                iterations = null
+            )
+        )
+        
+        val validationResult = BackupEncryption.validateContainer(badContainer)
+        assertFalse(validationResult.first)
+        assertTrue(validationResult.second?.contains("iterationCount") == true)
+        
+        try {
+            BackupEncryption.decrypt(badContainer, testPassword)
+            fail("Should have failed decryption safely due to missing iterations metadata")
+        } catch (e: Exception) {
+            // Expected
+        }
+    }
+
+    @Test
+    fun test_legacy_database_filename_not_exposed_in_metadata() {
+        val container = BackupEncryption.encrypt(testPayload, testPassword)
+        val json = BackupEncryption.containerToJson(container)
+        
+        // The legacy file name "life_control_database" should NEVER be exposed in the serialized backup metadata
+        assertFalse(json.contains("life_control_database"))
     }
 
     @Test
@@ -70,7 +132,10 @@ class BackupEncryptionTest {
 
         // Unsupported algorithm
         val badAlgo = validContainer.copy(
-            encryption = validContainer.encryption?.copy(algorithm = "AES-CBC")
+            encryption = validContainer.encryption?.copy(
+                algorithm = "AES-CBC",
+                encryptionAlgorithm = "AES-CBC"
+            )
         )
         val v2 = BackupEncryption.validateContainer(badAlgo)
         assertFalse(v2.first)
@@ -78,7 +143,10 @@ class BackupEncryptionTest {
 
         // Unsupported KDF
         val badKdf = validContainer.copy(
-            encryption = validContainer.encryption?.copy(kdf = "PBKDF2WithHmacSHA1")
+            encryption = validContainer.encryption?.copy(
+                kdf = "PBKDF2WithHmacSHA1",
+                keyDerivationAlgorithm = "PBKDF2WithHmacSHA1"
+            )
         )
         val v3 = BackupEncryption.validateContainer(badKdf)
         assertFalse(v3.first)
@@ -86,7 +154,10 @@ class BackupEncryptionTest {
 
         // Low iterations
         val lowIterations = validContainer.copy(
-            encryption = validContainer.encryption?.copy(iterations = 999)
+            encryption = validContainer.encryption?.copy(
+                iterations = 999,
+                iterationCount = 999
+            )
         )
         val v4 = BackupEncryption.validateContainer(lowIterations)
         assertFalse(v4.first)

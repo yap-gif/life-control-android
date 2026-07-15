@@ -34,6 +34,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.ui.MainViewModel
 import com.example.ui.screens.*
 import com.example.ui.theme.MyApplicationTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import androidx.activity.compose.LocalActivityResultRegistryOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import java.util.Locale
+
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -42,25 +49,85 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
-                MainAppContainer(viewModel = viewModel)
+            val appLang by viewModel.appLanguage.collectAsState()
+            LocalizedProvider(languageCode = appLang) {
+                MyApplicationTheme {
+                    MainAppContainer(viewModel = viewModel)
+                }
             }
         }
     }
 }
 
+@Composable
+fun LocalizedProvider(
+    languageCode: String,
+    content: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val activityResultRegistryOwner = LocalActivityResultRegistryOwner.current
+    val onBackPressedDispatcherOwner = LocalOnBackPressedDispatcherOwner.current
+
+    val locale = remember(languageCode) {
+        if (languageCode == "system") {
+            java.util.Locale.getDefault()
+        } else {
+            java.util.Locale(languageCode)
+        }
+    }
+
+    val localizedConfiguration = remember(configuration, locale) {
+        val config = android.content.res.Configuration(configuration)
+        config.setLocale(locale)
+        config
+    }
+
+    val localizedContext = remember(context, locale) {
+        val config = android.content.res.Configuration(context.resources.configuration)
+        config.setLocale(locale)
+        context.createConfigurationContext(config)
+    }
+
+    CompositionLocalProvider(
+        LocalConfiguration provides localizedConfiguration,
+        LocalContext provides localizedContext,
+        content = {
+            if (activityResultRegistryOwner != null && onBackPressedDispatcherOwner != null) {
+                CompositionLocalProvider(
+                    LocalActivityResultRegistryOwner provides activityResultRegistryOwner,
+                    LocalOnBackPressedDispatcherOwner provides onBackPressedDispatcherOwner,
+                    content = content
+                )
+            } else if (activityResultRegistryOwner != null) {
+                CompositionLocalProvider(
+                    LocalActivityResultRegistryOwner provides activityResultRegistryOwner,
+                    content = content
+                )
+            } else if (onBackPressedDispatcherOwner != null) {
+                CompositionLocalProvider(
+                    LocalOnBackPressedDispatcherOwner provides onBackPressedDispatcherOwner,
+                    content = content
+                )
+            } else {
+                content()
+            }
+        }
+    )
+}
+
 sealed class NavigationTab(
     val route: String,
-    val title: String,
+    val titleRes: Int,
     val filledIcon: ImageVector,
     val outlinedIcon: ImageVector
 ) {
-    object Home : NavigationTab("home", "Home", Icons.Filled.Dashboard, Icons.Outlined.Dashboard)
-    object Tasks : NavigationTab("tasks", "Tasks", Icons.Filled.Assignment, Icons.Outlined.Assignment)
-    object Money : NavigationTab("money", "Money", Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet)
-    object Learning : NavigationTab("learning", "Learning", Icons.Filled.School, Icons.Outlined.School)
-    object Journal : NavigationTab("journal", "Journal", Icons.Filled.EditNote, Icons.Outlined.EditNote)
-    object Settings : NavigationTab("settings", "Settings", Icons.Filled.Settings, Icons.Outlined.Settings)
+    object Home : NavigationTab("home", R.string.tab_home, Icons.Filled.Dashboard, Icons.Outlined.Dashboard)
+    object Tasks : NavigationTab("tasks", R.string.tab_tasks, Icons.Filled.Assignment, Icons.Outlined.Assignment)
+    object Money : NavigationTab("money", R.string.tab_money, Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet)
+    object Learning : NavigationTab("learning", R.string.tab_learning, Icons.Filled.School, Icons.Outlined.School)
+    object Journal : NavigationTab("journal", R.string.tab_journal, Icons.Filled.EditNote, Icons.Outlined.EditNote)
+    object Settings : NavigationTab("settings", R.string.tab_settings, Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
 @Composable
@@ -111,11 +178,11 @@ fun MainAppContainer(viewModel: MainViewModel) {
                             icon = {
                                 Icon(
                                     imageVector = if (isSelected) tab.filledIcon else tab.outlinedIcon,
-                                    contentDescription = tab.title
+                                    contentDescription = stringResource(tab.titleRes)
                                 )
                             },
                             label = {
-                                Text(tab.title)
+                                Text(stringResource(tab.titleRes))
                             },
                             modifier = Modifier.testTag("nav_item_${tab.route}")
                         )

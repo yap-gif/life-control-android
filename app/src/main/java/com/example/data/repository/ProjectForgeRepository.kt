@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class LifeControlRepository(
-    private val dao: LifeControlDao,
+class ProjectForgeRepository(
+    private val dao: ProjectForgeDao,
     context: Context
 ) {
     // --- Room Database Access ---
@@ -99,6 +99,26 @@ class LifeControlRepository(
     fun saveScreenshotModeEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("screenshot_mode_enabled", enabled).apply()
         _screenshotModeEnabled.value = enabled
+    }
+
+    // --- Localization Settings ---
+    private val _appLanguage = MutableStateFlow(getAppLanguagePref())
+    val appLanguage: StateFlow<String> = _appLanguage.asStateFlow()
+
+    private val _generatedContentLanguage = MutableStateFlow(getGeneratedContentLanguagePref())
+    val generatedContentLanguage: StateFlow<String> = _generatedContentLanguage.asStateFlow()
+
+    private fun getAppLanguagePref() = prefs.getString("app_language", "system") ?: "system"
+    private fun getGeneratedContentLanguagePref() = prefs.getString("generated_content_language", "follow") ?: "follow"
+
+    fun saveAppLanguage(lang: String) {
+        prefs.edit().putString("app_language", lang).apply()
+        _appLanguage.value = lang
+    }
+
+    fun saveGeneratedContentLanguage(lang: String) {
+        prefs.edit().putString("generated_content_language", lang).apply()
+        _generatedContentLanguage.value = lang
     }
 
     // --- AI Coach Preferences ---
@@ -191,6 +211,8 @@ class LifeControlRepository(
         saveAiCoachEnabled(false)
         saveAiAnalysisMode("local")
         saveAiConsentAccepted(false)
+        saveAppLanguage("system")
+        saveGeneratedContentLanguage("follow")
         saveChecklistItem("setup_profile_goal", false)
         saveChecklistItem("connect_ai_coach", false)
         saveChecklistItem("custom_learning_path", false)

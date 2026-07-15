@@ -1,0 +1,71 @@
+<resources>
+    <!-- App Name -->
+    <string name="app_name">ProjectForge AI</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_home">仪表盘</string>
+    <string name="tab_tasks">工作区</string>
+    <string name="tab_money">发布创意室</string>
+    <string name="tab_learning">模板创意室</string>
+    <string name="tab_journal">内容生成器</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- General Actions -->
+    <string name="action_save">保存</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_delete">删除</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_add">添加</string>
+    <string name="action_back">返回</string>
+    <string name="action_close">关闭</string>
+    <string name="action_confirm">确认</string>
+
+    <!-- Settings Screen Localization -->
+    <string name="settings_title">设置与工作区中心</string>
+    <string name="settings_section_lang">语言设置</string>
+    <string name="settings_app_lang">应用语言</string>
+    <string name="settings_gen_lang">生成内容语言</string>
+    <string name="settings_lang_system">系统默认</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_zh">中文</string>
+    <string name="settings_lang_ms">Bahasa Melayu</string>
+    <string name="settings_lang_follow">跟随应用语言</string>
+
+    <string name="settings_about">关于 ProjectForge AI</string>
+    <string name="settings_privacy">隐私与数据透明度</string>
+    <string name="settings_user_guide">用户指南中心</string>
+    <string name="settings_security_audit">应用权限与隐私审计</string>
+    <string name="settings_reset">重置完整工作区</string>
+
+    <!-- Security & Encryption Terminology (Strict Technical Accuracy) -->
+    <string name="security_password_backup">基于密码加密的备份</string>
+    <string name="security_aes_gcm">AES-GCM 验证加密</string>
+    <string name="security_pbkdf2">PBKDF2-HMAC-SHA256 密钥派生</string>
+    <string name="security_sha256">SHA-256 完整性验证</string>
+    <string name="security_fileprovider">基于 FileProvider 的共享</string>
+
+    <string name="security_warn_title">加密备份信息</string>
+    <string name="security_warn_desc">为了保护您的本地工作区数据，备份采用基于密码加密的备份，使用 AES-GCM 验证加密和 PBKDF2-HMAC-SHA256 密钥派生进行保护。SHA-256 完整性验证确保备份内容未被篡改。文件通过基于 FileProvider 的共享进行安全传输。</string>
+
+    <!-- Help Dialogs, Snackbar, etc. -->
+    <string name="msg_saved_success">修改保存成功！</string>
+    <string name="msg_reset_success">工作区已完全重置。</string>
+    <string name="msg_backup_success">备份生成成功！</string>
+    <string name="msg_restore_success">备份还原成功！</string>
+    <string name="msg_invalid_password">提供的加密密码无效。</string>
+
+    <!-- Template Studio -->
+    <string name="template_studio_title">模板创意室控制</string>
+    <string name="template_studio_output_lang">输出语言</string>
+    <string name="template_studio_select_template">选择活动模板</string>
+    <string name="template_studio_custom_rules">自定义撰写规则</string>
+
+    <!-- Quality Checker & Diff Studio -->
+    <string name="quality_checker_title">文档质量检查器</string>
+    <string name="diff_studio_title">比对创意室与修订日志</string>
+    <string name="release_pack_studio_title">发布包创意室</string>
+
+    <!-- Showcase and Walkthrough -->
+    <string name="showcase_mode">展示模式</string>
+    <string name="demo_walkthrough">演示流程导览模式</string>
+</resources>

@@ -1,0 +1,71 @@
+<resources>
+    <!-- App Name -->
+    <string name="app_name">ProjectForge AI</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_home">Papan Pemuka</string>
+    <string name="tab_tasks">Ruang Kerja</string>
+    <string name="tab_money">Studio Peluncuran</string>
+    <string name="tab_learning">Studio Templat</string>
+    <string name="tab_journal">Penjana Kandungan</string>
+    <string name="tab_settings">Tetapan</string>
+
+    <!-- General Actions -->
+    <string name="action_save">Simpan</string>
+    <string name="action_cancel">Batal</string>
+    <string name="action_delete">Padam</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Tambah</string>
+    <string name="action_back">Kembali</string>
+    <string name="action_close">Tutup</string>
+    <string name="action_confirm">Sahkan</string>
+
+    <!-- Settings Screen Localization -->
+    <string name="settings_title">Tetapan &amp; Hub Ruang Kerja</string>
+    <string name="settings_section_lang">Tetapan Bahasa</string>
+    <string name="settings_app_lang">Bahasa Aplikasi</string>
+    <string name="settings_gen_lang">Bahasa Kandungan Dijana</string>
+    <string name="settings_lang_system">Sistem Lalai</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_lang_zh">中文</string>
+    <string name="settings_lang_ms">Bahasa Melayu</string>
+    <string name="settings_lang_follow">Ikut Bahasa Aplikasi</string>
+
+    <string name="settings_about">Mengenai ProjectForge AI</string>
+    <string name="settings_privacy">Privasi &amp; Ketelusan Data</string>
+    <string name="settings_user_guide">Hub Panduan Pengguna</string>
+    <string name="settings_security_audit">Audit Privasi &amp; Kebenaran Aplikasi</string>
+    <string name="settings_reset">Set Semula Ruang Kerja</string>
+
+    <!-- Security & Encryption Terminology (Strict Technical Accuracy) -->
+    <string name="security_password_backup">sandaran disulitkan berasaskan kata laluan</string>
+    <string name="security_aes_gcm">penyulitan tertentusah AES-GCM</string>
+    <string name="security_pbkdf2">terbitan kunci PBKDF2-HMAC-SHA256</string>
+    <string name="security_sha256">pengesahan integriti SHA-256</string>
+    <string name="security_fileprovider">perkongsian bersandarkan FileProvider</string>
+
+    <string name="security_warn_title">Maklumat Sandaran Disulitkan</string>
+    <string name="security_warn_desc">Untuk melindungi data ruang kerja tempatan anda, sandaran dilindungi melalui sandaran disulitkan berasaskan kata laluan menggunakan penyulitan tertentusah AES-GCM dan terbitan kunci PBKDF2-HMAC-SHA256. Pengesahan integriti SHA-256 memastikan kandungan sandaran tidak diubah. Fail dikongsi dengan selamat menggunakan perkongsian bersandarkan FileProvider.</string>
+
+    <!-- Help Dialogs, Snackbar, etc. -->
+    <string name="msg_saved_success">Perubahan berjaya disimpan!</string>
+    <string name="msg_reset_success">Ruang kerja telah set semula sepenuhnya.</string>
+    <string name="msg_backup_success">Sandaran berjaya dijana!</string>
+    <string name="msg_restore_success">Sandaran berjaya dipulihkan!</string>
+    <string name="msg_invalid_password">Kata laluan penyulitan yang disediakan tidak sah.</string>
+
+    <!-- Template Studio -->
+    <string name="template_studio_title">Kawalan Studio Templat</string>
+    <string name="template_studio_output_lang">Bahasa Output</string>
+    <string name="template_studio_select_template">Pilih Templat Aktif</string>
+    <string name="template_studio_custom_rules">Peraturan Penulisan Suai</string>
+
+    <!-- Quality Checker & Diff Studio -->
+    <string name="quality_checker_title">Pemeriksa Kualiti Dokumentasi</string>
+    <string name="diff_studio_title">Studio Perbezaan &amp; Log Semakan</string>
+    <string name="release_pack_studio_title">Studio Pek Peluncuran</string>
+
+    <!-- Showcase and Walkthrough -->
+    <string name="showcase_mode">Mod Showcase</string>
+    <string name="demo_walkthrough">Mod Panduan Demonstrasi</string>
+</resources>

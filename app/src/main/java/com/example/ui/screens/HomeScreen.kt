@@ -136,7 +136,7 @@ fun HomeScreen(
         ) {
             Column {
                 Text(
-                    text = "Life Control",
+                    text = "ProjectForge AI",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,

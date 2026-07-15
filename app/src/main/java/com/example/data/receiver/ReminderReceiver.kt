@@ -12,7 +12,7 @@ import com.example.MainActivity
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val title = intent.getStringExtra("title") ?: "Life Control Reminder"
+        val title = intent.getStringExtra("title") ?: "ProjectForge AI Reminder"
         val message = intent.getStringExtra("message") ?: "Time to check your goals!"
         val id = intent.getIntExtra("id", 1)
 
@@ -22,7 +22,7 @@ class ReminderReceiver : BroadcastReceiver() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Life Control Reminders",
+                "ProjectForge AI Reminders",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Reminders for tasks, journals, study, and reviews"

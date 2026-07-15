@@ -15,7 +15,7 @@ object ReminderManager {
         // Reminder 1: Daily task check-in
         val tasksEnabled = prefs.getBoolean("reminder_tasks_enabled", false)
         val tasksTime = prefs.getString("reminder_tasks_time", "09:00") ?: "09:00"
-        scheduleDailyAlarm(context, alarmManager, 1, tasksEnabled, tasksTime, "Daily Task Check-in", "Review your Life Control tasks for today.")
+        scheduleDailyAlarm(context, alarmManager, 1, tasksEnabled, tasksTime, "Daily Task Check-in", "Review your ProjectForge AI tasks for today.")
 
         // Reminder 2: Daily journal reflection
         val journalEnabled = prefs.getBoolean("reminder_journal_enabled", false)

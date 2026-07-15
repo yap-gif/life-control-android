@@ -4,7 +4,7 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface LifeControlDao {
+interface ProjectForgeDao {
 
     // --- Tasks ---
     @Query("SELECT * FROM tasks ORDER BY id DESC")

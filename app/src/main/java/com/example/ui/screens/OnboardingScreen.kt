@@ -68,7 +68,7 @@ fun OnboardingScreen(
             ),
             OnboardingPageData(
                 title = "Your Data Stays Offline",
-                description = "Life Control stores your data locally on your device. No login, no cloud database, no tracking.",
+                description = "ProjectForge AI stores your data locally on your device. No login, no cloud database, no tracking.",
                 icon = Icons.Default.Security,
                 iconColor = Color(0xFFE57373),
                 bgColors = listOf(Color(0xFF0F172A), Color(0xFF1E293B))
@@ -119,7 +119,7 @@ fun OnboardingScreen(
                             modifier = Modifier.size(28.dp)
                         )
                         Text(
-                            text = "Life Control",
+                            text = "ProjectForge AI",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
