@@ -28,6 +28,8 @@ jobs:
         run: |
           node --check bundle/logic.js
           node --check bundle/app.js
+          node --check bundle/review-contract.js
+          node --check bundle/review-format.js
       - name: Check JSON manifests
         run: |
           node -e "const f=require('fs'); ['manifest.json','app.json','package.json'].forEach(p=>JSON.parse(f.readFileSync(p,'utf8')))"
