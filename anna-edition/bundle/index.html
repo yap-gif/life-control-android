@@ -7,11 +7,12 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <main class="shell">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <main class="shell" id="main-content" tabindex="-1">
     <header class="top">
       <div><div class="eyebrow">LIFE CONTROL / ANNA EDITION</div><h1>Build a life you can measure.</h1>
         <p class="muted">Your progress. Your choices. Only your selected context reaches AI.</p></div>
-      <div class="pill" id="connection">Connecting to Anna...</div>
+      <div class="pill" id="connection" role="status" aria-live="polite">Connecting to Anna...</div>
     </header>
     <div id="message" class="message" role="status" aria-live="polite"></div>
     <section class="summary grid-four" aria-label="Overview">
@@ -88,7 +89,7 @@
             <label class="tick consent"><input type="checkbox" id="ai-consent" required> I authorize this one AI review with only my selected categories. I understand AI calls may consume platform credits.</label>
             <button type="submit" id="review-btn">Generate weekly review</button>
           </form>
-          <div id="review-result" class="review-result" role="status" aria-live="polite">No AI request sent yet.</div>
+          <div id="review-result" class="review-result" role="status" aria-live="polite" aria-busy="false">No AI request sent yet.</div>
         </section>
       </div>
     </div>
@@ -97,9 +98,10 @@
         <strong>Data & privacy controls</strong>
         <p>Data is stored by the Anna platform for this app. You can delete this workspace's saved records here. This does not retract data already sent in an authorized AI request or delete any platform-side logs or backups.</p>
       </div>
-      <button type="button" class="danger" id="erase-data" disabled>Erase saved data</button>
-      <div id="erase-confirm-panel" hidden class="erase-confirm" role="group" aria-label="Confirm permanent data deletion">
-        <p>Delete all saved Life Control Anna Edition records and forecast settings? This cannot be undone.</p>
+      <button type="button" class="danger" id="erase-data" aria-controls="erase-confirm-panel" aria-expanded="false" disabled>Erase saved data</button>
+      <div id="erase-confirm-panel" hidden class="erase-confirm" role="group" aria-labelledby="erase-confirm-title" aria-describedby="erase-confirm-detail">
+        <strong id="erase-confirm-title">Confirm workspace erasure</strong>
+        <p id="erase-confirm-detail">Delete all saved Life Control Anna Edition records and forecast settings? This cannot be undone.</p>
         <button type="button" id="erase-cancel">Cancel</button>
         <button type="button" class="danger" id="erase-confirm">Confirm erase</button>
       </div>
