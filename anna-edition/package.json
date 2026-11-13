@@ -12,6 +12,6 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "@anna-ai/cli": "^0.1.63"
+    "@anna-ai/cli": "^0.1.64"
   }
 }
