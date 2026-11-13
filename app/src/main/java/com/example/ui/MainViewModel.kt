@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.withTransaction
 import com.example.data.local.*
 import com.example.data.repository.ProjectForgeRepository
+import com.example.data.repository.BackupValidation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.example.data.ai.PortfolioAnalysisResult
 import com.example.data.ai.PortfolioReviewService
 import com.example.data.ai.LocalPortfolioReviewService
@@ -456,13 +459,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // --- Backup & Restore (Moshi JSON format) ---
-    fun getBackupJson(): String {
-        updateChecklistItem("export_backup", true)
-        val moshi = com.squareup.moshi.Moshi.Builder()
-            .addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
-            .build()
-        val adapter = moshi.adapter(com.example.data.repository.BackupContainer::class.java)
-
+    suspend fun getBackupJson(): String = withContext(Dispatchers.IO) {
         val settingsMap = mapOf(
             "main_life_goal" to mainLifeGoal.value,
             "monthly_income_target" to monthlyIncomeTarget.value.toString(),
@@ -480,72 +477,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "generated_content_language" to generatedContentLanguage.value
         )
 
-        val backupData = com.example.data.repository.BackupData(
-            tasks = tasks.value,
-            transactions = transactions.value,
-            learningPaths = learningPaths.value,
-            lessons = allLessons.value,
-            journalEntries = journalReflections.value,
-            settings = settingsMap
-        )
-
-        val appVersion = try {
-            val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
-            pInfo.versionName ?: "1.2.1"
-        } catch (e: Exception) {
-            "1.2.1"
+        // Read the Room tables directly, within one consistent transaction.
+        // StateFlow.value may still be empty if a UI collector has not subscribed.
+        val db = ProjectForgeDatabase.getDatabase(getApplication(), viewModelScope)
+        val backupData = db.withTransaction {
+            val dao = db.dao()
+            com.example.data.repository.BackupData(
+                tasks = dao.getTasksSnapshot(),
+                transactions = dao.getTransactionsSnapshot(),
+                learningPaths = dao.getLearningPathsSnapshot(),
+                lessons = dao.getLessonsSnapshot(),
+                journalEntries = dao.getJournalSnapshot(),
+                settings = settingsMap
+            )
         }
 
-        val deviceInfo = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} (Android ${android.os.Build.VERSION.RELEASE})"
+        val appVersion = try {
+            val pInfo = getApplication<Application>().packageManager.getPackageInfo(
+                getApplication<Application>().packageName, 0
+            )
+            pInfo.versionName ?: "1.2.1"
+        } catch (_: Exception) {
+            "1.2.1"
+        }
 
         val container = com.example.data.repository.BackupContainer(
             backupVersion = 2,
             appVersion = appVersion,
             createdAt = System.currentTimeMillis(),
-            deviceInfo = deviceInfo,
+            deviceInfo = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} (Android ${android.os.Build.VERSION.RELEASE})",
             data = backupData
         )
-
-        return adapter.toJson(container)
+        val moshi = com.squareup.moshi.Moshi.Builder()
+            .addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
+            .build()
+        moshi.adapter(com.example.data.repository.BackupContainer::class.java).toJson(container)
     }
 
-    suspend fun restoreFromJson(json: String): Boolean {
-        return try {
-            val moshi = com.squareup.moshi.Moshi.Builder()
-                .addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
-                .build()
-
-            var backupVersion = 1
-            var backupData: com.example.data.repository.BackupData? = null
-
-            // Try parsing new format (BackupContainer)
-            try {
-                val containerAdapter = moshi.adapter(com.example.data.repository.BackupContainer::class.java)
-                val container = containerAdapter.fromJson(json)
-                if (container != null) {
-                    backupVersion = container.backupVersion
-                    backupData = container.data
-                }
-            } catch (e: Exception) {
-                // Not the new format, fallback to legacy
-            }
-
-            // Fallback to legacy
-            if (backupData == null) {
-                try {
-                    val legacyAdapter = moshi.adapter(com.example.data.repository.BackupData::class.java)
-                    backupData = legacyAdapter.fromJson(json)
-                } catch (e: Exception) {
-                    return false
-                }
-            }
-
-            val data = backupData ?: return false
-
-            // Validation check
-            if (data.tasks == null && data.transactions == null && data.learningPaths == null && data.journalEntries == null) {
-                return false
-            }
+    suspend fun restoreFromJson(json: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val data = BackupValidation.parseCompleteBackup(json) ?: return@withContext false
 
             // Database restore inside a Room transaction to ensure atomicity
             val db = ProjectForgeDatabase.getDatabase(getApplication(), viewModelScope)
@@ -593,11 +564,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun getEncryptedBackupJson(password: CharArray): String {
-        updateChecklistItem("export_backup", true)
+    suspend fun getEncryptedBackupJson(password: CharArray): String = withContext(Dispatchers.Default) {
         val plainText = getBackupJson()
         val container = com.example.data.repository.BackupEncryption.encrypt(plainText, password)
-        return com.example.data.repository.BackupEncryption.containerToJson(container)
+        com.example.data.repository.BackupEncryption.containerToJson(container)
     }
 
     fun decryptAndValidateBackup(encryptedJson: String, password: CharArray): Pair<String?, String?> {
@@ -621,36 +591,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return Pair(null, "Incorrect password or corrupted backup file.")
             }
             
-            // Validate the decrypted JSON structure
-            val moshi = com.squareup.moshi.Moshi.Builder()
-                .addLast(com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory())
-                .build()
-            
-            var backupData: com.example.data.repository.BackupData? = null
-            try {
-                val containerAdapter = moshi.adapter(com.example.data.repository.BackupContainer::class.java)
-                val parsedContainer = containerAdapter.fromJson(decryptedJson)
-                if (parsedContainer != null) {
-                    backupData = parsedContainer.data
-                }
-            } catch (e: Exception) {
-                // Not the BackupContainer format, try raw BackupData
+            if (BackupValidation.parseCompleteBackup(decryptedJson) == null) {
+                return Pair(null, "Restore failed: Decrypted backup is incomplete or inconsistent.")
             }
 
-            if (backupData == null) {
-                try {
-                    val legacyAdapter = moshi.adapter(com.example.data.repository.BackupData::class.java)
-                    backupData = legacyAdapter.fromJson(decryptedJson)
-                } catch (e: Exception) {
-                    return Pair(null, "Restore failed: Decrypted backup JSON structure is invalid.")
-                }
-            }
-
-            val data = backupData ?: return Pair(null, "Restore failed: Decrypted backup contains no valid data.")
-            if (data.tasks == null && data.transactions == null && data.learningPaths == null && data.journalEntries == null) {
-                return Pair(null, "Restore failed: Decrypted backup contains no valid records.")
-            }
-            
             Pair(decryptedJson, null)
         } catch (e: Exception) {
             Pair(null, "Validation failed: ${e.localizedMessage}")
