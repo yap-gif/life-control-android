@@ -33,9 +33,11 @@ This document prepares review material only. **No Anna CLI push, cut, submit-rev
 
 **Privacy:** Link a stable public `anna-edition/PRIVACY.md` at the time of publishing; the current feature-branch URL is appropriate only for draft testing.
 
-## B. Asset plan — not yet produced
+## B. Asset plan — internal draft samples prepared, still require approval
 
 Official Listing Fields documentation permits up to **6 screenshot URLs**, a logo URL, and optional cover image. Upload-logo accepts PNG, JPEG, WebP or GIF, up to **2 MB**; the host resizes it to a square 256×256 WebP.
+
+A preliminary app icon and three cropped screenshots of **real previously supplied Harness UI** have been prepared as an off-repository review package. These are not uploaded to Anna. Top Harness URL bars and the right RPC log panels were excluded. The screenshots still require final developer review; retake after the new accessibility patch for final publication.
 
 Suggested screenshots after removing credentials, private records, developer session URLs and RPC logs:
 
@@ -75,11 +77,13 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 
 ### Acceptance evidence
 
-- 18 CI tests + `anna-app validate --strict`: verified
+- 30 CI tests + `anna-app validate --strict`: verified (latest branch)
 - Real Anna Harness UI, APS roundtrip across restart, real `llm.complete`: supported by developer-supplied logs
 - AI category isolation: supported by real outgoing model request
 - Safe Markdown formatting + ambiguous `APS-PERSIST-001` task test: supported by post-patch developer screenshot and RPC
 - Manual CRUD, Journal overwrite, erase/restart and Mobile checks: developer-reported
+- Keyboard-only and screen-reader validation following accessibility changes: **pending manual**
+- Live AI quota failure and storage-permission failure UX: **pending manual**
 - Public installation after creating Anna Working Draft: **not tested**
 - Anna App Review and funding qualification: **not tested or guaranteed**
 
