@@ -77,7 +77,7 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 
 ### Acceptance evidence
 
-- 30 CI tests + `anna-app validate --strict`: verified (latest branch)
+- 31 CI tests + `anna-app validate --strict`: verified (latest branch)
 - Real Anna Harness UI, APS roundtrip across restart, real `llm.complete`: supported by developer-supplied logs
 - AI category isolation: supported by real outgoing model request
 - Safe Markdown formatting + ambiguous `APS-PERSIST-001` task test: supported by post-patch developer screenshot and RPC
