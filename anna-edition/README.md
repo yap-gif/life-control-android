@@ -38,7 +38,7 @@ For a disclosure of data-handling boundaries and known platform-level limits, se
 
 ## Verification evidence (2026-11-13)
 
-**Independent CI evidence:** `anna-app validate --strict` passed; 30 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
+**Independent CI evidence:** `anna-app validate --strict` passed; 31 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
 
 **Developer's real Windows Anna Harness logs:** The app opened successfully; after restarting in APS mode, `storage.get` returned the expected test records. A real `llm.complete` responded to a request containing Tasks and Learning, but no Money or Journal. The developer subsequently reported Task complete/reopen/delete, same-day Journal overwrite, erase-and-restart, and Mobile-mode form checks as successful. Those last items are user-reported manual checks, not independently repeated device tests.
 
@@ -51,7 +51,7 @@ Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 - [Store listing draft](./STORE-LISTING-DRAFT.md) — proposed name, tagline, short and long description, privacy disclosures, screenshot plan.
 - [Marketplace release plan](./MARKETPLACE-RELEASE-PREP.md) — production verification gates, logo and final screenshot requirements, approval boundaries.
 - A preliminary icon and three token-free application screenshots have been prepared separately for developer review; no binary images have been pushed to the public repository.
-- The latest accessibility and host-failure changes have **CI source tests**, but a fresh keyboard-only and failure-mode check in Anna Harness remains required before publication.
+- The latest keyboard/accessibility changes have **CI source tests** but still require interactive keyboard testing. The developer supplied a real `--no-llm --storage legacy` failure log: the UI remained usable and did not reveal host details. A subsequent patch adds the explicit `llm_disabled` explanation; its browser wording must be retested.
 
 ## Known limitations
 
