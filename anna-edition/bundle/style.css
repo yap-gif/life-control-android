@@ -16,3 +16,8 @@ fieldset{border:1px solid #405675;border-radius:12px;padding:10px 13px;margin:8p
 footer{margin-top:28px;font-size:12px;text-align:center}
 @media(max-width:870px){.columns{grid-template-columns:1fr}.grid-four{grid-template-columns:repeat(2,minmax(0,1fr))}.top{flex-direction:column}.shell{padding:18px 13px 28px}}
 @media(max-width:420px){.stat strong{font-size:18px}.card{padding:15px}}
+
+[hidden]{display:none!important}.privacy-controls{margin-top:18px;padding:18px;border:1px solid #40516d;border-radius:14px;background:#18263a;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.privacy-controls>div:first-child{flex:1 1 330px}.privacy-controls strong{font-size:14px}.privacy-controls p{font-size:12px;color:#a7bad2;line-height:1.5;margin:8px 0 0}
+.privacy-controls button.danger{background:#572c3d;color:#ffe3e5;border:1px solid #b3657d}.privacy-controls button.danger:hover{background:#6b354a}
+.erase-confirm{width:100%;padding:12px;border:1px solid #875069;border-radius:10px}.erase-confirm button{margin:8px 8px 0 0}
