@@ -10,6 +10,9 @@ interface ProjectForgeDao {
     @Query("SELECT * FROM tasks ORDER BY id DESC")
     fun getAllTasks(): Flow<List<TaskEntity>>
 
+    @Query("SELECT * FROM tasks ORDER BY id DESC")
+    suspend fun getTasksSnapshot(): List<TaskEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskEntity)
 
@@ -24,6 +27,9 @@ interface ProjectForgeDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC, id DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions ORDER BY date DESC, id DESC")
+    suspend fun getTransactionsSnapshot(): List<TransactionEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
 
@@ -34,6 +40,9 @@ interface ProjectForgeDao {
     // --- Learning Paths & Lessons ---
     @Query("SELECT * FROM learning_paths ORDER BY id ASC")
     fun getAllLearningPaths(): Flow<List<LearningPathEntity>>
+
+    @Query("SELECT * FROM learning_paths ORDER BY id ASC")
+    suspend fun getLearningPathsSnapshot(): List<LearningPathEntity>
 
     @Query("SELECT * FROM learning_paths WHERE id = :id")
     suspend fun getLearningPathById(id: Int): LearningPathEntity?
@@ -53,6 +62,9 @@ interface ProjectForgeDao {
     @Query("SELECT * FROM lessons ORDER BY id ASC")
     fun getAllLessons(): Flow<List<LessonEntity>>
 
+    @Query("SELECT * FROM lessons ORDER BY id ASC")
+    suspend fun getLessonsSnapshot(): List<LessonEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLesson(lesson: LessonEntity)
 
@@ -69,6 +81,9 @@ interface ProjectForgeDao {
     // --- Journal / Reflections ---
     @Query("SELECT * FROM journal_reflections ORDER BY date DESC")
     fun getAllJournalReflections(): Flow<List<JournalEntity>>
+
+    @Query("SELECT * FROM journal_reflections ORDER BY date DESC")
+    suspend fun getJournalSnapshot(): List<JournalEntity>
 
     @Query("SELECT * FROM journal_reflections WHERE date = :date LIMIT 1")
     suspend fun getReflectionByDate(date: String): JournalEntity?
