@@ -42,7 +42,7 @@ jobs:
         timeout-minutes: 3
         run: |
           set -euo pipefail
-          npm run dev -- --port 5180 > "$RUNNER_TEMP/anna-dev.log" 2>&1 &
+          npm run dev -- --no-llm --port 5180 > "$RUNNER_TEMP/anna-dev.log" 2>&1 &
           child=$!
           trap 'kill "$child" 2>/dev/null || true' EXIT
           for i in $(seq 1 45); do
