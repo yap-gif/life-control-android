@@ -14,7 +14,7 @@ This is **not** a fully offline Android application and the platform controls st
 - The app does not include an advertising SDK, direct Gemini API key, or custom third-party analytics endpoint.
 
 ## Storage, deletion and limits
-Records are retained in the app's Anna-managed storage until the user deletes them, a platform policy applies, or the app is otherwise removed. The app supports individual record deletion and a user-confirmed **Erase saved data** action that deletes its storage key. This action only erases the app-accessible storage entry: it cannot retract previously sent AI prompts or guarantee deletion of platform backups, security/audit logs, or provider-side records.
+Records are retained in the app's Anna-managed storage until the user deletes them, a platform policy applies, or the app is otherwise removed. The app supports individual record deletion and a user-confirmed **Erase saved data** action that requests deletion of its storage key when available, or overwrites it with an empty workspace on older SDK implementations. This action only erases the app-accessible storage entry: it cannot retract previously sent AI prompts or guarantee deletion of platform backups, security/audit logs, or provider-side records.
 
 The application does not claim end-to-end encryption or automatic deletion by Anna. Storage availability and cross-device behavior depend on Anna's platform service.
 
