@@ -208,6 +208,36 @@ async function handleReview(event) {
     $("review-btn").textContent="Generate weekly review";
   }
 }
+async function eraseWorkspace() {
+  if (reviewBusy) {
+    status("An AI request is still running. Previously sent data cannot be recalled. Try erasing again after the request finishes.",true);
+    return;
+  }
+  $("erase-confirm").disabled = true;
+  $("erase-cancel").disabled = true;
+  forms.forEach(fid => $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = true));
+  try {
+    // Always drain pending saves before deletion so an older save cannot revive erased data.
+    await saveChain.catch(() => {});
+    await anna.storage.delete({ key: STORAGE_KEY });
+    state = normalizeState({});
+    for (const [key,value] of Object.entries(state.goal)) {
+      $("goal-form").elements.namedItem(key).value = String(value);
+    }
+    $("review-result").textContent = "No AI request sent yet.";
+    $("ai-consent").checked = false;
+    render();
+    status("Anna Edition app records erased from this app's storage. Platform logs/backups and past AI requests are outside this control.");
+  } catch (error) {
+    status("Unable to erase stored records: " + String(error.message || error), true);
+  } finally {
+    $("erase-confirm-panel").hidden = true;
+    $("erase-confirm").disabled = false;
+    $("erase-cancel").disabled = false;
+    forms.forEach(fid => $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = false));
+  }
+}
+
 async function boot() {
   forms.forEach(fid=>{
     $(fid).querySelectorAll("input,textarea,select,button").forEach(input=>input.disabled=true);
@@ -225,6 +255,10 @@ async function boot() {
     }
     bindEntries();
     $("review-form").addEventListener("submit",handleReview);
+    $("erase-data").disabled = false;
+    $("erase-data").addEventListener("click", () => { $("erase-confirm-panel").hidden = false; });
+    $("erase-cancel").addEventListener("click", () => { $("erase-confirm-panel").hidden = true; });
+    $("erase-confirm").addEventListener("click", eraseWorkspace);
     forms.forEach(fid=>{
       $(fid).querySelectorAll("input,textarea,select,button").forEach(input=>input.disabled=false);
     });
