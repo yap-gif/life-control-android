@@ -92,6 +92,18 @@
         </section>
       </div>
     </div>
+    <section class="privacy-controls" aria-label="Data management">
+      <div>
+        <strong>Data & privacy controls</strong>
+        <p>Data is stored by the Anna platform for this app. You can delete this workspace's saved records here. This does not retract data already sent in an authorized AI request or delete any platform-side logs or backups.</p>
+      </div>
+      <button type="button" class="danger" id="erase-data" disabled>Erase saved data</button>
+      <div id="erase-confirm-panel" hidden class="erase-confirm" role="group" aria-label="Confirm permanent data deletion">
+        <p>Delete all saved Life Control Anna Edition records and forecast settings? This cannot be undone.</p>
+        <button type="button" id="erase-cancel">Cancel</button>
+        <button type="button" class="danger" id="erase-confirm">Confirm erase</button>
+      </div>
+    </section>
     <footer>Independent Anna-hosted data. No Android Room sync · No automatic AI calls · No external analytics.</footer>
   </main>
   <script type="module" src="./app.js"></script>
