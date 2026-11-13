@@ -17,6 +17,7 @@ This version adapts the product highlighted in the Anna Founding Builder invitat
 | Goal forecast | Explicit savings target, saved amount and planned monthly contribution; deterministic months-to-goal estimate |
 | AI weekly review | Real `anna.llm.complete` call, only after explicit per-request consent and at least one selected context category |
 | Anna storage | Per-app `anna.storage.get/set`, loaded before any editing is enabled |
+| Data erasure | Individual record deletion and confirmed `anna.storage.delete` for this app's workspace key |
 
 AI context selection is enforced by `bundle/logic.js::buildReviewContext` and not solely by UI labels. The model receives a JSON payload containing **only** the selected categories. No hidden full-data profile is appended.
 
@@ -31,13 +32,23 @@ AI context selection is enforced by `bundle/logic.js::buildReviewContext` and no
 - The app uses plain `textContent` for journal data and AI output rather than injecting untrusted HTML.
 - Up to 100 records per collection are retained in the UI data model; the home screen displays the 12 most recent per category. Week reviews include bounded record counts to reduce disclosure and prompt size.
 
+For a disclosure of data-handling boundaries and known platform-level limits, see [PRIVACY.md](./PRIVACY.md).
+
+## Verification evidence (2026-11-13)
+
+- `anna-app validate --strict` passed in GitHub Actions using the official Anna CLI.
+- 12 Node/Anna mock-runtime tests passed, covering weekly aggregates, AI category isolation, storage, model request routing and deletion.
+- `anna-app dev --no-llm` successfully started the local harness on GitHub Actions and its dashboard responded over HTTP.
+- The bundle's direct entry URL could not be tested without a mounted window token; browser interactions and an authenticated Anna model call **remain unverified**.
+- Source CI runs do **not** establish Anna App Store approval, live storage persistence, mobile UX quality or real-user grant eligibility.
+
 ## Known limitations
 
 1. **No Android sync:** Existing Life Control records do not automatically appear here; they must be entered in Anna Edition. There is no migration/importer.
 2. **Reminder limitations:** Due and overdue items appear only inside this app's UI, not as scheduled device/OS push notifications.
 3. **Forecast limitations:** Simple planning estimate based on manually entered savings amounts; no cashflow predictions or bank integration.
 4. **Storage failure:** Editing is blocked if the Anna storage connection cannot be loaded. If a save fails mid-session, the UI reports that the change may not persist.
-5. **Review outcome:** No guarantee of Anna App Review approval, qualified active users or grant funding.
+5. **Review outcome:** No guarantee of Anna App Review approval, qualified active users or grant funding. The in-app erase function does not remove Anna platform backups, logs or previously submitted AI prompts.
 6. **No production verification:** The app has not yet been run inside Anna's hosted developer harness. The manifest and UI must pass live local/working-draft validation before publishing.
 
 ## Start locally
