@@ -34,7 +34,8 @@ test("Anna host-runtime: app storage roundtrip and selected AI context", async (
   try {
     await h.runtime.storage.set({ key: STORAGE_KEY, value: example });
     const fetched = await h.runtime.storage.get({ key: STORAGE_KEY });
-    assert.deepEqual(fetched.value, example);
+    assert.equal(storage.size, 1, "Storage handler did not receive set correctly: " + JSON.stringify(h.calls.all()));
+    assert.deepEqual(fetched?.value, example, "Unexpected host reply; call log: " + JSON.stringify(h.calls.all()));
 
     const context = buildReviewContext(fetched.value, ["tasks", "learning"], "2026-11-13");
     const messages = [
