@@ -1,0 +1,17 @@
+{
+  "name": "life-control-anna-edition",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "dev": "anna-app dev",
+    "validate": "anna-app validate --strict"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@anna-ai/cli": "^0.1.63"
+  }
+}
