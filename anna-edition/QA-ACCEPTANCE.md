@@ -16,7 +16,7 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Anna schema 4 and `validate --strict` | GitHub Actions | CI-confirmed |
-| Core logic, storage/LLM mock runtime, Markdown and prompt contract | 18 automated tests | CI-confirmed |
+| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 30 automated tests (current branch) | CI-confirmed |
 | Local dev dashboard | `anna-app dev --no-llm` on CI | CI-confirmed |
 | Desktop app connection and initial task/finance/study/journal/goal data | Anna Harness screenshot and RPC `storage.set` | RPC-confirmed |
 | Persistent records after process restart with real APS mode | `storage.get` result contained `APS-PERSIST-001` | RPC-confirmed |
@@ -28,6 +28,9 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Mobile form and layout | Developer marked passed | User-reported |
 | Updated safe Markdown rendering in real browser | Developer-provided post-patch Harness screenshot shows rendered headings, emphasis, bullets and inline code | RPC-confirmed |
 | Updated anti-inference instructions with live model | 13:41:32–13:41:35 RPC log: user payload contained the one incomplete task `APS-PERSIST-001` due 2026-11-13; model explicitly stated its domain and requirements were unknown, and gave conditional suggestions | RPC-confirmed (targeted case passed) |
+| Updated per-record keyboard focus / aria-labels / delete confirmation | Static source tests pass; needs interactive keyboard + assistive-tech testing in latest Anna Harness | CI-confirmed (source only); manual pending |
+| AI quota and storage failure messages | Error classifier unit tests pass; not yet validated against live quota/connection failures | CI-confirmed (unit only); manual pending |
+| Marketplace logo / redacted screenshot / listing draft | Draft review materials prepared; no binary assets uploaded to public repo or Anna | Draft only |
 | Platform marketplace review and public release | Not submitted | Pending |
 
 ## Latest post-patch Anna Harness observation
@@ -54,8 +57,10 @@ Developer's screenshot and RPC log show an authenticated `llm.complete` request 
 3. Start `npm.cmd run dev -- --storage aps`. Keep the test data synthetic; real calls may consume credits.
 4. Markdown and the targeted ambiguous-title model regression have passed in the user-supplied Anna Harness. Avoid repeated paid model calls merely to re-confirm these exact cases.
 5. Review failure handling, accessible keyboard/screen-reader experience, listing metadata and privacy statements before any public submission.
-6. Before releasing, review public listing content, privacy statements, accessibility, and error handling. Do not expose Harness URLs containing `t=` tokens or private RPC storage payloads.
+6. Use keyboard-only Tab/Shift+Tab, Enter and Escape to check record-specific actions and the erase confirmation. Confirm keyboard focus returns predictably after mutations.
+7. In a sandbox or with non-sensitive test data, verify an unavailable AI runtime (`--no-llm`) shows a useful, non-sensitive error; test storage failure only in a disposable environment.
+8. Review the provisional logo, screenshots and listing copy. Replace branch-based privacy URLs with stable ones before publishing. Do not expose Harness URLs containing `t=` tokens or private RPC storage payloads.
 
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes accessible UI checks, failure-path testing, store listing assets and Anna working-draft verification. Marketplace review and builder grant eligibility are separate platform decisions.
+**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes real keyboard/screen-reader interaction checks, live failure-path validation, developer approval of image assets, and Anna working-draft verification. Marketplace review and builder grant eligibility are separate platform decisions.
