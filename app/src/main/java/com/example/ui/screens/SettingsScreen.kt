@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.MainViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.res.stringResource
 import com.example.R
 
@@ -157,16 +159,21 @@ fun SettingsScreen(
     val exportBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        uri?.let {
-            try {
-                val json = viewModel.getBackupJson()
-                context.contentResolver.openOutputStream(it)?.use { stream ->
-                    stream.write(json.toByteArray())
+        uri?.let { selectedUri ->
+            coroutineScope.launch {
+                try {
+                    val json = viewModel.getBackupJson()
+                    withContext(Dispatchers.IO) {
+                        val stream = context.contentResolver.openOutputStream(selectedUri)
+                            ?: throw java.io.IOException("Unable to open backup destination")
+                        stream.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                    }
+                    viewModel.updateChecklistItem("export_backup", true)
+                    Toast.makeText(context, "Full backup exported successfully!", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Export failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
-                Toast.makeText(context, "Full backup exported successfully!", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Export failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -195,28 +202,26 @@ fun SettingsScreen(
     val exportEncryptedBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
-        uri?.let {
-            try {
-                if (tempEncryptionPassword.length >= 8) {
-                    val passwordChars = tempEncryptionPassword.toCharArray()
+        uri?.let { selectedUri ->
+            val passwordChars = tempEncryptionPassword.toCharArray()
+            tempEncryptionPassword = ""
+            coroutineScope.launch {
+                try {
+                    require(passwordChars.size >= 8) { "Password must be at least 8 characters" }
                     val encryptedJson = viewModel.getEncryptedBackupJson(passwordChars)
-                    context.contentResolver.openOutputStream(it)?.use { stream ->
-                        stream.write(encryptedJson.toByteArray())
+                    withContext(Dispatchers.IO) {
+                        val stream = context.contentResolver.openOutputStream(selectedUri)
+                            ?: throw java.io.IOException("Unable to open encrypted backup destination")
+                        stream.use { it.write(encryptedJson.toByteArray(Charsets.UTF_8)) }
                     }
-                    // clear sensitive password variables
-                    for (i in passwordChars.indices) {
-                        passwordChars[i] = '0'
-                    }
-                    tempEncryptionPassword = ""
+                    viewModel.updateChecklistItem("export_backup", true)
                     Toast.makeText(context, "Encrypted backup exported successfully!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, "Export failed: Password must be at least 8 characters.", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Export failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                } finally {
+                    passwordChars.fill('\u0000')
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Export failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-            } finally {
-                tempEncryptionPassword = ""
             }
         }
     }
@@ -2041,20 +2046,26 @@ fun SettingsScreen(
                             Toast.makeText(context, "Password cannot be empty", Toast.LENGTH_SHORT).show()
                         } else {
                             val passwordChars = encryptedRestorePassword.toCharArray()
-                            val (decryptedJson, errorMsg) = viewModel.decryptAndValidateBackup(encryptedBackupJsonToRestore ?: "", passwordChars)
-                            for (i in passwordChars.indices) {
-                                passwordChars[i] = '0'
-                            }
-                            if (decryptedJson != null) {
-                                encryptedRestorePassword = ""
-                                restorePasswordError = null
-                                showEncryptedRestorePasswordDialog = false
-                                encryptedBackupJsonToRestore = null
-                                restoreJsonToConfirm = decryptedJson
-                                showRestoreConfirmDialog = true
-                            } else {
-                                restorePasswordError = errorMsg ?: "Decryption failed"
-                                Toast.makeText(context, errorMsg ?: "Restore failed: Decryption failure", Toast.LENGTH_LONG).show()
+                            val backupJson = encryptedBackupJsonToRestore.orEmpty()
+                            encryptedRestorePassword = ""
+                            coroutineScope.launch {
+                                val (decryptedJson, errorMsg) = try {
+                                    withContext(Dispatchers.Default) {
+                                        viewModel.decryptAndValidateBackup(backupJson, passwordChars)
+                                    }
+                                } finally {
+                                    passwordChars.fill('\u0000')
+                                }
+                                if (decryptedJson != null) {
+                                    restorePasswordError = null
+                                    showEncryptedRestorePasswordDialog = false
+                                    encryptedBackupJsonToRestore = null
+                                    restoreJsonToConfirm = decryptedJson
+                                    showRestoreConfirmDialog = true
+                                } else {
+                                    restorePasswordError = errorMsg ?: "Decryption failed"
+                                    Toast.makeText(context, errorMsg ?: "Restore failed: Decryption failure", Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
                     },
