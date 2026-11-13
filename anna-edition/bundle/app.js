@@ -1,8 +1,9 @@
 import { AnnaAppRuntime } from "/static/anna-apps/_sdk/latest/index.js";
 import {
   STORAGE_KEY, normalizeState, localDate, calculateForecast,
-  calculateSummary
+  calculateSummary, validDate
 } from "./logic.js";
+import { explainHostError, entryActionLabel } from "./ui-feedback.js";
 import { buildReviewRequest } from "./review-contract.js";
 import { renderReviewMarkdown } from "./review-format.js";
 
@@ -19,6 +20,7 @@ const id = () => "lc-" + Date.now().toString(36) + "-" + Math.random().toString(
 function status(message, error = false) {
   $("message").textContent = message;
   $("message").style.color = error ? "#ffc0bc" : "#9cdbc4";
+  $("message").setAttribute("aria-live", error ? "assertive" : "polite");
 }
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -38,11 +40,12 @@ function persistAndRender() {
   saveChain = saveChain.catch(() => {}).then(async () => {
     await anna.storage.set({ key: STORAGE_KEY, value: snapshot });
   });
-  saveChain.then(() => status("Saved to your Anna app storage."), error => status(
-    "Storage failed — changes are visible in this session but may be lost: " + String(error.message || error), true
-  ));
+  saveChain.then(
+    () => status("Saved to your Anna app storage."),
+    error => status(explainHostError(error, "storage"), true)
+  );
 }
-function entry(li, primary, subtitle, buttons = []) {
+function entry(li, primary, subtitle, buttons = [], recordId = "") {
   const content = el("div","entry-content");
   content.append(el("div","primary",primary),el("div","meta",subtitle));
   li.append(content);
@@ -51,7 +54,20 @@ function entry(li, primary, subtitle, buttons = []) {
     buttons.forEach(b => {
       const button = el("button","",b.label);
       button.type = "button";
-      button.addEventListener("click", b.action);
+      button.setAttribute("aria-label", entryActionLabel(b.label, primary));
+      button.dataset.entryId = recordId;
+      // Complete and Reopen are the same action, so retain keyboard focus.
+      button.dataset.actionKey = ["Complete", "Reopen"].includes(b.label) ? "toggle" : b.label.toLowerCase();
+      button.addEventListener("click", () => {
+        const fallbackInput = li.closest(".card")?.querySelector("input,textarea,select");
+        const recordKey = button.dataset.entryId;
+        const actionKey = button.dataset.actionKey;
+        b.action();
+        const replacementButton = [...document.querySelectorAll(".entries button[data-entry-id]")]
+          .find(candidate => candidate.dataset.entryId === recordKey &&
+            candidate.dataset.actionKey === actionKey);
+        (replacementButton || fallbackInput)?.focus();
+      });
       actions.append(button);
     });
     li.append(actions);
@@ -85,7 +101,7 @@ function render() {
     const row = entry(li,v.title,dueLabel,[{
       label: v.done ? "Reopen" : "Complete",
       action: () => { const t=state.tasks.find(t => t.id === v.id); if (t) { t.done=!t.done; persistAndRender(); } }
-    },{label:"Delete",action:()=>deleteById("tasks",v.id)}]);
+    },{label:"Delete",action:()=>deleteById("tasks",v.id)}],v.id);
     if (!v.done && v.date <= today) row.querySelector(".meta").className += v.date < today ? " overdue" : " soon";
     return row;
   },"No tasks yet.");
@@ -93,17 +109,17 @@ function render() {
   renderList("money-list",state.money,v => entry(el("li"),
     (v.type==="income" ? "+ " : "− ") + money(v.amount),
     v.category + " · " + v.date,
-    [{label:"Delete",action:()=>deleteById("money",v.id)}]
+    [{label:"Delete",action:()=>deleteById("money",v.id)}],v.id
   ),"No transactions yet.");
 
   renderList("learning-list",state.learning,v => entry(el("li"),v.topic,
     v.minutes + " min · " + v.date,
-    [{label:"Delete",action:()=>deleteById("learning",v.id)}]
+    [{label:"Delete",action:()=>deleteById("learning",v.id)}],v.id
   ),"No study sessions yet.");
 
   renderList("journal-list",state.journal,v => entry(el("li"),v.text,
     "Journal · " + v.date,
-    [{label:"Delete",action:()=>deleteById("journal",v.id)}]
+    [{label:"Delete",action:()=>deleteById("journal",v.id)}],v.id
   ),"No reflections yet.");
 
   const forecast = calculateForecast(state.goal);
@@ -124,7 +140,7 @@ function bindEntries() {
   bindForm("task-form",f=>{
     const title=String(f.get("title") || "").trim();
     const date=String(f.get("date") || "");
-    if(!title || !/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error("Enter a task and due date.");
+    if(!title || !validDate(date))throw new Error("Enter a task and due date.");
     limitEntries("tasks",{id:id(),title,date,done:false});
     $("task-form").reset();
     $("task-form").elements.namedItem("date").value=TODAY();
@@ -136,7 +152,7 @@ function bindEntries() {
     const category=String(f.get("category")||"").trim();
     const date=String(f.get("date")||"");
     if(!(amount>0 && amount<=100000000 && Number.isFinite(amount)) ||
-      !["income","expense"].includes(type) || !category || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      !["income","expense"].includes(type) || !category || !validDate(date)) {
       throw new Error("Enter a positive amount, type, category and date.");
     }
     limitEntries("money",{id:id(),amount,type,category,date});
@@ -149,7 +165,7 @@ function bindEntries() {
     const minutes=Number(f.get("minutes"));
     const date=String(f.get("date")||"");
     if(!topic || !Number.isInteger(minutes) || minutes<1 || minutes>1440 ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error("Enter a topic, minutes and date.");
+      !validDate(date))throw new Error("Enter a topic, minutes and date.");
     limitEntries("learning",{id:id(),topic,minutes,date});
     $("learning-form").reset();
     $("learning-form").elements.namedItem("date").value=TODAY();
@@ -158,7 +174,7 @@ function bindEntries() {
   bindForm("journal-form",f=>{
     const text=String(f.get("text")||"").trim();
     const date=String(f.get("date")||"");
-    if(!text || !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Enter reflection and date.");
+    if(!text || !validDate(date)) throw new Error("Enter reflection and date.");
     const existing=state.journal.find(v=>v.date===date);
     if(existing){existing.text=text;}else{limitEntries("journal",{id:id(),text,date});}
     $("journal-form").elements.namedItem("text").value="";
@@ -186,6 +202,7 @@ async function handleReview(event) {
   reviewBusy=true;
   $("review-btn").disabled=true;
   $("review-btn").textContent="Generating...";
+  $("review-result").setAttribute("aria-busy", "true");
   $("review-result").textContent="Sending selected categories only and generating your weekly review...";
   status("Only the selected categories are included in this AI request.");
   try {
@@ -195,9 +212,11 @@ async function handleReview(event) {
     renderReviewMarkdown($("review-result"), output);
     status("Review complete. No other categories were sent.");
   } catch(error) {
-    $("review-result").textContent="Review failed; no result saved. " + String(error.message || error);
-    status("AI request failed. You can opt in again to retry.",true);
+    const explanation = explainHostError(error, "ai");
+    $("review-result").textContent=explanation;
+    status(explanation,true);
   } finally {
+    $("review-result").setAttribute("aria-busy", "false");
     reviewBusy=false;
     $("review-btn").disabled=false;
     $("review-btn").textContent="Generate weekly review";
@@ -229,9 +248,11 @@ async function eraseWorkspace() {
     render();
     status("Anna Edition app records erased from this app's storage. Platform logs/backups and past AI requests are outside this control.");
   } catch (error) {
-    status("Unable to erase stored records: " + String(error.message || error), true);
+    status(explainHostError(error, "storage"), true);
   } finally {
     $("erase-confirm-panel").hidden = true;
+    $("erase-data").setAttribute("aria-expanded", "false");
+    $("erase-data").focus();
     $("erase-confirm").disabled = false;
     $("erase-cancel").disabled = false;
     forms.forEach(fid => $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = false));
@@ -256,8 +277,21 @@ async function boot() {
     bindEntries();
     $("review-form").addEventListener("submit",handleReview);
     $("erase-data").disabled = false;
-    $("erase-data").addEventListener("click", () => { $("erase-confirm-panel").hidden = false; });
-    $("erase-cancel").addEventListener("click", () => { $("erase-confirm-panel").hidden = true; });
+    const dismissErase = () => {
+      $("erase-confirm-panel").hidden = true;
+      $("erase-data").setAttribute("aria-expanded", "false");
+      $("erase-data").focus();
+    };
+    $("erase-data").addEventListener("click", () => {
+      $("erase-confirm-panel").hidden = false;
+      $("erase-data").setAttribute("aria-expanded", "true");
+      // Begin focus on Cancel, not the destructive Confirm button.
+      $("erase-cancel").focus();
+    });
+    $("erase-cancel").addEventListener("click", dismissErase);
+    $("erase-confirm-panel").addEventListener("keydown", event => {
+      if (event.key === "Escape") { event.preventDefault(); dismissErase(); }
+    });
     $("erase-confirm").addEventListener("click", eraseWorkspace);
     forms.forEach(fid=>{
       $(fid).querySelectorAll("input,textarea,select,button").forEach(input=>input.disabled=false);
@@ -266,7 +300,7 @@ async function boot() {
     status("Ready. AI remains off until you explicitly authorize a review.");
   } catch(error) {
     $("connection").textContent="Connection unavailable";
-    status("Unable to load Anna storage. Editing is disabled to prevent unsaved records. " + String(error.message || error),true);
+    status(explainHostError(error, "storage") + " Editing is disabled to prevent unsaved records.",true);
   }
 }
 boot();
