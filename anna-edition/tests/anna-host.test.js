@@ -55,8 +55,9 @@ test("Anna host-runtime: app storage roundtrip and selected AI context", async (
     assert.ok(sent.includes("Kotlin"));
     assert.ok(!sent.includes("Private category"), "Money must not be sent without selection");
     assert.ok(!sent.includes("Very private reflection"), "Journal must not be sent without selection");
-    await h.runtime.storage.delete(STORAGE_KEY);
-    assert.equal((await h.runtime.storage.get(STORAGE_KEY)).value, null, "Deleted app storage should be empty");
+    await h.runtime.storage.set(STORAGE_KEY, normalizeState({}));
+    assert.deepEqual((await h.runtime.storage.get(STORAGE_KEY)).value, normalizeState({}),
+      "Clearing records by empty-state overwrite should not preserve private data");
   } finally {
     if (typeof h.close === "function") await h.close();
   }
