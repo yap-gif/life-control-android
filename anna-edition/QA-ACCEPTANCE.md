@@ -28,7 +28,7 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Mobile form and layout | Developer marked passed | User-reported |
 | Updated safe Markdown rendering in real browser | Developer-provided post-patch Harness screenshot shows rendered headings, emphasis, bullets and inline code | RPC-confirmed |
 | Updated anti-inference instructions with live model | 13:41:32–13:41:35 RPC log: user payload contained the one incomplete task `APS-PERSIST-001` due 2026-11-13; model explicitly stated its domain and requirements were unknown, and gave conditional suggestions | RPC-confirmed (targeted case passed) |
-| Updated per-record keyboard focus / aria-labels / delete confirmation | Static source tests pass; needs interactive keyboard + assistive-tech testing in latest Anna Harness | CI-confirmed (source only); manual pending |
+| Updated per-record keyboard focus / aria-labels / delete confirmation | 23:56:35 Complete, 23:56:38 Reopen, 23:56:55 Delete saved successfully; developer reports keyboard focus and Escape/Cancel behaved correctly | RPC-confirmed for mutations; user-reported keyboard interaction passed; screen-reader pending |
 | AI quota and storage failure messages | Error classifier unit tests pass; not yet validated against live quota/connection failures | CI-confirmed (unit only); manual pending |
 | AI unavailable with `--no-llm --storage legacy` | 23:54:20–23:54:21 Anna Harness: `llm.complete` returned `llm_disabled`; revised UI displayed precise `--no-llm` explanation, did not expose raw RPC error and remained usable | RPC-confirmed (specific error UX passed) |
 | Marketplace logo / redacted screenshot / listing draft | Draft review materials prepared; no binary assets uploaded to public repo or Anna | Draft only |
@@ -63,6 +63,17 @@ Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev 
 
 **Disposition:** This specific error-handling regression is **PASS**. Does not establish behavior under real AI quota exhaustion, network loss or production APS failure.
 
+## Final Task action and keyboard check (2026-11-14)
+
+**Evidence classification:** The developer supplied a full Anna Harness RPC log and explicitly stated that all requested interactions ran correctly.
+
+- **23:56:35.306–.314:** `storage.set` changed the only task's `done` flag from `false` to `true`; host returned `ok:true`.
+- **23:56:38.053–.064:** `storage.set` changed it from `true` back to `false`; host returned `ok:true`.
+- **23:56:55.156–.164:** `storage.set` wrote `tasks:[]`, indicating the record was deleted; host returned `ok:true`.
+- The developer reports that keyboard focus recovery and the erase confirmation's Cancel/Escape path also worked. Those UI-only focus events are **not visible in RPC**, so the assertion is a user manual acceptance, not an independently logged accessibility audit.
+
+**Disposition:** Task mutation and user-reported keyboard smoke tests **PASS for the local scope**. Separate screen-reader validation remains a release quality recommendation, not a claim of having passed.
+
 ## Next local check
 
 1. Preserve any local edits before updating. From the repository root run `git status --short`, then `git pull --ff-only origin feature/life-control-anna-edition-20261113`.
@@ -70,10 +81,10 @@ Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev 
 3. Start `npm.cmd run dev -- --storage aps`. Keep the test data synthetic; real calls may consume credits.
 4. Markdown and the targeted ambiguous-title model regression have passed in the user-supplied Anna Harness. Avoid repeated paid model calls merely to re-confirm these exact cases.
 5. Review failure handling, accessible keyboard/screen-reader experience, listing metadata and privacy statements before any public submission.
-6. Use keyboard-only Tab/Shift+Tab, Enter and Escape to check record-specific actions and the erase confirmation. Confirm keyboard focus returns predictably after mutations.
+6. Keyboard-only task Complete/Reopen/Delete and erase confirmation focus/Escape have been reported passed by the developer. A dedicated screen-reader audit (e.g., NVDA) remains unperformed.
 7. The revised `--no-llm --storage legacy` error wording was confirmed in real Harness. Do not combine `--no-llm` with `--storage aps`. Other live failure cases (quota exhaustion, storage permission/network failure) remain untested and should only be attempted with disposable data.
 8. Review the provisional logo, screenshots and listing copy. Replace branch-based privacy URLs with stable ones before publishing. Do not expose Harness URLs containing `t=` tokens or private RPC storage payloads.
 
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes real keyboard/screen-reader interaction checks, live failure-path validation, developer approval of image assets, and Anna working-draft verification. Marketplace review and builder grant eligibility are separate platform decisions.
+**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, developer approval of image assets, and Anna working-draft verification. Marketplace review and builder grant eligibility are separate platform decisions.
