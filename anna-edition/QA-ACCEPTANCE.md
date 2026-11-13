@@ -26,19 +26,25 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Journal overwrite for same date | Developer marked passed | User-reported |
 | Erase data then restart | Developer marked passed | User-reported; platform logs/backups outside app control |
 | Mobile form and layout | Developer marked passed | User-reported |
-| Updated safe Markdown rendering in real browser | New DOM parser tested, but not yet user-tested | Pending |
-| Updated anti-inference instructions with live model | New prompt contract tested, but live output not yet checked | Pending |
+| Updated safe Markdown rendering in real browser | Developer-provided post-patch Harness screenshot shows rendered headings, emphasis, bullets and inline code | RPC-confirmed |
+| Updated anti-inference instructions with live model | Live post-patch response with Tasks and Learning **empty** made no domain-specific inventions; still needs a deliberately ambiguous non-empty task | Partially RPC-confirmed; targeted test pending |
 | Platform marketplace review and public release | Not submitted | Pending |
+
+## Latest post-patch Anna Harness observation
+
+Developer's screenshot and RPC log show an authenticated `llm.complete` request using the new evidence-only system contract, successful AI response and fully formatted Markdown headings, bold emphasis, lists, and inline code. The outbound business payload was `{period, tasks: [], learning: []}`; Money and Journal were not sent. The model described only the absence of recorded entries.
+
+**Important limitation:** This is not the ambiguous-task regression test. Empty arrays do not demonstrate that the model avoids guessing whether `APS-PERSIST-001` is a coding or infrastructure task. An empty `storage.get` response was also present, consistent with a cleared workspace; it does not demonstrate a failure of earlier APS persistence.
 
 ## Next local check
 
 1. Preserve any local edits before updating. From the repository root run `git status --short`, then `git pull --ff-only origin feature/life-control-anna-edition-20261113`.
 2. From `anna-edition/`, run `npm.cmd test` and `npm.cmd run validate`.
 3. Start `npm.cmd run dev -- --storage aps`. Keep the test data synthetic; real calls may consume credits.
-4. Run an authorized Tasks+Learning review. Confirm that headings, bold text and numbered lists format correctly and the RPC payload excludes Money/Journal.
+4. Markdown formatting and category isolation have now been observed post-patch with empty Tasks+Learning; no need to repeat this exact empty-data check. Verify non-empty data and the ambiguous-title case instead.
 5. Test an intentionally ambiguous task label such as `APS-PERSIST-001`. The model must not assert that it entails coding, a particular project, or specific substeps without explicit supporting context.
 6. Before releasing, review public listing content, privacy statements, accessibility, and error handling. Do not expose Harness URLs containing `t=` tokens or private RPC storage payloads.
 
 ## Release decision
 
-**Not yet approved for release.** PR #2 remains Draft; `main` is untouched. Technical viability is supported by CI and real APS/LLM logs, but the newly changed display/prompt behavior needs the final post-patch visual check. Marketplace review and builder grant eligibility are separate platform decisions.
+**Not yet approved for release.** PR #2 remains Draft; `main` is untouched. The new Markdown display is confirmed in a real browser and the empty-data model response was conservative. The ambiguous-title anti-inference check with non-empty task data remains pending. Marketplace review and builder grant eligibility are separate platform decisions.
