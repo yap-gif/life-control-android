@@ -1,0 +1,35 @@
+name: Anna Edition Source Checks
+
+on:
+  push:
+    paths:
+      - "anna-edition/**"
+      - ".github/workflows/anna-edition-tests.yml"
+  pull_request:
+    paths:
+      - "anna-edition/**"
+      - ".github/workflows/anna-edition-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: anna-edition
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check bundle/logic.js
+          node --check bundle/app.js
+      - name: Check JSON manifests
+        run: |
+          node -e "const f=require('fs'); ['manifest.json','app.json','package.json'].forEach(p=>JSON.parse(f.readFileSync(p,'utf8')))"
+      - name: Unit tests (no API calls)
+        run: npm test
