@@ -17,7 +17,7 @@ This version adapts the product highlighted in the Anna Founding Builder invitat
 | Goal forecast | Explicit savings target, saved amount and planned monthly contribution; deterministic months-to-goal estimate |
 | AI weekly review | Real `anna.llm.complete` call, only after explicit per-request consent and at least one selected context category |
 | Anna storage | Per-app `anna.storage.get/set`, loaded before any editing is enabled |
-| Data erasure | Individual record deletion and confirmed `anna.storage.delete` for this app's workspace key |
+| Data erasure | Individual record deletion and confirmed erase with SDK delete when available, or empty-state overwrite when not available |
 
 AI context selection is enforced by `bundle/logic.js::buildReviewContext` and not solely by UI labels. The model receives a JSON payload containing **only** the selected categories. No hidden full-data profile is appended.
 
