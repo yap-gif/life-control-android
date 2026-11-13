@@ -45,7 +45,7 @@ test("Anna host-runtime: app storage roundtrip and selected AI context", async (
     assert.ok(!sent.includes("Private category"), "Money must not be sent without selection");
     assert.ok(!sent.includes("Very private reflection"), "Journal must not be sent without selection");
   } finally {
-    await h.close();
+    if (typeof h.close === "function") await h.close();
   }
 });
 
@@ -55,6 +55,6 @@ test("Anna host-runtime: no model request when context is empty", async () => {
     assert.throws(() => buildReviewContext(example, [], "2026-11-13"));
     assert.equal(h.calls.byNs("llm.complete").length, 0);
   } finally {
-    await h.close();
+    if (typeof h.close === "function") await h.close();
   }
 });
