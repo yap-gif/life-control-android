@@ -18,6 +18,8 @@ This version adapts the product highlighted in the Anna Founding Builder invitat
 | AI weekly review | Real `anna.llm.complete` call with per-request consent, safe Markdown rendering, and evidence-only coaching instructions |
 | Anna storage | Per-app `anna.storage.get/set`, loaded before any editing is enabled |
 | Data erasure | Individual record deletion and confirmed erase with SDK delete when available, or empty-state overwrite when not available |
+| Accessibility | Skip-to-content link, record-specific action labels, focus restoration on task operations, keyboard-accessible erase confirmation |
+| Host failures | Stable, non-secret error guidance for AI quota, missing LLM runtime, invalid requests and storage permission failures |
 
 AI context selection is enforced by `bundle/logic.js::buildReviewContext` and not solely by UI labels. The model receives a JSON payload containing **only** the selected categories. No hidden full-data profile is appended.
 
@@ -36,13 +38,20 @@ For a disclosure of data-handling boundaries and known platform-level limits, se
 
 ## Verification evidence (2026-11-13)
 
-**Independent CI evidence:** `anna-app validate --strict` passed; 18 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
+**Independent CI evidence:** `anna-app validate --strict` passed; 30 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
 
 **Developer's real Windows Anna Harness logs:** The app opened successfully; after restarting in APS mode, `storage.get` returned the expected test records. A real `llm.complete` responded to a request containing Tasks and Learning, but no Money or Journal. The developer subsequently reported Task complete/reopen/delete, same-day Journal overwrite, erase-and-restart, and Mobile-mode form checks as successful. Those last items are user-reported manual checks, not independently repeated device tests.
 
 **Post-patch browser checks still needed:** Pull the latest commit; confirm that the new Markdown renderer displays headings/bold/lists as formatted text and that an AI review with an ambiguous task title avoids invented domain-specific steps. These controls can reduce unsupported output, not guarantee zero model errors.
 
 Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
+
+## Marketplace preparation (internal only)
+
+- [Store listing draft](./STORE-LISTING-DRAFT.md) — proposed name, tagline, short and long description, privacy disclosures, screenshot plan.
+- [Marketplace release plan](./MARKETPLACE-RELEASE-PREP.md) — production verification gates, logo and final screenshot requirements, approval boundaries.
+- A preliminary icon and three token-free application screenshots have been prepared separately for developer review; no binary images have been pushed to the public repository.
+- The latest accessibility and host-failure changes have **CI source tests**, but a fresh keyboard-only and failure-mode check in Anna Harness remains required before publication.
 
 ## Known limitations
 
