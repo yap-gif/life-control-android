@@ -30,6 +30,7 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Updated anti-inference instructions with live model | 13:41:32–13:41:35 RPC log: user payload contained the one incomplete task `APS-PERSIST-001` due 2026-11-13; model explicitly stated its domain and requirements were unknown, and gave conditional suggestions | RPC-confirmed (targeted case passed) |
 | Updated per-record keyboard focus / aria-labels / delete confirmation | Static source tests pass; needs interactive keyboard + assistive-tech testing in latest Anna Harness | CI-confirmed (source only); manual pending |
 | AI quota and storage failure messages | Error classifier unit tests pass; not yet validated against live quota/connection failures | CI-confirmed (unit only); manual pending |
+| AI unavailable with `--no-llm --storage legacy` | User-provided Harness screenshot and RPC log: `llm.complete` returned `llm_disabled`, app remained functional and displayed a safe generic error | RPC-confirmed (safe failure); specific explanation retest pending after fix |
 | Marketplace logo / redacted screenshot / listing draft | Draft review materials prepared; no binary assets uploaded to public repo or Anna | Draft only |
 | Platform marketplace review and public release | Not submitted | Pending |
 
@@ -49,6 +50,12 @@ Developer's screenshot and RPC log show an authenticated `llm.complete` request 
 - Browser screenshot shows formatted section headings, bold text, ordered items and inline code for the new renderer.
 
 **Disposition:** The precise ambiguous-title regression **passes in this observed real-model run**. Results are not a guarantee against future unsupported model inferences. The response included a reasonable conditional assumption about possible blockers but did not state a speculative blocker as fact. The presence of a real model output does not replace abuse-case testing, accessibility review or platform App Review.
+
+## Real no-LLM failure-path observation (2026-11-14)
+
+Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev --no-llm --storage legacy`. An illustrative test task `AI-ERROR-TEST-001` was saved, a consented Tasks-only `llm.complete` request was sent, and the host returned `res err llm_disabled harness started with --no-llm`. The app stayed usable and showed a non-sensitive failure notice; it did not expose the host diagnostic or any credentials in the user-facing review panel.
+
+**Finding:** The previous error classifier treated `llm_disabled` as unknown and displayed a generic connectivity message. This has been corrected to show a specific message that the current development session has AI disabled. Source/CI tests are updated, but the new wording needs one browser retest before recording the UX as fully passed. The log does not prove real AI quota exhaustion behavior or storage failure behavior.
 
 ## Next local check
 
