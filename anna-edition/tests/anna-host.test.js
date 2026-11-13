@@ -1,0 +1,60 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { mountBundle } from "@anna-ai/cli/test";
+import { STORAGE_KEY, buildReviewContext, normalizeState } from "../bundle/logic.js";
+
+const example = normalizeState({
+  tasks: [{ id: "task-1", title: "Read docs", date: "2026-11-13", done: false }],
+  money: [{ id: "money-1", date: "2026-11-13", type: "expense", amount: 8, category: "Private category" }],
+  learning: [{ id: "lesson-1", date: "2026-11-13", topic: "Kotlin", minutes: 25 }],
+  journal: [{ id: "diary-1", date: "2026-11-13", text: "Very private reflection" }],
+  goal: { goal: 1000, saved: 300, monthly: 70 }
+});
+
+test("Anna host-runtime: app storage roundtrip and selected AI context", async () => {
+  const h = await mountBundle({
+    manifest: "./manifest.json",
+    bundle: "./bundle",
+    mocks: {
+      "llm.complete": ({ messages }) => ({
+        role: "assistant",
+        content: { type: "text", text: "Review generated" },
+        model: "mock",
+        stopReason: "endTurn",
+        usage: { inputTokens: 5, outputTokens: 3, totalTokens: 8 }
+      })
+    }
+  });
+  try {
+    await h.runtime.storage.set({ key: STORAGE_KEY, value: example });
+    const fetched = await h.runtime.storage.get({ key: STORAGE_KEY });
+    assert.deepEqual(fetched.value, example);
+
+    const context = buildReviewContext(fetched.value, ["tasks", "learning"], "2026-11-13");
+    const messages = [
+      { role: "user", content: { type: "text", text: JSON.stringify(context) } }
+    ];
+    const response = await h.runtime.llm.complete({ messages, maxTokens: 200 });
+    assert.equal(response.content.text, "Review generated");
+
+    const call = h.calls.lastOf("llm.complete");
+    assert.ok(call, "LLM host API call should be recorded by the Anna harness");
+    const sent = JSON.stringify(call.args);
+    assert.ok(sent.includes("Read docs"));
+    assert.ok(sent.includes("Kotlin"));
+    assert.ok(!sent.includes("Private category"), "Money must not be sent without selection");
+    assert.ok(!sent.includes("Very private reflection"), "Journal must not be sent without selection");
+  } finally {
+    await h.close();
+  }
+});
+
+test("Anna host-runtime: no model request when context is empty", async () => {
+  const h = await mountBundle({ manifest: "./manifest.json", bundle: "./bundle" });
+  try {
+    assert.throws(() => buildReviewContext(example, [], "2026-11-13"));
+    assert.equal(h.calls.byNs("llm.complete").length, 0);
+  } finally {
+    await h.close();
+  }
+});
