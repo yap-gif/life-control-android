@@ -8,8 +8,27 @@ test("AI quota errors are actionable without exposing raw RPC data", () => {
   assert.match(message, /quota/i);
   assert.ok(!message.includes(secret));
 });
-test("offline/no-LLM errors identify unavailable runtime", () => {
-  assert.match(explainHostError({ errorCode: "not_implemented" }, "ai"), /unavailable/i);
+test("offline/no-LLM errors identify disabled runtime", () => {
+  for (const error of [
+    { errorCode: "not_implemented" },
+    { code: "llm_disabled" },
+    { error: { code: "llm_disabled" } },
+    { message: "llm_disabled harness started with --no-llm" },
+    { cause: { message: "RPC failed: llm_disabled" } }
+  ]) {
+    const message = explainHostError(error, "ai");
+    assert.match(message, /AI is disabled/i);
+    assert.match(message, /--no-llm/);
+    assert.match(message, /Restart without/);
+  }
+});
+
+test("SDK's raw error is inspected but never exposed in the UI", () => {
+  const secret = "sessionToken=TEST-SENSITIVE-DATA";
+  const e = { message: "llm_disabled harness started with --no-llm " + secret };
+  const explanation = explainHostError(e, "ai");
+  assert.ok(!explanation.includes(secret));
+  assert.equal(hostErrorCode(e), "llm_disabled");
 });
 test("unknown AI error never displays sensitive host message", () => {
   const m = explainHostError({ message: "t=session-sensitive-token&code=500" }, "ai");
