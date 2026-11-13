@@ -1,0 +1,11 @@
+{
+  "slug": "life-control-anna",
+  "name": "Life Control — Anna Edition",
+  "version": "0.1.0",
+  "tagline": "Privacy-first goals, tasks, money, learning and consent-based AI weekly reviews.",
+  "description": "Life Control — Anna Edition is an independent personal-growth workspace built for Anna. Manage tasks and due-date reminders inside the app, record income and expenses, log learning sessions, journal privately, and forecast a savings goal. An AI-powered weekly review is only sent when you explicitly approve a request and select the data categories to share. The AI never receives excluded categories. Your records are stored in Anna's per-app storage, not synced from the original Android Room database. This initial edition does not provide system push notifications, live Android sync, or automatic financial forecasts based on bank transactions.",
+  "category": "productivity",
+  "homepage_url": "https://github.com/yap-gif/life-control-android/tree/main/anna-edition",
+  "support_url": "https://github.com/yap-gif/life-control-android/issues",
+  "privacy_url": "https://github.com/yap-gif/life-control-android/tree/main/anna-edition#privacy"
+}
