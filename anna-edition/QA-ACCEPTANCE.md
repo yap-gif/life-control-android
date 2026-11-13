@@ -16,7 +16,7 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Anna schema 4 and `validate --strict` | GitHub Actions | CI-confirmed |
-| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 30 automated tests (current branch) | CI-confirmed |
+| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 31 automated tests (current branch) | CI-confirmed |
 | Local dev dashboard | `anna-app dev --no-llm` on CI | CI-confirmed |
 | Desktop app connection and initial task/finance/study/journal/goal data | Anna Harness screenshot and RPC `storage.set` | RPC-confirmed |
 | Persistent records after process restart with real APS mode | `storage.get` result contained `APS-PERSIST-001` | RPC-confirmed |
@@ -55,7 +55,7 @@ Developer's screenshot and RPC log show an authenticated `llm.complete` request 
 
 Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev --no-llm --storage legacy`. An illustrative test task `AI-ERROR-TEST-001` was saved, a consented Tasks-only `llm.complete` request was sent, and the host returned `res err llm_disabled harness started with --no-llm`. The app stayed usable and showed a non-sensitive failure notice; it did not expose the host diagnostic or any credentials in the user-facing review panel.
 
-**Finding:** The previous error classifier treated `llm_disabled` as unknown and displayed a generic connectivity message. This has been corrected to show a specific message that the current development session has AI disabled. Source/CI tests are updated, but the new wording needs one browser retest before recording the UX as fully passed. The log does not prove real AI quota exhaustion behavior or storage failure behavior.
+**Finding:** The previous error classifier treated `llm_disabled` as unknown and displayed a generic connectivity message. This has been corrected to show a specific message that the current development session has AI disabled. The patch passed 31/31 unit tests and `validate --strict` in CI, but the new wording needs one browser retest before recording the UX as fully passed. The log does not prove real AI quota exhaustion behavior or storage failure behavior.
 
 ## Next local check
 
@@ -65,7 +65,7 @@ Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev 
 4. Markdown and the targeted ambiguous-title model regression have passed in the user-supplied Anna Harness. Avoid repeated paid model calls merely to re-confirm these exact cases.
 5. Review failure handling, accessible keyboard/screen-reader experience, listing metadata and privacy statements before any public submission.
 6. Use keyboard-only Tab/Shift+Tab, Enter and Escape to check record-specific actions and the erase confirmation. Confirm keyboard focus returns predictably after mutations.
-7. In a sandbox or with non-sensitive test data, verify an unavailable AI runtime (`--no-llm`) shows a useful, non-sensitive error; test storage failure only in a disposable environment.
+7. In a sandbox or with non-sensitive test data, verify the revised explicit wording in an unavailable AI runtime (`--no-llm --storage legacy`); do not combine `--no-llm` with `--storage aps`; test storage failure only in a disposable environment.
 8. Review the provisional logo, screenshots and listing copy. Replace branch-based privacy URLs with stable ones before publishing. Do not expose Harness URLs containing `t=` tokens or private RPC storage payloads.
 
 ## Release decision
