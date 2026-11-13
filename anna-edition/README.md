@@ -15,7 +15,7 @@ This version adapts the product highlighted in the Anna Founding Builder invitat
 | Learning | Record topic + study minutes, weekly minutes |
 | Journal | Add or update one reflection per date |
 | Goal forecast | Explicit savings target, saved amount and planned monthly contribution; deterministic months-to-goal estimate |
-| AI weekly review | Real `anna.llm.complete` call, only after explicit per-request consent and at least one selected context category |
+| AI weekly review | Real `anna.llm.complete` call with per-request consent, safe Markdown rendering, and evidence-only coaching instructions |
 | Anna storage | Per-app `anna.storage.get/set`, loaded before any editing is enabled |
 | Data erasure | Individual record deletion and confirmed erase with SDK delete when available, or empty-state overwrite when not available |
 
@@ -29,18 +29,20 @@ AI context selection is enforced by `bundle/logic.js::buildReviewContext` and no
 - Data belongs to the **Anna-hosted app storage**, not to an on-device-only Room store. Do not describe this edition as offline-only or as end-to-end encrypted.
 - When the user authorizes AI, selected data is processed by Anna's LLM service; the provider/model and quota are governed by Anna.
 - No direct third-party credentials, user token, advertising SDK, external endpoints, automatic AI triggers or hidden telemetry are coded into this module.
-- The app uses plain `textContent` for journal data and AI output rather than injecting untrusted HTML.
+- Journal data is rendered via `textContent`. AI responses use an allow-listed Markdown DOM formatter that creates only safe elements and assigns every model-derived string as `textContent` (no raw HTML injection).
 - Up to 100 records per collection are retained in the UI data model; the home screen displays the 12 most recent per category. Week reviews include bounded record counts to reduce disclosure and prompt size.
 
 For a disclosure of data-handling boundaries and known platform-level limits, see [PRIVACY.md](./PRIVACY.md).
 
 ## Verification evidence (2026-11-13)
 
-- `anna-app validate --strict` passed in GitHub Actions using the official Anna CLI.
-- 12 Node/Anna mock-runtime tests passed, covering weekly aggregates, AI category isolation, storage, model request routing and deletion.
-- `anna-app dev --no-llm` successfully started the local harness on GitHub Actions and its dashboard responded over HTTP.
-- The bundle's direct entry URL could not be tested without a mounted window token; browser interactions and an authenticated Anna model call **remain unverified**.
-- Source CI runs do **not** establish Anna App Store approval, live storage persistence, mobile UX quality or real-user grant eligibility.
+**Independent CI evidence:** `anna-app validate --strict` passed; 18 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
+
+**Developer's real Windows Anna Harness logs:** The app opened successfully; after restarting in APS mode, `storage.get` returned the expected test records. A real `llm.complete` responded to a request containing Tasks and Learning, but no Money or Journal. The developer subsequently reported Task complete/reopen/delete, same-day Journal overwrite, erase-and-restart, and Mobile-mode form checks as successful. Those last items are user-reported manual checks, not independently repeated device tests.
+
+**Post-patch browser checks still needed:** Pull the latest commit; confirm that the new Markdown renderer displays headings/bold/lists as formatted text and that an AI review with an ambiguous task title avoids invented domain-specific steps. These controls can reduce unsupported output, not guarantee zero model errors.
+
+Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 
 ## Known limitations
 
@@ -49,7 +51,7 @@ For a disclosure of data-handling boundaries and known platform-level limits, se
 3. **Forecast limitations:** Simple planning estimate based on manually entered savings amounts; no cashflow predictions or bank integration.
 4. **Storage failure:** Editing is blocked if the Anna storage connection cannot be loaded. If a save fails mid-session, the UI reports that the change may not persist.
 5. **Review outcome:** No guarantee of Anna App Review approval, qualified active users or grant funding. The in-app erase function does not remove Anna platform backups, logs or previously submitted AI prompts.
-6. **No production verification:** The app has not yet been run inside Anna's hosted developer harness. The manifest and UI must pass live local/working-draft validation before publishing.
+6. **Not yet published:** Windows developer-harness, real APS storage restoration and a real LLM request have been observed. The new Markdown/prompt patch still requires browser retesting before marketplace submission.
 
 ## Start locally
 
@@ -82,7 +84,7 @@ The Anna CLI's official quickstart also suggests `anna-app doctor` to verify loc
 4. In the AI panel select **Tasks only**; inspect the outbound `llm.complete` request in the development harness and ensure it contains no Money, Journal or Learning data.
 5. Repeat with each single category, all selected, none selected, and consent unchecked.
 6. Verify AI failures and quota errors do not leak or modify other records; approval resets after each AI run.
-7. Test responsive screens and screen reader labels.
+7. Test responsive screens, screen reader labels, rendered AI Markdown and uncertain-task behavior (including safe display of literal HTML).
 8. Push an Anna working draft, review actual host behavior, submit for App Review only after validation.
 
 Official guidance: [Anna App CLI quickstart](https://anna.partners/developers/apps/app-quickstart), [Anna Host API](https://anna.partners/developers/apps/app-ui-host-api), [Publishing](https://anna.partners/developers/apps/app-publish), and [Founding Builder rules](https://forum.anna.partners/t/turn-your-ai-agents-apps-into-recurring-monthly-grants-join-the-anna-ai-os-founding-builder-program-up-to-80k-month-pool/205).
