@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mountBundle } from "@anna-ai/cli/test";
 import { STORAGE_KEY, buildReviewContext, normalizeState } from "../bundle/logic.js";
+import { buildReviewRequest } from "../bundle/review-contract.js";
 
 const example = normalizeState({
   tasks: [{ id: "task-1", title: "Read docs", date: "2026-11-13", done: false }],
@@ -41,11 +42,8 @@ test("Anna host-runtime: app storage roundtrip and selected AI context", async (
     assert.equal(storage.size, 1, "Storage handler did not receive set correctly: " + JSON.stringify(h.calls.all()));
     assert.deepEqual(fetched?.value, example, "Unexpected host reply; call log: " + JSON.stringify(h.calls.all()));
 
-    const context = buildReviewContext(fetched.value, ["tasks", "learning"], "2026-11-13");
-    const messages = [
-      { role: "user", content: { type: "text", text: JSON.stringify(context) } }
-    ];
-    const response = await h.runtime.llm.complete({ messages, maxTokens: 200 });
+    const request = buildReviewRequest(fetched.value, ["tasks", "learning"], "2026-11-13");
+    const response = await h.runtime.llm.complete(request);
     assert.equal(response.content.text, "Review generated");
 
     const call = h.calls.lastOf("llm.complete");
