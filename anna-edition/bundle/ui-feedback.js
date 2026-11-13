@@ -16,7 +16,7 @@ export function hostErrorCode(error) {
   // show the raw exception text or embedded URLs/credentials to the user.
   const sources = [error?.message, error?.error?.message, error?.cause?.message];
   if (sources.some(value => typeof value === "string" &&
-      /(?:^|\\W)llm_disabled(?:$|\\W)|harness started with --no-llm/i.test(value))) {
+      /\bllm_disabled\b|harness started with --no-llm/i.test(value))) {
     return "llm_disabled";
   }
 
