@@ -133,7 +133,18 @@ function bindForm(formId, handler) {
   $(formId).addEventListener("submit", event => {
     event.preventDefault();
     try { handler(new FormData(event.currentTarget)); }
-    catch(error) { status(String(error.message || error),true); }
+    catch (error) {
+      // Form validation messages originate from this app. Never display arbitrary exceptions.
+      const allowed = new Set([
+        "Enter a task and due date.",
+        "Enter a positive amount, type, category and date.",
+        "Enter a topic, minutes and date.",
+        "Enter reflection and date.",
+        "Goal, saved and monthly amounts must be non-negative."
+      ]);
+      status(allowed.has(error?.message) ? error.message :
+        "Could not process this form. Please check your inputs and try again.", true);
+    }
   });
 }
 function bindEntries() {
