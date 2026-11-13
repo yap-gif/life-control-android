@@ -219,7 +219,12 @@ async function eraseWorkspace() {
   try {
     // Always drain pending saves before deletion so an older save cannot revive erased data.
     await saveChain.catch(() => {});
-    await anna.storage.delete({ key: STORAGE_KEY });
+    if (typeof anna.storage.delete === "function") {
+      await anna.storage.delete({ key: STORAGE_KEY });
+    } else {
+      // Older Anna harnesses expose get/set but not delete; replace with a blank state.
+      await anna.storage.set({ key: STORAGE_KEY, value: normalizeState({}) });
+    }
     state = normalizeState({});
     for (const [key,value] of Object.entries(state.goal)) {
       $("goal-form").elements.namedItem(key).value = String(value);
