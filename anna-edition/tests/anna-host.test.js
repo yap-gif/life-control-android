@@ -12,10 +12,16 @@ const example = normalizeState({
 });
 
 test("Anna host-runtime: app storage roundtrip and selected AI context", async () => {
+  const storage = new Map();
   const h = await mountBundle({
     manifest: "./manifest.json",
     bundle: "./bundle",
     mocks: {
+      "storage.set": ({ key, value }) => {
+        storage.set(key, value);
+        return { ok: true };
+      },
+      "storage.get": ({ key }) => ({ value: storage.get(key) ?? null }),
       "llm.complete": ({ messages }) => ({
         role: "assistant",
         content: { type: "text", text: "Review generated" },
