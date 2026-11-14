@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "dev": "anna-app dev",
-    "validate": "anna-app validate --strict"
+    "validate": "anna-app validate --strict",
+    "preflight": "node release-preflight.mjs"
   },
   "engines": {
     "node": ">=22"
