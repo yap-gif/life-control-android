@@ -38,7 +38,7 @@ For a disclosure of data-handling boundaries and known platform-level limits, se
 
 ## Verification evidence (updated 2026-11-14)
 
-**Independent CI evidence:** `anna-app validate --strict` passed; 37 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
+**Independent CI evidence:** `anna-app validate --strict` passed; 38 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
 
 **Developer's real Windows Anna Harness logs:** The app opened successfully; after restarting in APS mode, `storage.get` returned the expected test records. A real `llm.complete` responded to a request containing Tasks and Learning, but no Money or Journal. The developer subsequently reported Task complete/reopen/delete, same-day Journal overwrite, erase-and-restart, and Mobile-mode form checks as successful. Those last items are user-reported manual checks, not independently repeated device tests.
 
@@ -89,7 +89,7 @@ The Anna CLI's official quickstart also suggests `anna-app doctor` to verify loc
 
 ## Release-candidate checks
 
-Run `npm run preflight` for local metadata/privacy validation. This now passes without branch-link warnings because the homepage and privacy URLs are pinned to a publicly verified GitHub commit. The strict `npm run preflight -- --release-gate` is also a **local-only** check; it does not read the actual Anna Console Listing. CI has **37** tests passing. See the [0.1.0 release-candidate gate](./RELEASE-CANDIDATE-0.1.0.md) for outstanding listing assets, stable public links, screen-reader testing and explicit authorization boundaries.
+Run `npm run preflight` for local metadata/privacy validation. This now passes without branch-link warnings because the homepage and privacy URLs are pinned to a publicly verified GitHub commit. The strict `npm run preflight -- --release-gate` is also a **local-only** check; it does not read the actual Anna Console Listing. CI has **38** tests passing. See the [0.1.0 release-candidate gate](./RELEASE-CANDIDATE-0.1.0.md) for outstanding listing assets, stable public links, screen-reader testing and explicit authorization boundaries.
 
 ## Verify before submitting
 
