@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-11-14  
 **Status:** PREPARATION ONLY — no immutable version cut or App Review submission  
-**Anna app:** `life-control-anna` (ID **908**); private Working Draft **`r2`** (uploaded, bundle ready); `r1` was previously installed as `0.0.0-draft`  
+**Anna app:** `life-control-anna` (ID **908**); private Working Draft **`r2`** (uploaded, bundle ready, subsequently opened and visually accepted); `r1` was previously installed as `0.0.0-draft`  
 **GitHub:** [Draft PR #2](https://github.com/yap-gif/life-control-android/pull/2); `main` remains unchanged.
 
 ## Evidence already accepted
@@ -19,10 +19,10 @@
 
 ## Hard gates before irreversible operations
 
-- [x] **Stable public local links:** `app.json` uses GitHub permalink commit `972b8294735310f39000b98ad6abf24ce4bd6e75` for the homepage and privacy policy. Both URLs were fetched successfully through the connected GitHub source. The Anna **remote Listing tab** must still be updated and confirmed. Do not merge PR #2 or overwrite `main` without authorization.
-- [ ] **Listing tab:** Windows `apps status` on 2026-11-14 confirmed remote **name: Life Control** after **r2** push and the developer confirmed the name. Local `app.json`, UI and manifest titles are now **Life Control**. Confirm the revised UI in installed Anna Chat. Also verify tagline, long description, category, homepage, support, privacy URL and media. The local `app.json` cannot prove the remote Listing contains these fields.
-- [ ] **Logo:** Developer accepted the blue/teal creative direction. The actual logo upload to Anna **Listing → Upload logo** is still pending (JPEG/PNG/WebP/GIF, ≤2 MB).
-- [ ] **Actual screenshots:** Six developer-approved AI-generated **promotional concepts** have been packaged separately from **three real previous Harness captures**. The six concept images are **not** genuine screenshots; some include non-existent UI and incorrect privacy/reminder claims and must not be entered in Anna's Screenshot URLs as live product captures. Capture fresh installed `0.0.0-draft` screenshots with synthetic records, host at HTTPS URLs and verify each without account credentials.
+- [x] **Stable public local links:** `app.json` now uses verified GitHub permalink commit `f72944d867da70aa206016b5ca5fa4a025855dba` for its homepage and privacy notice, whose heading correctly says **Life Control**. These local values were updated **after r2 was uploaded**, so the remote Anna Listing must be checked and, if necessary, explicitly updated. No PR merge is required.
+- [ ] **Listing tab:** Remote **name: Life Control** was confirmed by the CLI, and the developer's installed r2 screenshot now independently shows the **Life Control** window and in-app header. The developer also reports all checks passed. Still verify the Console's actual tagline, description, category, homepage/support/**updated privacy URL** and screenshots, because neither the CLI status command nor the screenshot exposes these metadata fields.
+- [ ] **Logo Listing field:** Developer's installed-app icon screenshot shows the approved blue/teal icon labeled **Life Control**. This confirms the visible installed app icon, **not** the remote Listing's specific `logo_url` or upload result; inspect Listing → Logo to verify it.
+- [ ] **Actual screenshots:** Developer supplied a genuine **installed r2 empty-state UI** screenshot and an installed app icon screenshot. A crop-only authentic overview screenshot is packaged outside GitHub; additional real feature screenshots and their public HTTPS URLs are still needed if the Listing uses a six-image gallery. The six developer-approved AI-generated visuals are **promotional concepts, not real screenshots**; some contain inaccurate functionality/privacy claims and must not be used as actual app screenshots.
 - [ ] **Accessibility:** A keyboard-only smoke test was developer-reported as passed; an actual screen-reader audit (e.g. NVDA) has **not** been run. Complete it or explicitly accept/document the residual risk.
 - [ ] **Failure handling:** The `--no-llm` case passed, but genuine quota exhaustion, storage permission failures and network interruption have not been exercised. Test safely with disposable data, or record a conscious acceptance of these residual risks.
 - [x] **Local release tests:** Latest CI runs `npm.cmd test`, `npm.cmd run validate` and `npm.cmd run preflight`: **38/38 tests**, strict Anna validation passed and local metadata/link checks now pass. The separate strict release gate runs without branch warnings. This does not validate Anna's remote Listing tab, screenshot authenticity, accessibility or production failure modes.
@@ -31,7 +31,7 @@
 
 ## Anna sequence (informational; not executed by this document)
 
-1. **2026-11-14:** Working Draft `r2` was uploaded to the same app ID 908 with the unified **Life Control** brand. `r1` had previously been installed and tested. Reopen or re-install the draft and confirm `r2` brand before any version cut.
+1. **2026-11-14:** Working Draft `r2` was uploaded to existing app ID 908. Developer supplied a live installed-window screenshot showing **Life Control** branding and reported all checks passed. The current local privacy/homepage links were subsequently updated to a newer verified public commit; remote Listing values need to be reconciled before review.
 2. After all gates pass, and **only on explicit authorization**, run `anna-app apps cut 0.1.0`; confirm `apps versions life-control-anna` and the Console's UI bundle readiness.
 3. After reviewing the pinned immutable candidate, and **only on separate explicit authorization**, run `anna-app apps submit-review life-control-anna`.
 4. Approval is a platform decision, not guaranteed. Public `release` is a separate action requiring separate developer approval.
