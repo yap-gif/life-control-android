@@ -126,6 +126,18 @@ Developer provided a Windows PowerShell 5.1 log showing a **fast-forward from `4
 
 **Evidence scope:** These are developer-supplied local output logs; they prove the local source revision and tests, not that the already-uploaded private Anna Working Draft **r2** has been reinstalled and visually checked in Anna Chat. Remote Listing media/logo and screenshot acceptance remain separate gates.
 
+## Real installed r2 visual acceptance (2026-11-14)
+
+The developer supplied two images captured from the installed Anna application after the private **r2** branding update and explicitly stated that all requested checks passed.
+
+1. The window screenshot visibly shows **Life Control** as the title and **LIFE CONTROL** as the in-app eyebrow; the UI displays `Anna connected`, four empty-state dashboard metrics, the Tasks and Daily Journal forms, plus the Money form. No `Anna Edition` suffix is visible on the captured application surface.
+2. A separate installed-app icon screenshot shows the approved blue/teal icon with label **Life Control**.
+3. A verbatim crop of screenshot #1 has been prepared as a truthful overview image; no generated UI elements were introduced. The original source images are preserved outside the repository.
+
+**Disposition:** **PASS — r2 branding and installed overview visually observed.** The developer also attests that all checks passed, but the screenshot itself shows only the overview, not a renewed per-feature RPC audit. It does **not** independently verify the Anna Developer Console's Listing screenshot URLs, `logo_url`, tagline, privacy URL or App Review readiness.
+
+**Privacy-link observation:** The local `app.json` privacy URL is pinned to historical GitHub commit `972b8294735310f39000b98ad6abf24ce4bd6e75`, whose notice header still uses the former brand. A corrected public notice headed **Life Control** is available at commit `f72944d867da70aa206016b5ca5fa4a025855dba`. Update the Anna Listing privacy URL before review; do not interpret passing local preflight as checking brand freshness.
+
 ## Next local check
 
 1. Preserve any local edits before updating. From the repository root run `git status --short`, then `git pull --ff-only origin feature/life-control-anna-edition-20261113`.
@@ -139,4 +151,4 @@ Developer provided a Windows PowerShell 5.1 log showing a **fast-forward from `4
 
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. Remaining release work includes a direct r2 installed-app branding check, an assistive-technology screen-reader audit, untested live quota/storage failure paths, actual (non-generated) app screenshots, remote Listing logo/media checks and an explicit decision before freezing an immutable version. Marketplace review and builder grant eligibility are separate platform decisions.
+**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. r2 installed-app branding has now passed visual inspection. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, additional authentic feature screenshots, remote Listing metadata/media and up-to-date privacy URL checks, and an explicit decision before freezing an immutable version. Marketplace review and builder grant eligibility are separate platform decisions.
