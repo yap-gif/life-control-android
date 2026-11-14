@@ -1,4 +1,4 @@
-# Life Control Anna Edition — QA Acceptance Record
+# Life Control — QA Acceptance Record
 
 **Date:** 2026-11-14  
 **Branch:** `feature/life-control-anna-edition-20261113`  
@@ -104,7 +104,7 @@ A new `release-preflight.mjs` performs read-only structural checks against the l
 
 The developer provided PowerShell 5.1 output showing a clean fast-forward to `d01bf66`; **37/37 tests passed**, `npm.cmd run validate` returned **validate passed**, and `npm.cmd run preflight -- --release-gate` returned **Structural metadata and privacy-file checks: PASS** with no warnings. These results are based on developer-supplied local logs, corroborating independent GitHub CI for the same branch.
 
-The Anna CLI's `apps status life-control-anna` reported **app ID 908**, **draft**, **0 cut versions**, and remote listing **name: Life Control**. This differs from local `app.json` **name: Life Control — Anna Edition**. It may be an intentional console edit, but must be resolved or recorded as the final product naming choice before submitting for review. The remote Listing's other fields (logo, screenshot URLs, privacy link, category, descriptions) cannot be confirmed from `apps status` alone.
+The Anna CLI's `apps status life-control-anna` reported **app ID 908**, **draft**, **0 cut versions**, and remote listing **name: Life Control**. The developer confirmed **Life Control** is the final public name. Local `app.json`, manifest, browser title and user-facing copy are aligned to this name; the existing slug `life-control-anna` and app ID 908 remain unchanged. The remote Listing's other fields (logo, screenshot URLs, privacy link, category, descriptions) cannot be confirmed from `apps status` alone.
 
 ## Next local check
 
