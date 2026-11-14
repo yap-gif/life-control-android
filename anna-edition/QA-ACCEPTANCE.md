@@ -172,6 +172,28 @@ The developer explicitly confirmed all requested pre-review checks were correct 
 
 **Disposition:** The specific **Versions and Listing review checks** are accepted from the developer's verification. **App Review submission itself is not yet authorized or performed.** No public publication has occurred.
 
+## Anna App Review submission confirmed (2026-11-14)
+
+**Evidence:** Developer-provided PowerShell 5.1 output from the authenticated Anna CLI. The downloaded unsigned `.ps1` script was blocked by Windows execution policy and was **not run**. The developer instead executed the Anna CLI directly:
+
+```text
+anna-app apps submit-review life-control-anna
+✓ apps/life-control-anna: submitted for review
+status: pending_review
+under review: v0.1.0
+```
+
+The developer then separately ran `apps status life-control-anna`, which returned:
+
+- **name:** Life Control
+- **app_id:** 908
+- **status:** `pending_review`
+- **latest:** `v0.1.0 (id=2279, published=—)`
+- **in review:** `v0.1.0 (pinned at submit-review)`
+- **versions:** 1 total
+
+**Disposition: PASS — submitted to Anna App Review and independently confirmed by a new server status query.** Immutable version **ID 2279** is the pinned review candidate. This is **not an approval** and **not a public release**. The separate developer's prior Listing checks were manually attested; no additional remote Listing read was performed here. Do not re-run `submit-review` or cut/re-pin another version unless the developer explicitly requests it.
+
 ## Release decision
 
-**Immutable version 0.1.0 (Anna version ID 2279) is cut and confirmed; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. r2 installed-app branding has now passed visual inspection. Remaining release work includes an assistive-technology screen-reader audit and untested live quota/storage failure paths. The developer reports that frozen-version bundle readiness and remote Listing metadata/media/updated privacy URL are all verified. A **separate explicit decision** is still required before submitting v0.1.0 for App Review. Marketplace review and builder grant eligibility are separate platform decisions.
+**Immutable version 0.1.0 (Anna version ID 2279) has been submitted to Anna App Review; app state `PENDING_REVIEW` confirmed. It has not been approved or published.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. r2 installed-app branding has now passed visual inspection. Remaining release work includes an assistive-technology screen-reader audit and untested live quota/storage failure paths. The developer reports that frozen-version bundle readiness and remote Listing metadata/media/updated privacy URL are all verified. Submission of frozen v0.1.0 was explicitly authorized and completed; a **separate decision** is still required before any public release after approval. Marketplace review and builder grant eligibility are separate platform decisions.
