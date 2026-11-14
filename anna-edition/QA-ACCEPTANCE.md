@@ -16,9 +16,9 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Anna schema 4 and `validate --strict` | GitHub Actions | CI-confirmed |
-| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 36 automated tests (current branch) | CI-confirmed |
+| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 37 automated tests (current branch) | CI-confirmed |
 | Local dev dashboard | `anna-app dev --no-llm` on CI | CI-confirmed |
-| Read-only release Listing preflight | `npm run preflight`: metadata/privacy structure PASS, warns on provisional homepage/privacy branch URLs | CI-confirmed; release gate pending |
+| Read-only release Listing preflight | `npm run preflight`: metadata/privacy structure PASS and commit-pinned public homepage/privacy URLs, no provisional-link warning | CI-confirmed for local files; remote Anna Listing pending |
 | Desktop app connection and initial task/finance/study/journal/goal data | Anna Harness screenshot and RPC `storage.set` | RPC-confirmed |
 | Persistent records after process restart with real APS mode | `storage.get` result contained `APS-PERSIST-001` | RPC-confirmed |
 | Authorized live AI request | `llm.complete` returned normal response | RPC-confirmed |
@@ -97,7 +97,7 @@ Developer-provided PowerShell CLI output and Developer Console Versions screensh
 
 ## Local listing release preflight (2026-11-14)
 
-A new `release-preflight.mjs` performs read-only structural checks against the local `app.json`, `manifest.json` and `PRIVACY.md`. CI passed **36/36** tests plus `validate --strict`, and reported exactly two expected warnings for the feature-branch `homepage_url` and `privacy_url`. The check does **not** prove the actual Anna server Listing tab includes uploaded logo/screenshot assets. The strict `npm run preflight -- --release-gate` is expected to fail until stable public URLs are used. Refer to [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md).
+A new `release-preflight.mjs` performs read-only structural checks against the local `app.json`, `manifest.json` and `PRIVACY.md`. Initially it found two feature-branch URL warnings; these were resolved by pinning both URLs to an accessible public GitHub commit. The latest CI passed **37/37** tests plus `validate --strict` and local listing preflight without warnings. The check does **not** prove the Anna server Listing tab has updated metadata or uploaded logo/screenshot assets. Refer to [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md).
 
 ## Next local check
 
