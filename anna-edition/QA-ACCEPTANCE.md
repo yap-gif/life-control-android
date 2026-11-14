@@ -31,7 +31,7 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Updated per-record keyboard focus / aria-labels / delete confirmation | 23:56:35 Complete, 23:56:38 Reopen, 23:56:55 Delete saved successfully; developer reports keyboard focus and Escape/Cancel behaved correctly | RPC-confirmed for mutations; user-reported keyboard interaction passed; screen-reader pending |
 | AI quota and storage failure messages | Error classifier unit tests pass; not yet validated against live quota/connection failures | CI-confirmed (unit only); manual pending |
 | AI unavailable with `--no-llm --storage legacy` | 23:54:20–23:54:21 Anna Harness: `llm.complete` returned `llm_disabled`; revised UI displayed precise `--no-llm` explanation, did not expose raw RPC error and remained usable | RPC-confirmed (specific error UX passed) |
-| Anna server Working Draft upload and developer install | CLI: 7-file 42.0 KB bundle staged and ready; `apps/life-control-anna` revision 1; console shows `r1` and “Installed working draft (0.0.0-draft) — now available in chat.” | CLI-confirmed and developer screenshot-confirmed; installed app interaction pending |
+| Anna server Working Draft upload and developer install | CLI: 7-file 42.0 KB bundle ready; `apps/life-control-anna` revision 1; console showed “Installed working draft (0.0.0-draft) — now available in chat.” | CLI-confirmed and developer screenshot-confirmed |\n| Anna Chat installed Working Draft full-feature smoke test | Developer directly reports testing all features of the installed `0.0.0-draft` app successfully on 2026-11-14; individual production API logs/screenshots not provided | User-reported PASS; independent RPC/API confirmation pending |
 | Anna server application identity | `life-control-anna`: app ID 908, status draft, 0 cut versions; separate `anna-edition` ID 906 unchanged | CLI-confirmed |
 | Marketplace logo / redacted screenshot / listing draft | Draft review materials prepared; no binary assets uploaded to public repo or Anna | Draft only |
 | Platform marketplace review and public release | Not submitted | Pending |
@@ -86,7 +86,13 @@ Developer-provided PowerShell CLI output and Developer Console Versions screensh
 - The console's Versions tab displayed `Working draft`, `r1`, `Bundle ready`, and the toast **“Installed working draft (0.0.0-draft) — now available in chat.”**
 - `anna-app apps list` also showed the distinct developer entry `anna-edition` (ID 906), which was not renamed or deleted. On Windows the list process printed a `UV_HANDLE_CLOSING` assertion on exit; this should be tracked as CLI-runtime instability, not evidence of a failed app upload.
 
-**Disposition:** Private Working Draft creation and developer-side installation **PASS based on platform receipts**. There is **no evidence yet** that the installed app actually opens and successfully handles storage or AI operations in production Anna chat. Next verification must use the installed `0.0.0-draft` application instead of localhost Harness. No immutable version, review submission or public release has occurred.
+**Disposition:** Private Working Draft creation and developer-side installation **PASS based on platform receipts**. On 2026-11-14 the developer further reported that all features of the installed app worked correctly in Anna Chat. This is **user-reported production-draft smoke acceptance**, without per-operation production RPC logs. No immutable version, review submission or public release has occurred.
+
+## Installed Anna Chat Working Draft manual acceptance (2026-11-14)
+
+**Source:** The developer explicitly reported, “我已经测试所有功能，都可以使用” (“I have tested all functions; everything works”). Context: the previously installed private `life-control-anna` `0.0.0-draft`, app ID 908, working revision 1.
+
+**Disposition:** Installed Working Draft **manual smoke test PASSED by developer report** across the app's functions. This statement does not independently document each storage/LLM request, performance, quotas, screen-reader compatibility or publishing readiness. Keep previously documented CI and local Harness evidence in their own categories; no new production RPC evidence was supplied.
 
 ## Next local check
 
@@ -101,4 +107,4 @@ Developer-provided PowerShell CLI output and Developer Console Versions screensh
 
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes real installed Working Draft functionality verification, an assistive-technology screen-reader audit, untested live quota/storage failure paths, and developer approval of image assets. Marketplace review and builder grant eligibility are separate platform decisions.
+**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, developer approval of store assets, stable listing/privacy links, and an explicit decision before freezing an immutable version. Marketplace review and builder grant eligibility are separate platform decisions.
