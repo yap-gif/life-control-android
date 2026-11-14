@@ -1,4 +1,4 @@
-# Privacy notice — Life Control Anna Edition
+# Privacy notice — Life Control
 Updated: 2026-11-14 · Private draft / candidate v0.1.0
 
 ## Data entered into the app
