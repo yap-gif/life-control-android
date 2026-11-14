@@ -1,11 +1,11 @@
-# Life Control — Marketplace Release Preparation (not yet submitted)
+# Life Control — Marketplace Review (v0.1.0 submitted)
 
 **Prepared:** 2026-11-13  
-**Frozen candidate version:** `0.1.0` (immutable version ID **2279**; not submitted or published)  
+**Review candidate:** `v0.1.0` (immutable version ID **2279**), currently **PENDING_REVIEW**, unpublished  
 **Developer handle:** `@lifecontroldev` (reported by developer)  
 **GitHub:** [PR #2](https://github.com/yap-gif/life-control-android/pull/2) — Draft
 
-This document prepares review material. The developer installed private Working Draft r2, froze immutable version **0.1.0 (ID 2279)**, and manually confirmed the Versions and Listing checks. **App Review submission and public publication have not occurred.**
+This document prepares review material. The developer installed private Working Draft r2, froze immutable version **0.1.0 (ID 2279)**, and manually confirmed the Versions and Listing checks. **App Review was submitted on 2026-11-14 and independently confirmed as `PENDING_REVIEW`; public publication has not occurred.**
 
 ## A. Draft Marketplace listing copy
 
@@ -96,9 +96,9 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 3. **Completed with explicit developer actions (2026-11-14):** first `apps push` created private Working Draft r1; the developer installed `0.0.0-draft`, tested its features and subsequently pushed the **Life Control** brand update as **r2**. The updated r2 should be reopened and checked in Anna Chat. Neither push was a public publication.
 4. **Developer-reported PASS (2026-11-14):** tested all features of the installed private Working Draft in Anna Chat. No per-operation production RPC receipts have been provided.
 5. **Completed after explicit developer approval:** `anna-app apps cut 0.1.0` returned immutable version ID **2279**. A separate `apps versions` and `apps status` verified a single, unpublished version on App ID 908.
-6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
+6. **Completed after explicit developer approval:** `apps submit-review life-control-anna` returned `submitted for review` / `pending_review`; a separate `apps status` confirmed that v0.1.0 ID 2279 was the pinned review candidate. This is not an administrative approval.
 7. Public release only after approval and a separate affirmative publishing decision.
 
 **Console verification update (2026-11-14):** The developer reported that v0.1.0 (version ID 2279) had a Ready bundle and that the actual Listing name, category, description, logo, genuine screenshots and updated privacy URL were correct. These are manual acceptance statements, not independently fetched platform metadata. Screen-reader testing and live quota/storage-failure scenarios remain unverified.
 
-**Current decision:** Frozen `0.1.0` and user-verified Listing are ready for a *separate decision* on App Review submission. This document does not authorize or perform `submit-review` or `release`. GitHub PR #2 remains Draft and `main` unchanged.
+**Current decision:** Anna App Review submission for frozen v0.1.0 (ID 2279) is **completed** and the status re-query confirmed `PENDING_REVIEW`. No admin approval or publication is claimed. Do not repeat submission/re-pin another candidate or execute `release` without a new explicit developer instruction. GitHub PR #2 remains Draft and `main` unchanged.
