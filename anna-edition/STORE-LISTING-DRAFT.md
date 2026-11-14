@@ -28,10 +28,14 @@ This independent Anna edition does not synchronize with the Life Control Android
 ### Customer support URL
 https://github.com/yap-gif/life-control-android/issues
 
-### Draft privacy URL
-https://github.com/yap-gif/life-control-android/blob/feature/life-control-anna-edition-20261113/anna-edition/PRIVACY.md
+### Candidate version-pinned privacy URL
+https://github.com/yap-gif/life-control-android/blob/972b8294735310f39000b98ad6abf24ce4bd6e75/anna-edition/PRIVACY.md
 
-Replace this feature-branch URL with a verified stable public `main` or versioned link before submission; `npm run preflight` currently flags the provisional privacy and homepage URLs. Listing values in Anna's Console are authoritative and must be checked separately from the local `app.json`.
+Version-pinned privacy and homepage URLs were verified through the GitHub connector and are configured in local `app.json` with **zero temporary-branch warnings**. The remote Anna Listing values remain to be synchronized and checked separately. The permalinks are immutable snapshots; publish updated privacy disclosures at a new stable version URL when the notice changes.
+
+## Approved marketing concepts are not actual screenshots
+
+The developer approved six AI-generated dark-blue/neon visuals as **creative direction**. These images are mockups, not real screen captures. In particular, one concept incorrectly claims that user data is processed only on the device (this Anna edition is platform-hosted), and another implies generic reminders where only in-app due indicators exist. Do not submit those concepts as truthful in-app store screenshots. An off-repository review package separates six concepts from three older authentic Anna Harness crops; capture final screenshots directly in installed Anna Chat before App Review.
 
 ## Promotional screenshots to capture
 
@@ -52,7 +56,7 @@ Draft crops created from previously supplied developer screenshots are for inter
 
 ## Logo preparation
 
-A preliminary 512×512 PNG / 256×256 WebP icon candidate has been created for visual review. The current Anna listing accepts JPEG, PNG, WebP or GIF logo uploads up to **2 MB** and server-normalizes to 256×256 WebP. Confirm color contrast, legibility at 48×48, originality and actual ownership before uploading.
+A 512×512 PNG / 256×256 WebP icon candidate has been created and the developer approved the visual direction. Anna remote logo upload remains pending. The current Anna listing accepts JPEG, PNG, WebP or GIF logo uploads up to **2 MB** and server-normalizes to 256×256 WebP. Confirm color contrast, legibility at 48×48, originality and actual ownership before uploading.
 
 ## Final listing consistency checks
 
@@ -66,7 +70,7 @@ A preliminary 512×512 PNG / 256×256 WebP icon candidate has been created for v
 
 ## Release gate
 
-The developer installed private Working Draft `r1` / `0.0.0-draft` (app ID 908), reported all features working, and CI has 36 passing tests. Public listing screenshots, logo selection, stable links and screen-reader audit are not yet accepted. See [0.1.0 candidate decision gate](./RELEASE-CANDIDATE-0.1.0.md).
+The developer installed private Working Draft `r1` / `0.0.0-draft` (app ID 908), reported all features working, and CI has **37 passing tests**. Six AI-generated promotional concepts are approved for creative direction, but **not** accepted as actual app screenshots. The remote logo/screenshot upload, screen-reader audit and Anna Listing verification remain pending. See [0.1.0 candidate decision gate](./RELEASE-CANDIDATE-0.1.0.md).
 
 ## Workflow boundaries
 
