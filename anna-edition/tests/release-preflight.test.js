@@ -7,7 +7,7 @@ const app = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "ut
 const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
 const privacy = readFileSync(new URL("../PRIVACY.md", import.meta.url), "utf8");
 
-test("Anna Edition listing has valid constraints and privacy disclosures", () => {
+test("Life Control listing has valid constraints and privacy disclosures", () => {
   const results = inspectListing(app, manifest, privacy);
   assert.deepEqual(results.errors, []);
 });
