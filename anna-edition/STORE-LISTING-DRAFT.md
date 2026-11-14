@@ -1,7 +1,7 @@
 # Life Control | Store Listing Draft
 
 **Status: review copy only. App Working Draft was uploaded and privately installed on 2026-11-14; this listing remains provisional. No immutable version cut, App Review submission or public publication.**  
-**Candidate app:** `life-control-anna` (created in Developer Console as app ID 908, working revision 1)  
+**Candidate app:** `life-control-anna` (created in Developer Console as app ID 908, working revision 2)  
 **Candidate version:** `0.1.0`  
 **Developer:** `@lifecontroldev`  
 **Category:** `productivity`
@@ -29,9 +29,9 @@ This Anna-hosted app does not synchronize with the Life Control Android app, con
 https://github.com/yap-gif/life-control-android/issues
 
 ### Candidate version-pinned privacy URL
-https://github.com/yap-gif/life-control-android/blob/972b8294735310f39000b98ad6abf24ce4bd6e75/anna-edition/PRIVACY.md
+https://github.com/yap-gif/life-control-android/blob/f72944d867da70aa206016b5ca5fa4a025855dba/anna-edition/PRIVACY.md
 
-Version-pinned privacy and homepage URLs were verified through the GitHub connector and are configured in local `app.json` with **zero temporary-branch warnings**. The remote Anna Listing values remain to be synchronized and checked separately. The permalinks are immutable snapshots; publish updated privacy disclosures at a new stable version URL when the notice changes.
+Version-pinned privacy and homepage URLs were verified through the GitHub connector; the permalink now displays the approved **Life Control** privacy-notice title and are configured in local `app.json` with **zero temporary-branch warnings**. The remote Anna Listing values remain to be synchronized and checked separately. The permalinks are immutable snapshots; publish updated privacy disclosures at a new stable version URL when the notice changes.
 
 ## Approved marketing concepts are not actual screenshots
 
