@@ -31,7 +31,7 @@ This document prepares review material. **The developer has pushed and installed
 
 **Support:** https://github.com/yap-gif/life-control-android/issues
 
-**Privacy:** The existing public repository is confirmed, but the local `app.json` privacy/homepage URLs still point to a temporary feature branch. Replace these with verified stable public `main` or release-version links and confirm the corresponding Anna Console Listing values before submission.
+**Privacy:** Local `app.json` now points to verified public GitHub permalinks at commit `972b8294735310f39000b98ad6abf24ce4bd6e75`, including [Privacy](https://github.com/yap-gif/life-control-android/blob/972b8294735310f39000b98ad6abf24ce4bd6e75/anna-edition/PRIVACY.md) and [Homepage](https://github.com/yap-gif/life-control-android/tree/972b8294735310f39000b98ad6abf24ce4bd6e75/anna-edition). The Anna **remote Listing tab** has not yet been confirmed or synchronized; the commit-pinned policies must be replaced with new versioned links if terms materially change.
 
 ## B. Asset plan — internal draft samples prepared, still require approval
 
@@ -77,7 +77,7 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 
 ### Acceptance evidence
 
-- 36 CI tests + `anna-app validate --strict`: verified (latest branch)
+- 37 CI tests + `anna-app validate --strict`: verified (latest branch)
 - Real Anna Harness UI, APS roundtrip across restart, real `llm.complete`: supported by developer-supplied logs
 - AI category isolation: supported by real outgoing model request
 - Safe Markdown formatting + ambiguous `APS-PERSIST-001` task test: supported by post-patch developer screenshot and RPC
@@ -99,4 +99,4 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
 7. Public release only after approval and a separate affirmative publishing decision.
 
-**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes structural checks with two provisional-link warnings**. Remain in PR Draft and close store-asset, stable homepage/privacy URL and accessibility gaps before an explicit version-freeze decision. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, cut a version, submit review or publish automatically.
+**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes without branch-link warnings; 37/37 tests pass.** Six promotional visual concepts are developer-approved but not real app screenshots. Remote Listing fields, actual screenshots, logo upload and accessibility gap remain open before an explicit version-freeze decision. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, cut a version, submit review or publish automatically.
