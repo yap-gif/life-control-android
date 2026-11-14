@@ -77,7 +77,7 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 
 ### Acceptance evidence
 
-- 37 CI tests + `anna-app validate --strict`: verified (latest branch)
+- 38 CI tests + `anna-app validate --strict`: verified (latest branch)
 - Real Anna Harness UI, APS roundtrip across restart, real `llm.complete`: supported by developer-supplied logs
 - AI category isolation: supported by real outgoing model request
 - Safe Markdown formatting + ambiguous `APS-PERSIST-001` task test: supported by post-patch developer screenshot and RPC
@@ -99,4 +99,4 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
 7. Public release only after approval and a separate affirmative publishing decision.
 
-**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes without branch-link warnings; 37/37 tests pass.** Six promotional visual concepts are developer-approved but not real app screenshots. Remote Listing fields, actual screenshots, logo upload and accessibility gap remain open before an explicit version-freeze decision. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, cut a version, submit review or publish automatically.
+**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes without branch-link warnings; 38/38 tests pass.** Six promotional visual concepts are developer-approved but not real app screenshots. Remote Listing fields, actual screenshots, logo upload and accessibility gap remain open before an explicit version-freeze decision. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, cut a version, submit review or publish automatically.
