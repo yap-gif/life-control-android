@@ -31,7 +31,7 @@ https://github.com/yap-gif/life-control-android/issues
 ### Draft privacy URL
 https://github.com/yap-gif/life-control-android/blob/feature/life-control-anna-edition-20261113/anna-edition/PRIVACY.md
 
-Replace this branch URL with a stable versioned public URL before publishing.
+Replace this feature-branch URL with a verified stable public `main` or versioned link before submission; `npm run preflight` currently flags the provisional privacy and homepage URLs. Listing values in Anna's Console are authoritative and must be checked separately from the local `app.json`.
 
 ## Promotional screenshots to capture
 
@@ -63,6 +63,10 @@ A preliminary 512×512 PNG / 256×256 WebP icon candidate has been created for v
 - Privacy and support URLs are publicly accessible and stable
 - Screenshots use actual app UI with synthetic data and no session tokens
 - Logo is reviewed and approved by the developer
+
+## Release gate
+
+The developer installed private Working Draft `r1` / `0.0.0-draft` (app ID 908), reported all features working, and CI has 36 passing tests. Public listing screenshots, logo selection, stable links and screen-reader audit are not yet accepted. See [0.1.0 candidate decision gate](./RELEASE-CANDIDATE-0.1.0.md).
 
 ## Workflow boundaries
 
