@@ -14,8 +14,8 @@
 | Installed functionality | All features reported working in Anna Chat | **Developer manual report**; no production per-operation logs supplied |
 | Real APS + real model | Storage persistence, category-isolated AI request and safe response observed in developer Harness | Developer screenshots and RPC logs |
 | No-LLM failure | `llm_disabled` handled with safe, precise message | Developer screenshot and RPC log |
-| Source regression | **37 / 37 tests**, `validate --strict`, local dev harness | GitHub Actions |
-| Listing structural preflight | Pass with **verified commit-pinned public links**; 37/37 automated tests | CI `npm run preflight`, `validate --strict` |
+| Source regression | **38 / 38 tests**, `validate --strict`, local dev harness | GitHub Actions |
+| Listing structural preflight | Pass with **verified commit-pinned public links**; 38/38 automated tests | CI `npm run preflight`, `validate --strict` |
 
 ## Hard gates before irreversible operations
 
@@ -25,7 +25,7 @@
 - [ ] **Actual screenshots:** Six developer-approved AI-generated **promotional concepts** have been packaged separately from **three real previous Harness captures**. The six concept images are **not** genuine screenshots; some include non-existent UI and incorrect privacy/reminder claims and must not be entered in Anna's Screenshot URLs as live product captures. Capture fresh installed `0.0.0-draft` screenshots with synthetic records, host at HTTPS URLs and verify each without account credentials.
 - [ ] **Accessibility:** A keyboard-only smoke test was developer-reported as passed; an actual screen-reader audit (e.g. NVDA) has **not** been run. Complete it or explicitly accept/document the residual risk.
 - [ ] **Failure handling:** The `--no-llm` case passed, but genuine quota exhaustion, storage permission failures and network interruption have not been exercised. Test safely with disposable data, or record a conscious acceptance of these residual risks.
-- [x] **Local release tests:** Latest CI runs `npm.cmd test`, `npm.cmd run validate` and `npm.cmd run preflight`: **37/37 tests**, strict Anna validation passed and local metadata/link checks now pass. The separate strict release gate runs without branch warnings. This does not validate Anna's remote Listing tab, screenshot authenticity, accessibility or production failure modes.
+- [x] **Local release tests:** Latest CI runs `npm.cmd test`, `npm.cmd run validate` and `npm.cmd run preflight`: **38/38 tests**, strict Anna validation passed and local metadata/link checks now pass. The separate strict release gate runs without branch warnings. This does not validate Anna's remote Listing tab, screenshot authenticity, accessibility or production failure modes.
 - [ ] **CLI dependency reproducibility:** The developer's Windows machine has a local, untracked `anna-edition/package-lock.json`; review its contents and decide whether to commit it so npm installs are deterministic. Do not commit `.anna/` or `node_modules/`.
 - [ ] **Human authorization:** Obtain explicit separate approval to freeze `0.1.0`. A green CI or successful draft install is **not** authorization to cut, submit or release.
 
