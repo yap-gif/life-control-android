@@ -1,5 +1,5 @@
 # Privacy notice — Life Control Anna Edition
-Updated: 2026-11-13 · Prototype v0.1.0
+Updated: 2026-11-14 · Private draft / candidate v0.1.0
 
 ## Data entered into the app
 Users can enter tasks, due dates, expense/income categories and amounts, learning sessions, private journal reflections, and a savings target. This prototype stores these entries through the **Anna app storage API**. It does **not** read from or synchronize with the separate Android Life Control app, bank accounts, calendars, contacts, or local device files.
@@ -19,7 +19,7 @@ Records are retained in the app's Anna-managed storage until the user deletes th
 The application does not claim end-to-end encryption or automatic deletion by Anna. Storage availability and cross-device behavior depend on Anna's platform service.
 
 ## Security controls
-The interface renders stored user text and model results as plain text (no unchecked HTML injection). AI prompts explicitly treat user-entered content as data, not instructions. Network AI requests and platform operations still inherit the risks and protections of the Anna host environment.
+The interface uses safe text nodes for stored user entries and an allow-listed Markdown renderer for model results (no unchecked HTML injection). AI prompts explicitly treat user-entered content as data, not instructions. Network AI requests and platform operations still inherit the risks and protections of the Anna host environment.
 
 ## Contact
 For app feedback or deletion-related product concerns, open a [GitHub issue](https://github.com/yap-gif/life-control-android/issues). For platform-hosted data requests, contact Anna through its official account/privacy channels.
