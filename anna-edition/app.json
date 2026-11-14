@@ -5,7 +5,7 @@
   "tagline": "Track what matters. Get AI weekly reviews based only on the life data you choose to share.",
   "description": "Life Control is a productivity workspace that combines everyday planning with consent-based AI reflection. Organize tasks and due dates, record MYR income and expenses, log learning sessions, write dated journal reflections and estimate progress toward a savings goal. For each AI Weekly Review, you select exactly which categories the AI may analyze: Tasks, Money, Learning and/or Journal. Each request requires fresh approval, and unselected categories are excluded. Records are stored through Anna per-app storage. You can delete individual records or clear your app-accessible workspace, but this cannot retract previous AI requests or guarantee deletion of platform-side backups or logs. This Anna-hosted app does not sync with the separate Android Life Control app, connect to bank accounts, provide device push notifications or give professional financial advice. AI requests may use Anna platform quota.",
   "category": "productivity",
-  "homepage_url": "https://github.com/yap-gif/life-control-android/tree/972b8294735310f39000b98ad6abf24ce4bd6e75/anna-edition",
+  "homepage_url": "https://github.com/yap-gif/life-control-android/tree/f72944d867da70aa206016b5ca5fa4a025855dba/anna-edition",
   "support_url": "https://github.com/yap-gif/life-control-android/issues",
-  "privacy_url": "https://github.com/yap-gif/life-control-android/blob/972b8294735310f39000b98ad6abf24ce4bd6e75/anna-edition/PRIVACY.md"
+  "privacy_url": "https://github.com/yap-gif/life-control-android/blob/f72944d867da70aa206016b5ca5fa4a025855dba/anna-edition/PRIVACY.md"
 }
