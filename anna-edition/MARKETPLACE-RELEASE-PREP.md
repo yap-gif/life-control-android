@@ -84,7 +84,7 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 - Manual CRUD, Journal overwrite, erase/restart and Mobile checks: developer-reported
 - Keyboard-only and screen-reader validation following accessibility changes: **pending manual**
 - Live AI quota failure and storage-permission failure UX: **pending manual**
-- Public installation after creating Anna Working Draft: **not tested**
+- Anna private Working Draft: **uploaded** as revision 1, 7-file UI bundle ready, app ID 908; **developer installed** reserved `0.0.0-draft` from console; installed functionality **not yet tested**
 - Anna App Review and funding qualification: **not tested or guaranteed**
 
 ## D. Anna release sequence — informational only
@@ -93,10 +93,10 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 
 1. Finalize listing copy, privacy link and public-facing screenshots/logo.
 2. Perform remaining accessibility and failure-path tests.
-3. **Only with explicit developer approval**, run `anna-app apps push` to create/update a private Working Draft and verify it in Anna's Developer Console. Push is **not** public publication.
+3. **Completed with explicit developer action (2026-11-14):** `anna-app apps push` created private Working Draft revision 1; the developer installed `0.0.0-draft` from Anna Developer Console. This was **not** public publication.
 4. Test the uploaded draft in the actual platform, not just the local Anna Harness.
 5. **Only with explicit approval**, cut the planned immutable version (`anna-app apps cut 0.1.0`); review the resulting candidate.
 6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
 7. Public release only after approval and a separate affirmative publishing decision.
 
-**Current decision:** Remain in PR Draft / internal test preparation. Do not merge to `main`, cut a version, submit review or publish automatically.
+**Current decision:** Private Working Draft is installed for developer-only testing. Remain in PR Draft; verify real Anna chat operations before freezing version `0.1.0`. Do not merge to `main`, cut a version, submit review or publish automatically.
