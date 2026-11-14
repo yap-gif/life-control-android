@@ -14,13 +14,13 @@
 | Installed functionality | All features reported working in Anna Chat | **Developer manual report**; no production per-operation logs supplied |
 | Real APS + real model | Storage persistence, category-isolated AI request and safe response observed in developer Harness | Developer screenshots and RPC logs |
 | No-LLM failure | `llm_disabled` handled with safe, precise message | Developer screenshot and RPC log |
-| Source regression | **36 / 36 tests**, `validate --strict`, local dev harness | GitHub Actions |
+| Source regression | **37 / 37 tests**, `validate --strict`, local dev harness | GitHub Actions |
 | Listing structural preflight | Pass with **verified commit-pinned public links**; 37/37 automated tests | CI `npm run preflight`, `validate --strict` |
 
 ## Hard gates before irreversible operations
 
 - [x] **Stable public local links:** `app.json` uses GitHub permalink commit `972b8294735310f39000b98ad6abf24ce4bd6e75` for the homepage and privacy policy. Both URLs were fetched successfully through the connected GitHub source. The Anna **remote Listing tab** must still be updated and confirmed. Do not merge PR #2 or overwrite `main` without authorization.
-- [ ] **Listing tab:** Verify the live Anna server listing's name, tagline, long description, category, homepage, support and privacy URLs. The local `app.json` is not independent proof that the remote Listing tab contains all fields.
+- [ ] **Listing tab:** Windows `apps status` on 2026-11-14 returned remote **name: Life Control**, whereas local `app.json` says **Life Control — Anna Edition**. Confirm the developer's preferred brand label in Anna Console, then make local and remote names consistent. Also verify tagline, long description, category, homepage, support, privacy URL and media. The local `app.json` cannot prove the remote Listing contains these fields.
 - [ ] **Logo:** Developer accepted the blue/teal creative direction. The actual logo upload to Anna **Listing → Upload logo** is still pending (JPEG/PNG/WebP/GIF, ≤2 MB).
 - [ ] **Actual screenshots:** Six developer-approved AI-generated **promotional concepts** have been packaged separately from **three real previous Harness captures**. The six concept images are **not** genuine screenshots; some include non-existent UI and incorrect privacy/reminder claims and must not be entered in Anna's Screenshot URLs as live product captures. Capture fresh installed `0.0.0-draft` screenshots with synthetic records, host at HTTPS URLs and verify each without account credentials.
 - [ ] **Accessibility:** A keyboard-only smoke test was developer-reported as passed; an actual screen-reader audit (e.g. NVDA) has **not** been run. Complete it or explicitly accept/document the residual risk.
