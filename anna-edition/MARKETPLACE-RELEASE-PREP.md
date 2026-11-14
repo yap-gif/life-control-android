@@ -1,11 +1,11 @@
 # Life Control — Marketplace Release Preparation (not yet submitted)
 
 **Prepared:** 2026-11-13  
-**Candidate version:** `0.1.0` (draft; not cut or published)  
+**Frozen candidate version:** `0.1.0` (immutable version ID **2279**; not submitted or published)  
 **Developer handle:** `@lifecontroldev` (reported by developer)  
 **GitHub:** [PR #2](https://github.com/yap-gif/life-control-android/pull/2) — Draft
 
-This document prepares review material. **The developer has pushed and installed a private Working Draft (r1, later updated to r2); no immutable version cut, App Review submission, public release or Marketplace publication has been performed.**
+This document prepares review material. **The developer has pushed and installed a private Working Draft (r1, later updated to r2); immutable version `0.1.0` **was cut as version ID 2279**, but App Review submission, public release and Marketplace publication **have not** occurred.**
 
 ## A. Draft Marketplace listing copy
 
@@ -95,8 +95,8 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 2. Perform remaining accessibility and failure-path tests.
 3. **Completed with explicit developer actions (2026-11-14):** first `apps push` created private Working Draft r1; the developer installed `0.0.0-draft`, tested its features and subsequently pushed the **Life Control** brand update as **r2**. The updated r2 should be reopened and checked in Anna Chat. Neither push was a public publication.
 4. **Developer-reported PASS (2026-11-14):** tested all features of the installed private Working Draft in Anna Chat. No per-operation production RPC receipts have been provided.
-5. **Only with explicit approval**, cut the planned immutable version (`anna-app apps cut 0.1.0`); review the resulting candidate.
+5. **Completed after explicit developer approval:** `anna-app apps cut 0.1.0` returned immutable version ID **2279**. A separate `apps versions` and `apps status` verified a single, unpublished version on App ID 908.
 6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
 7. Public release only after approval and a separate affirmative publishing decision.
 
-**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes without branch-link warnings; 38/38 tests pass.** Six promotional visual concepts are developer-approved but not real app screenshots. Developer-supplied r2 window and icon images confirm the visible branding; remote Listing metadata, screenshot URL hosting, logo field and accessibility gap remain open before an explicit version-freeze decision. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, cut a version, submit review or publish automatically.
+**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes without branch-link warnings; 38/38 tests pass.** Six promotional visual concepts are developer-approved but not real app screenshots. Developer-supplied r2 window and icon images confirm the visible branding; remote Listing metadata, screenshot URL hosting, logo field and accessibility gap remain open before a separate explicit **review-submission** decision. Frozen `0.1.0` already exists; do not cut it again. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, repeat the cut, submit review or publish automatically.
