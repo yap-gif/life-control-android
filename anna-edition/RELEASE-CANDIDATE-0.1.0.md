@@ -34,14 +34,20 @@ The developer confirmed the **Versions** tab shows immutable **v0.1.0, version I
 - [ ] **CLI dependency reproducibility:** The developer's Windows machine has a local, untracked `anna-edition/package-lock.json`; review its contents and decide whether to commit it so npm installs are deterministic. Do not commit `.anna/` or `node_modules/`.
 - [x] **Human authorization for cut:** Developer explicitly requested the `0.1.0` immutable freeze and executed `apps cut 0.1.0`; CLI independently confirms version ID **2279**. **No authorization for App Review submission or public release has been granted.**
 
+## App Review submission authorization (2026-11-14)
+
+The developer **explicitly authorized** submitting **Life Control v0.1.0** (App ID **908**, version ID **2279**) for Anna App Review. The current assistant environment has **no connected Anna command/execution capability or the developer's local CLI credentials**, so it **has not sent** the submission request. A Windows PowerShell 5.1 guard script was generated for the developer to execute using their authenticated local Anna CLI; it validates the exact app/version, sends **one** `apps submit-review life-control-anna` request only while status is DRAFT, then requires a fresh remote `PENDING_REVIEW` response to mark completion.
+
+**State at time of writing: explicitly authorized / execution pending external CLI evidence.** Do not state `PENDING_REVIEW` as fact until the platform returns that status, and do not invoke `release`. This authorization does **not** authorize publication.
+
 ## Anna sequence (informational; not executed by this document)
 
 1. **2026-11-14:** Working Draft `r2` was uploaded to existing app ID 908. Developer supplied a live installed-window screenshot showing **Life Control** branding and reported all checks passed. The current local privacy/homepage links were subsequently updated to a newer verified public commit; remote Listing values need to be reconciled before review.
 2. **Completed 2026-11-14:** `anna-app apps cut 0.1.0` created immutable version **2279**. Post-cut `apps versions` and `apps status` verified the DRAFT state and 1 unpublished version. Recheck the candidate UI bundle and Listing in the Console.
-3. **Next gate, not yet authorized:** The developer reports the remote Listing and frozen bundle checks passed. Only on separate explicit authorization, run `anna-app apps submit-review life-control-anna` to pin v0.1.0 as review candidate.
+3. **Next gate, explicitly authorized but not yet executed:** The developer reports the remote Listing and frozen bundle checks passed and has authorized the submission. From the authenticated local Anna CLI, run `anna-app apps submit-review life-control-anna` to pin v0.1.0 as review candidate.
 4. Approval is a platform decision, not guaranteed. Public `release` is a separate action requiring separate developer approval.
 
-**Important:** **Do not repeat `apps cut 0.1.0`** — version ID 2279 already exists and is immutable. Do not use `apps publish` as a shortcut: it combines push and cut. Do not run `submit-review`, `release`, `discard`, `rename-slug` or `delete` without the appropriate new approval. A warning/hint printed by CLI is not authorization to release.
+**Important:** **Do not repeat `apps cut 0.1.0`** — version ID 2279 already exists and is immutable. Do not use `apps publish` as a shortcut: it combines push and cut. Submission of frozen **v0.1.0 only** is now approved; do not rerun a successful submission. Do not run `release`, `discard`, `rename-slug` or `delete` without the appropriate separate approval. A warning/hint printed by CLI is not authorization to release.
 
 ## Local read-only preflight
 
