@@ -5,7 +5,7 @@
 **Developer handle:** `@lifecontroldev` (reported by developer)  
 **GitHub:** [PR #2](https://github.com/yap-gif/life-control-android/pull/2) — Draft
 
-This document prepares review material. **The developer has pushed and installed a private Working Draft (r1, later updated to r2); immutable version `0.1.0` **was cut as version ID 2279**, but App Review submission, public release and Marketplace publication **have not** occurred.**
+This document prepares review material. The developer installed private Working Draft r2, froze immutable version **0.1.0 (ID 2279)**, and manually confirmed the Versions and Listing checks. **App Review submission and public publication have not occurred.**
 
 ## A. Draft Marketplace listing copy
 
@@ -99,4 +99,6 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
 7. Public release only after approval and a separate affirmative publishing decision.
 
-**Current decision:** Private Working Draft is installed and the developer reports full functional smoke-test success. **Local Listing preflight now passes without branch-link warnings; 38/38 tests pass.** Six promotional visual concepts are developer-approved but not real app screenshots. Developer-supplied r2 window and icon images confirm the visible branding; remote Listing metadata, screenshot URL hosting, logo field and accessibility gap remain open before a separate explicit **review-submission** decision. Frozen `0.1.0` already exists; do not cut it again. Follow [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md). Do not merge to `main`, repeat the cut, submit review or publish automatically.
+**Console verification update (2026-11-14):** The developer reported that v0.1.0 (version ID 2279) had a Ready bundle and that the actual Listing name, category, description, logo, genuine screenshots and updated privacy URL were correct. These are manual acceptance statements, not independently fetched platform metadata. Screen-reader testing and live quota/storage-failure scenarios remain unverified.
+
+**Current decision:** Frozen `0.1.0` and user-verified Listing are ready for a *separate decision* on App Review submission. This document does not authorize or perform `submit-review` or `release`. GitHub PR #2 remains Draft and `main` unchanged.
