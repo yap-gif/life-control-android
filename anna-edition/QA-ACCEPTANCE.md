@@ -120,6 +120,12 @@ The actual `anna-app apps push` then staged a **7-file / 42.0 KB** working bundl
 
 **Verification boundary:** revision 2 has been uploaded but the supplied logs do not show re-installation/opening of the updated branding in Anna Chat. The developer's earlier end-to-end functional smoke report applies to `r1`, not independently to `r2`.
 
+## Windows post-brand-sync verification (2026-11-14)
+
+Developer provided a Windows PowerShell 5.1 log showing a **fast-forward from `47e0792` to `f72944d`** on `feature/life-control-anna-edition-20261113`. The local `npm.cmd test` passed **38/38** tests, including the public product-name check; `npm.cmd run preflight -- --release-gate` passed with the new **“Life Control — local listing preflight”** header and no reported warnings.
+
+**Evidence scope:** These are developer-supplied local output logs; they prove the local source revision and tests, not that the already-uploaded private Anna Working Draft **r2** has been reinstalled and visually checked in Anna Chat. Remote Listing media/logo and screenshot acceptance remain separate gates.
+
 ## Next local check
 
 1. Preserve any local edits before updating. From the repository root run `git status --short`, then `git pull --ff-only origin feature/life-control-anna-edition-20261113`.
