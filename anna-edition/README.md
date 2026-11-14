@@ -1,6 +1,6 @@
-# Life Control — Anna Edition (0.1.0)
+# Life Control — Anna-hosted build (0.1.0)
 
-An independent, privacy-gated Anna AI OS edition of the Life Control concept. The original Android Kotlin/Room app remains unchanged.
+An independent, privacy-gated build of Life Control for the Anna platform. The original Android Kotlin/Room app remains unchanged.
 
 ## Purpose
 
@@ -55,7 +55,7 @@ Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 
 ## Known limitations
 
-1. **No Android sync:** Existing Life Control records do not automatically appear here; they must be entered in Anna Edition. There is no migration/importer.
+1. **No Android sync:** Existing Life Control records do not automatically appear here; they must be entered in this Anna-hosted build. There is no migration/importer.
 2. **Reminder limitations:** Due and overdue items appear only inside this app's UI, not as scheduled device/OS push notifications.
 3. **Forecast limitations:** Simple planning estimate based on manually entered savings amounts; no cashflow predictions or bank integration.
 4. **Storage failure:** Editing is blocked if the Anna storage connection cannot be loaded. If a save fails mid-session, the UI reports that the change may not persist.
