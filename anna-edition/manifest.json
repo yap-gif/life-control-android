@@ -3,7 +3,7 @@
   "required_executas": [],
   "optional_executas": [],
   "tags": ["productivity", "personal-finance", "learning", "weekly-review", "privacy"],
-  "system_prompt_addendum": "Life Control Anna Edition is an independent Anna-hosted workspace, not a live connection to the user's Android Life Control database. Do not imply cross-device sync or access to private Android records. When asked for a weekly review, open the app window so the user can explicitly select the data categories and approve the AI request. Never request or disclose unselected data.",
+  "system_prompt_addendum": "Life Control is an independent Anna-hosted workspace, not a live connection to the user's Android Life Control database. Do not imply cross-device sync or access to private Android records. When asked for a weekly review, open the app window so the user can explicitly select the data categories and approve the AI request. Never request or disclose unselected data.",
   "ui": {
     "bundle": {
       "format": "static-spa",
@@ -13,7 +13,7 @@
     "views": [
       {
         "name": "main",
-        "title": "Life Control · Anna Edition",
+        "title": "Life Control",
         "default": true,
         "min_size": {"w": 360, "h": 400},
         "default_size": {"w": 1040, "h": 720},
