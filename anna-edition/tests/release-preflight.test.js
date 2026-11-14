@@ -54,3 +54,13 @@ test("preflight distinguishes stable main-branch links from temporary feature li
   assert.deepEqual(errors, []);
   assert.deepEqual(warnings, []);
 });
+
+test("public product name is Life Control across listing, manifest and app UI", () => {
+  const index = readFileSync(new URL("../bundle/index.html", import.meta.url), "utf8");
+  assert.equal(app.name, "Life Control");
+  assert.equal(manifest.ui.views.find(view => view.default)?.title, "Life Control");
+  assert.match(index, /<title>Life Control<\/title>/);
+  assert.match(index, /class="eyebrow">LIFE CONTROL<\/div>/);
+  assert.doesNotMatch(index, /Anna Edition/i);
+  assert.doesNotMatch(app.description, /Anna Edition/i);
+});
