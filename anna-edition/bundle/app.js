@@ -257,7 +257,7 @@ async function eraseWorkspace() {
     $("review-result").textContent = "No AI request sent yet.";
     $("ai-consent").checked = false;
     render();
-    status("Anna Edition app records erased from this app's storage. Platform logs/backups and past AI requests are outside this control.");
+    status("Life Control records erased from this app's storage. Platform logs/backups and past AI requests are outside this control.");
   } catch (error) {
     status(explainHostError(error, "storage"), true);
   } finally {
