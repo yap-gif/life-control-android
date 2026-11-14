@@ -1,8 +1,10 @@
-# Life Control Anna Edition — visual assets claims audit
+# Life Control — visual assets claims audit
 
 **Reviewed:** 2026-11-14  
 **App:** `life-control-anna`, ID 908, Working Draft `r1`; candidate `0.1.0` is not cut.  
 **Evidence:** Six AI-generated, developer-approved concept pictures plus three genuine cropped Anna Harness screenshots from earlier tests.
+
+The developer confirmed the final public name is **Life Control** (no Edition suffix). The six earlier generated visuals still show the former suffix and require rebranding before any public use.
 
 The developer accepted the **creative appearance** of the six generated visuals. This establishes approval of style, **not** that their illustrated UI features or example data exist in the current installed build.
 
