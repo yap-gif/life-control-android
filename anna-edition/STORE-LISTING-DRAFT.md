@@ -70,7 +70,7 @@ A 512×512 PNG / 256×256 WebP icon candidate has been created and the developer
 
 ## Release gate
 
-The developer installed private Working Draft `r1` / `0.0.0-draft` (app ID 908), reported all features working, and CI has **37 passing tests**. Six AI-generated promotional concepts are approved for creative direction, but **not** accepted as actual app screenshots. The remote logo/screenshot upload, screen-reader audit and Anna Listing verification remain pending. See [0.1.0 candidate decision gate](./RELEASE-CANDIDATE-0.1.0.md).
+The developer installed private Working Draft `r1` / `0.0.0-draft` (app ID 908), reported all features working, and CI has **38 passing tests**. Six AI-generated promotional concepts are approved for creative direction, but **not** accepted as actual app screenshots. The remote logo/screenshot upload, screen-reader audit and Anna Listing verification remain pending. See [0.1.0 candidate decision gate](./RELEASE-CANDIDATE-0.1.0.md).
 
 ## Workflow boundaries
 
