@@ -1,8 +1,8 @@
 # Life Control | 0.1.0 release candidate gate
 
 **Prepared:** 2026-11-14  
-**Status:** **IMMUTABLE VERSION CUT CONFIRMED** (Anna version ID **2279**); **no App Review submission, no publication**  
-**Anna app:** `life-control-anna` (ID **908**), DRAFT; Working Draft **r2** was tested; immutable **v0.1.0 (version ID 2279)** now exists and is not published  
+**Status:** **PENDING_REVIEW** — v0.1.0 (Anna version ID **2279**) pinned for Anna App Review; **not approved or published**  
+**Anna app:** `life-control-anna` (ID **908**), PENDING_REVIEW; Working Draft **r2** was tested; immutable **v0.1.0 (version ID 2279)** now exists and is not published  
 **GitHub:** [Draft PR #2](https://github.com/yap-gif/life-control-android/pull/2); `main` remains unchanged.
 
 ## Evidence already accepted
@@ -40,14 +40,22 @@ The developer **explicitly authorized** submitting **Life Control v0.1.0** (App 
 
 **State at time of writing: explicitly authorized / execution pending external CLI evidence.** Do not state `PENDING_REVIEW` as fact until the platform returns that status, and do not invoke `release`. This authorization does **not** authorize publication.
 
+## App Review submission — confirmed server receipt (2026-11-14)
+
+- Developer explicitly authorized submitting **Life Control** app ID **908**, immutable **v0.1.0 / ID 2279**, then ran `anna-app apps submit-review life-control-anna` from their own authenticated Windows environment.
+- The CLI returned `submitted for review`, `status: pending_review`, and `under review: v0.1.0`.
+- A **separate** `anna-app apps status life-control-anna` query confirmed `status: pending_review`, `latest: v0.1.0 (id=2279, published=—)`, and `in review: v0.1.0 (pinned at submit-review)`.
+- The downloaded PowerShell helper was unsigned and blocked by local execution policy; the developer's direct CLI invocation completed successfully. No execution-policy change was needed.
+- **Outcome: Submitted and pinned.** Not Anna-approved and not publicly released. **Do not repeat submit-review, cut another version, release, or re-pin the review candidate without separate approval.** Monitor the Console for approval or rejection.
+
 ## Anna sequence (informational; not executed by this document)
 
 1. **2026-11-14:** Working Draft `r2` was uploaded to existing app ID 908. Developer supplied a live installed-window screenshot showing **Life Control** branding and reported all checks passed. The current local privacy/homepage links were subsequently updated to a newer verified public commit; remote Listing values need to be reconciled before review.
 2. **Completed 2026-11-14:** `anna-app apps cut 0.1.0` created immutable version **2279**. Post-cut `apps versions` and `apps status` verified the DRAFT state and 1 unpublished version. Recheck the candidate UI bundle and Listing in the Console.
-3. **Next gate, explicitly authorized but not yet executed:** The developer reports the remote Listing and frozen bundle checks passed and has authorized the submission. From the authenticated local Anna CLI, run `anna-app apps submit-review life-control-anna` to pin v0.1.0 as review candidate.
-4. Approval is a platform decision, not guaranteed. Public `release` is a separate action requiring separate developer approval.
+3. **Completed 2026-11-14:** `anna-app apps submit-review life-control-anna` succeeded and status re-query confirmed `PENDING_REVIEW` with **v0.1.0 (ID 2279)** pinned.
+4. **Pending:** Anna administrator review. Approval or rejection is a platform decision, not guaranteed. Any public `release` after approval is a separate action requiring separate developer approval.
 
-**Important:** **Do not repeat `apps cut 0.1.0`** — version ID 2279 already exists and is immutable. Do not use `apps publish` as a shortcut: it combines push and cut. Submission of frozen **v0.1.0 only** is now approved; do not rerun a successful submission. Do not run `release`, `discard`, `rename-slug` or `delete` without the appropriate separate approval. A warning/hint printed by CLI is not authorization to release.
+**Important:** **Do not repeat `apps cut 0.1.0`** — version ID 2279 already exists and is immutable. Do not use `apps publish` as a shortcut: it combines push and cut. Submission of frozen **v0.1.0** was approved, completed and verified; **do not rerun it**. Do not run `release`, `discard`, `rename-slug` or `delete` without the appropriate separate approval. A warning/hint printed by CLI is not authorization to release.
 
 ## Local read-only preflight
 
