@@ -1,7 +1,7 @@
 # Life Control — Anna Edition | Store Listing Draft
 
-**Status: review copy only. Not uploaded, submitted, version-cut, or published.**  
-**Candidate app:** `life-control-anna` (availability and final slug must be verified in the Developer Console)  
+**Status: review copy only. App Working Draft was uploaded and privately installed on 2026-11-14; this listing remains provisional. No immutable version cut, App Review submission or public publication.**  
+**Candidate app:** `life-control-anna` (created in Developer Console as app ID 908, working revision 1)  
 **Candidate version:** `0.1.0`  
 **Developer:** `@lifecontroldev`  
 **Category:** `productivity`
@@ -67,7 +67,7 @@ A preliminary 512×512 PNG / 256×256 WebP icon candidate has been created for v
 ## Workflow boundaries
 
 - Draft metadata is not published merely by committing this file to GitHub.
-- `anna-app apps push` creates/updates a private Working Draft **only after explicit approval**.
+- The developer completed `anna-app apps push` and installed private Working Draft `0.0.0-draft`; all app features were subsequently reported working. Any further push still requires an intentional change.
 - `apps cut` creates an immutable version; `apps submit-review` initiates platform review.
 - An approved app still requires a separately approved publication step.
 - Program grant eligibility is not inferred from feature completion or App Review status.
