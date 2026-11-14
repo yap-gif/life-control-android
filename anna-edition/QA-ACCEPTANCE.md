@@ -32,7 +32,8 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Updated per-record keyboard focus / aria-labels / delete confirmation | 23:56:35 Complete, 23:56:38 Reopen, 23:56:55 Delete saved successfully; developer reports keyboard focus and Escape/Cancel behaved correctly | RPC-confirmed for mutations; user-reported keyboard interaction passed; screen-reader pending |
 | AI quota and storage failure messages | Error classifier unit tests pass; not yet validated against live quota/connection failures | CI-confirmed (unit only); manual pending |
 | AI unavailable with `--no-llm --storage legacy` | 23:54:20–23:54:21 Anna Harness: `llm.complete` returned `llm_disabled`; revised UI displayed precise `--no-llm` explanation, did not expose raw RPC error and remained usable | RPC-confirmed (specific error UX passed) |
-| Anna server Working Draft upload and developer install | CLI: 7-file 42.0 KB bundle ready; `apps/life-control-anna` revision 1; console showed “Installed working draft (0.0.0-draft) — now available in chat.” | CLI-confirmed and developer screenshot-confirmed |\n| Anna Chat installed Working Draft full-feature smoke test | Developer directly reports testing all features of the installed `0.0.0-draft` app successfully on 2026-11-14; individual production API logs/screenshots not provided | User-reported PASS; independent RPC/API confirmation pending |
+| Anna server Working Draft upload and developer install | CLI: 7-file 42.0 KB bundle ready; `apps/life-control-anna` revision 1; console showed “Installed working draft (0.0.0-draft) — now available in chat.” | CLI-confirmed and developer screenshot-confirmed |
+| Anna Chat installed Working Draft full-feature smoke test | Developer directly reports testing all features of the installed `0.0.0-draft` app successfully on 2026-11-14; individual production API logs/screenshots not provided | User-reported PASS; independent RPC/API confirmation pending |
 | Anna server application identity | `life-control-anna`: app ID 908, status draft, 0 cut versions; separate `anna-edition` ID 906 unchanged | CLI-confirmed |
 | Marketplace logo / redacted screenshot / listing draft | Draft review materials prepared; no binary assets uploaded to public repo or Anna | Draft only |
 | Platform marketplace review and public release | Not submitted | Pending |
@@ -98,6 +99,12 @@ Developer-provided PowerShell CLI output and Developer Console Versions screensh
 ## Local listing release preflight (2026-11-14)
 
 A new `release-preflight.mjs` performs read-only structural checks against the local `app.json`, `manifest.json` and `PRIVACY.md`. Initially it found two feature-branch URL warnings; these were resolved by pinning both URLs to an accessible public GitHub commit. The latest CI passed **37/37** tests plus `validate --strict` and local listing preflight without warnings. The check does **not** prove the Anna server Listing tab has updated metadata or uploaded logo/screenshot assets. Refer to [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md).
+
+## Windows local preflight retest (2026-11-14)
+
+The developer provided PowerShell 5.1 output showing a clean fast-forward to `d01bf66`; **37/37 tests passed**, `npm.cmd run validate` returned **validate passed**, and `npm.cmd run preflight -- --release-gate` returned **Structural metadata and privacy-file checks: PASS** with no warnings. These results are based on developer-supplied local logs, corroborating independent GitHub CI for the same branch.
+
+The Anna CLI's `apps status life-control-anna` reported **app ID 908**, **draft**, **0 cut versions**, and remote listing **name: Life Control**. This differs from local `app.json` **name: Life Control — Anna Edition**. It may be an intentional console edit, but must be resolved or recorded as the final product naming choice before submitting for review. The remote Listing's other fields (logo, screenshot URLs, privacy link, category, descriptions) cannot be confirmed from `apps status` alone.
 
 ## Next local check
 
