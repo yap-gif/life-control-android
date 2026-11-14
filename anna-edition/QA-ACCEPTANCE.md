@@ -31,6 +31,8 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Updated per-record keyboard focus / aria-labels / delete confirmation | 23:56:35 Complete, 23:56:38 Reopen, 23:56:55 Delete saved successfully; developer reports keyboard focus and Escape/Cancel behaved correctly | RPC-confirmed for mutations; user-reported keyboard interaction passed; screen-reader pending |
 | AI quota and storage failure messages | Error classifier unit tests pass; not yet validated against live quota/connection failures | CI-confirmed (unit only); manual pending |
 | AI unavailable with `--no-llm --storage legacy` | 23:54:20–23:54:21 Anna Harness: `llm.complete` returned `llm_disabled`; revised UI displayed precise `--no-llm` explanation, did not expose raw RPC error and remained usable | RPC-confirmed (specific error UX passed) |
+| Anna server Working Draft upload and developer install | CLI: 7-file 42.0 KB bundle staged and ready; `apps/life-control-anna` revision 1; console shows `r1` and “Installed working draft (0.0.0-draft) — now available in chat.” | CLI-confirmed and developer screenshot-confirmed; installed app interaction pending |
+| Anna server application identity | `life-control-anna`: app ID 908, status draft, 0 cut versions; separate `anna-edition` ID 906 unchanged | CLI-confirmed |
 | Marketplace logo / redacted screenshot / listing draft | Draft review materials prepared; no binary assets uploaded to public repo or Anna | Draft only |
 | Platform marketplace review and public release | Not submitted | Pending |
 
@@ -74,6 +76,18 @@ Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev 
 
 **Disposition:** Task mutation and user-reported keyboard smoke tests **PASS for the local scope**. Separate screen-reader validation remains a release quality recommendation, not a claim of having passed.
 
+## First private Working Draft deployment and install (2026-11-14)
+
+Developer-provided PowerShell CLI output and Developer Console Versions screenshot establish:
+
+- `anna-app validate --strict` passed.
+- `anna-app apps push` staged **7 files / 42.0 KB**, with **working bundle ready**, creating private Working Draft **revision 1** under slug `life-control-anna`.
+- `anna-app apps status life-control-anna` returned **app_id 908**, **draft**, **0 total cut versions**.
+- The console's Versions tab displayed `Working draft`, `r1`, `Bundle ready`, and the toast **“Installed working draft (0.0.0-draft) — now available in chat.”**
+- `anna-app apps list` also showed the distinct developer entry `anna-edition` (ID 906), which was not renamed or deleted. On Windows the list process printed a `UV_HANDLE_CLOSING` assertion on exit; this should be tracked as CLI-runtime instability, not evidence of a failed app upload.
+
+**Disposition:** Private Working Draft creation and developer-side installation **PASS based on platform receipts**. There is **no evidence yet** that the installed app actually opens and successfully handles storage or AI operations in production Anna chat. Next verification must use the installed `0.0.0-draft` application instead of localhost Harness. No immutable version, review submission or public release has occurred.
+
 ## Next local check
 
 1. Preserve any local edits before updating. From the repository root run `git status --short`, then `git pull --ff-only origin feature/life-control-anna-edition-20261113`.
@@ -87,4 +101,4 @@ Developer supplied Anna Harness screenshot and RPC log from local `anna-app dev 
 
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, developer approval of image assets, and Anna working-draft verification. Marketplace review and builder grant eligibility are separate platform decisions.
+**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Remaining release work includes real installed Working Draft functionality verification, an assistive-technology screen-reader audit, untested live quota/storage failure paths, and developer approval of image assets. Marketplace review and builder grant eligibility are separate platform decisions.
