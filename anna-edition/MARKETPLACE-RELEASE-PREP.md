@@ -1,4 +1,4 @@
-# Life Control Anna Edition — Marketplace Release Preparation (not yet submitted)
+# Life Control — Marketplace Release Preparation (not yet submitted)
 
 **Prepared:** 2026-11-13  
 **Candidate version:** `0.1.0` (draft; not cut or published)  
@@ -9,7 +9,7 @@ This document prepares review material. **The developer has pushed and installed
 
 ## A. Draft Marketplace listing copy
 
-**Name:** Life Control — Anna Edition
+**Name:** Life Control
 
 **Category:** Productivity
 
@@ -17,7 +17,7 @@ This document prepares review material. **The developer has pushed and installed
 
 **Long description (proposed):**
 
-> Life Control — Anna Edition is an independent productivity and personal-growth workspace for the Anna platform.
+> Life Control is an independent productivity and personal-growth workspace for the Anna platform.
 >
 > Organize tasks and due dates, record income and expenses in MYR, track learning sessions, maintain a dated journal, and estimate progress toward a savings goal.
 >
