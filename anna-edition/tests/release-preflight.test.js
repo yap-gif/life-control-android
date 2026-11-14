@@ -11,8 +11,21 @@ test("Anna Edition listing has valid constraints and privacy disclosures", () =>
   const results = inspectListing(app, manifest, privacy);
   assert.deepEqual(results.errors, []);
 });
+test("pinned public listing links pass the strict local URL checks", () => {
+  const { errors, warnings } = inspectListing(app, manifest, privacy);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+  assert.match(app.homepage_url, /\/tree\/[a-f0-9]{40}\//);
+  assert.match(app.privacy_url, /\/blob\/[a-f0-9]{40}\//);
+});
+
 test("temporary feature-branch store and privacy links remain explicit warnings", () => {
-  const { warnings } = inspectListing(app, manifest, privacy);
+  const temporary = {
+    ...app,
+    homepage_url: "https://github.com/yap-gif/life-control-android/tree/feature/life-control-anna-edition-20261113/anna-edition",
+    privacy_url: "https://github.com/yap-gif/life-control-android/blob/feature/life-control-anna-edition-20261113/anna-edition/PRIVACY.md"
+  };
+  const { warnings } = inspectListing(temporary, manifest, privacy);
   assert.equal(warnings.length, 2);
   assert.ok(warnings.some(x => x.includes("privacy_url")));
   assert.ok(warnings.some(x => x.includes("homepage_url")));
