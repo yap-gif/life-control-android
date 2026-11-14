@@ -1,8 +1,8 @@
 # Life Control | 0.1.0 release candidate gate
 
 **Prepared:** 2026-11-14  
-**Status:** PREPARATION ONLY — no immutable version cut or App Review submission  
-**Anna app:** `life-control-anna` (ID **908**); private Working Draft **`r2`** (uploaded, bundle ready, subsequently opened and visually accepted); `r1` was previously installed as `0.0.0-draft`  
+**Status:** **IMMUTABLE VERSION CUT CONFIRMED** (Anna version ID **2279**); **no App Review submission, no publication**  
+**Anna app:** `life-control-anna` (ID **908**), DRAFT; Working Draft **r2** was tested; immutable **v0.1.0 (version ID 2279)** now exists and is not published  
 **GitHub:** [Draft PR #2](https://github.com/yap-gif/life-control-android/pull/2); `main` remains unchanged.
 
 ## Evidence already accepted
@@ -16,6 +16,7 @@
 | No-LLM failure | `llm_disabled` handled with safe, precise message | Developer screenshot and RPC log |
 | Source regression | **38 / 38 tests**, `validate --strict`, local dev harness | GitHub Actions |
 | Listing structural preflight | Pass with **verified commit-pinned public links**; 38/38 automated tests | CI `npm run preflight`, `validate --strict` |
+| Immutable version freeze | `apps cut 0.1.0`: id 2279; `apps versions` and `apps status` confirm 1 version, app still DRAFT, unpublished | Developer CLI transcript |
 
 ## Hard gates before irreversible operations
 
@@ -27,16 +28,16 @@
 - [ ] **Failure handling:** The `--no-llm` case passed, but genuine quota exhaustion, storage permission failures and network interruption have not been exercised. Test safely with disposable data, or record a conscious acceptance of these residual risks.
 - [x] **Local release tests:** Latest CI runs `npm.cmd test`, `npm.cmd run validate` and `npm.cmd run preflight`: **38/38 tests**, strict Anna validation passed and local metadata/link checks now pass. The separate strict release gate runs without branch warnings. This does not validate Anna's remote Listing tab, screenshot authenticity, accessibility or production failure modes.
 - [ ] **CLI dependency reproducibility:** The developer's Windows machine has a local, untracked `anna-edition/package-lock.json`; review its contents and decide whether to commit it so npm installs are deterministic. Do not commit `.anna/` or `node_modules/`.
-- [ ] **Human authorization:** Obtain explicit separate approval to freeze `0.1.0`. A green CI or successful draft install is **not** authorization to cut, submit or release.
+- [x] **Human authorization for cut:** Developer explicitly requested the `0.1.0` immutable freeze and executed `apps cut 0.1.0`; CLI independently confirms version ID **2279**. **No authorization for App Review submission or public release has been granted.**
 
 ## Anna sequence (informational; not executed by this document)
 
 1. **2026-11-14:** Working Draft `r2` was uploaded to existing app ID 908. Developer supplied a live installed-window screenshot showing **Life Control** branding and reported all checks passed. The current local privacy/homepage links were subsequently updated to a newer verified public commit; remote Listing values need to be reconciled before review.
-2. After all gates pass, and **only on explicit authorization**, run `anna-app apps cut 0.1.0`; confirm `apps versions life-control-anna` and the Console's UI bundle readiness.
-3. After reviewing the pinned immutable candidate, and **only on separate explicit authorization**, run `anna-app apps submit-review life-control-anna`.
+2. **Completed 2026-11-14:** `anna-app apps cut 0.1.0` created immutable version **2279**. Post-cut `apps versions` and `apps status` verified the DRAFT state and 1 unpublished version. Recheck the candidate UI bundle and Listing in the Console.
+3. **Next gate, not yet authorized:** Inspect remote Listing and frozen bundle, then, only on separate explicit authorization, run `anna-app apps submit-review life-control-anna` to pin v0.1.0 as review candidate.
 4. Approval is a platform decision, not guaranteed. Public `release` is a separate action requiring separate developer approval.
 
-**Important:** Do not run `anna-app apps publish` as a shortcut: it combines push and cut. Do not run `release`, `discard`, `rename-slug` or `delete` during this review phase.
+**Important:** **Do not repeat `apps cut 0.1.0`** — version ID 2279 already exists and is immutable. Do not use `apps publish` as a shortcut: it combines push and cut. Do not run `submit-review`, `release`, `discard`, `rename-slug` or `delete` without the appropriate new approval. A warning/hint printed by CLI is not authorization to release.
 
 ## Local read-only preflight
 
