@@ -16,7 +16,7 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Anna schema 4 and `validate --strict` | GitHub Actions | CI-confirmed |
-| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 37 automated tests (current branch) | CI-confirmed |
+| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 38 automated tests (current branch) | CI-confirmed |
 | Local dev dashboard | `anna-app dev --no-llm` on CI | CI-confirmed |
 | Read-only release Listing preflight | `npm run preflight`: metadata/privacy structure PASS and commit-pinned public homepage/privacy URLs, no provisional-link warning | CI-confirmed for local files; remote Anna Listing pending |
 | Desktop app connection and initial task/finance/study/journal/goal data | Anna Harness screenshot and RPC `storage.set` | RPC-confirmed |
@@ -98,13 +98,19 @@ Developer-provided PowerShell CLI output and Developer Console Versions screensh
 
 ## Local listing release preflight (2026-11-14)
 
-A new `release-preflight.mjs` performs read-only structural checks against the local `app.json`, `manifest.json` and `PRIVACY.md`. Initially it found two feature-branch URL warnings; these were resolved by pinning both URLs to an accessible public GitHub commit. The latest CI passed **37/37** tests plus `validate --strict` and local listing preflight without warnings. The check does **not** prove the Anna server Listing tab has updated metadata or uploaded logo/screenshot assets. Refer to [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md).
+A new `release-preflight.mjs` performs read-only structural checks against the local `app.json`, `manifest.json` and `PRIVACY.md`. Initially it found two feature-branch URL warnings; these were resolved by pinning both URLs to an accessible public GitHub commit. The latest CI passed **38/38** tests plus `validate --strict` and local listing preflight without warnings. The check does **not** prove the Anna server Listing tab has updated metadata or uploaded logo/screenshot assets. Refer to [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md).
 
 ## Windows local preflight retest (2026-11-14)
 
-The developer provided PowerShell 5.1 output showing a clean fast-forward to `d01bf66`; **37/37 tests passed**, `npm.cmd run validate` returned **validate passed**, and `npm.cmd run preflight -- --release-gate` returned **Structural metadata and privacy-file checks: PASS** with no warnings. These results are based on developer-supplied local logs, corroborating independent GitHub CI for the same branch.
+The developer provided PowerShell 5.1 output showing a clean fast-forward to `d01bf66`; **38/38 tests passed**, `npm.cmd run validate` returned **validate passed**, and `npm.cmd run preflight -- --release-gate` returned **Structural metadata and privacy-file checks: PASS** with no warnings. These results are based on developer-supplied local logs, corroborating independent GitHub CI for the same branch.
 
 The Anna CLI's `apps status life-control-anna` reported **app ID 908**, **draft**, **0 cut versions**, and remote listing **name: Life Control**. The developer confirmed **Life Control** is the final public name. Local `app.json`, manifest, browser title and user-facing copy are aligned to this name; the existing slug `life-control-anna` and app ID 908 remain unchanged. The remote Listing's other fields (logo, screenshot URLs, privacy link, category, descriptions) cannot be confirmed from `apps status` alone.
+
+## Final public naming decision (2026-11-14)
+
+The developer explicitly chose the public app name **Life Control**, without the former `Anna Edition` suffix. Anna CLI already reported remote app name **Life Control** for app ID **908**. The feature branch now aligns `app.json`, manifest window title, UI document title, visible brand label, user-facing erase messages and store listing copy to **Life Control**. The internal Anna app slug `life-control-anna`, storage key and app identity are deliberately unchanged.
+
+GitHub CI at commit `08a90b8ea930bc14c76e0b5ead14298c50ae9f35` passed **38/38** tests and Anna strict validation. The branding changes have **not** yet been pushed as a new Anna remote Working Draft revision; the installed `r1` must be updated and inspected before the new name can be considered deployed end-to-end.
 
 ## Next local check
 
