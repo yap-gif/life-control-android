@@ -31,6 +31,7 @@ jobs:
           node --check bundle/review-contract.js
           node --check bundle/review-format.js
           node --check bundle/ui-feedback.js
+          node --check release-preflight.mjs
       - name: Check JSON manifests
         run: |
           node -e "const f=require('fs'); ['manifest.json','app.json','package.json'].forEach(p=>JSON.parse(f.readFileSync(p,'utf8')))"
@@ -38,6 +39,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validate against Anna official CLI
         run: npm run validate
+      - name: Read-only listing preflight (no Anna mutations)
+        run: npm run preflight
       - name: Unit tests (no API calls)
         run: npm test
       - uses: astral-sh/setup-uv@v6
