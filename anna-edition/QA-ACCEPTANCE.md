@@ -1,6 +1,6 @@
 # Life Control Anna Edition — QA Acceptance Record
 
-**Date:** 2026-11-13  
+**Date:** 2026-11-14  
 **Branch:** `feature/life-control-anna-edition-20261113`  
 **PR:** [#2](https://github.com/yap-gif/life-control-android/pull/2) (Draft)
 
@@ -16,8 +16,9 @@ This is an evidence-grounded release gate, not a declaration of App Store approv
 | Check | Evidence | Status |
 | --- | --- | --- |
 | Anna schema 4 and `validate --strict` | GitHub Actions | CI-confirmed |
-| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 31 automated tests (current branch) | CI-confirmed |
+| Core logic, storage/LLM mock runtime, Markdown, prompt, keyboard/source accessibility and error handling | 36 automated tests (current branch) | CI-confirmed |
 | Local dev dashboard | `anna-app dev --no-llm` on CI | CI-confirmed |
+| Read-only release Listing preflight | `npm run preflight`: metadata/privacy structure PASS, warns on provisional homepage/privacy branch URLs | CI-confirmed; release gate pending |
 | Desktop app connection and initial task/finance/study/journal/goal data | Anna Harness screenshot and RPC `storage.set` | RPC-confirmed |
 | Persistent records after process restart with real APS mode | `storage.get` result contained `APS-PERSIST-001` | RPC-confirmed |
 | Authorized live AI request | `llm.complete` returned normal response | RPC-confirmed |
@@ -93,6 +94,10 @@ Developer-provided PowerShell CLI output and Developer Console Versions screensh
 **Source:** The developer explicitly reported, “我已经测试所有功能，都可以使用” (“I have tested all functions; everything works”). Context: the previously installed private `life-control-anna` `0.0.0-draft`, app ID 908, working revision 1.
 
 **Disposition:** Installed Working Draft **manual smoke test PASSED by developer report** across the app's functions. This statement does not independently document each storage/LLM request, performance, quotas, screen-reader compatibility or publishing readiness. Keep previously documented CI and local Harness evidence in their own categories; no new production RPC evidence was supplied.
+
+## Local listing release preflight (2026-11-14)
+
+A new `release-preflight.mjs` performs read-only structural checks against the local `app.json`, `manifest.json` and `PRIVACY.md`. CI passed **36/36** tests plus `validate --strict`, and reported exactly two expected warnings for the feature-branch `homepage_url` and `privacy_url`. The check does **not** prove the actual Anna server Listing tab includes uploaded logo/screenshot assets. The strict `npm run preflight -- --release-gate` is expected to fail until stable public URLs are used. Refer to [RELEASE-CANDIDATE-0.1.0.md](./RELEASE-CANDIDATE-0.1.0.md).
 
 ## Next local check
 
