@@ -149,6 +149,21 @@ The developer supplied two images captured from the installed Anna application a
 7. The revised `--no-llm --storage legacy` error wording was confirmed in real Harness. Do not combine `--no-llm` with `--storage aps`. Other live failure cases (quota exhaustion, storage permission/network failure) remain untested and should only be attempted with disposable data.
 8. Review the provisional logo, screenshots and listing copy. Replace branch-based privacy URLs with stable ones before publishing. Do not expose Harness URLs containing `t=` tokens or private RPC storage payloads.
 
+## Immutable version cut confirmed (2026-11-14)
+
+**Evidence:** Developer-supplied Anna CLI PowerShell 5.1 transcript from the existing `life-control-anna` project.
+
+- Pre-cut `apps versions life-control-anna` returned **0** versions.
+- The identity checks on local `app.json` matched name **Life Control**, slug `life-control-anna`, and requested version **0.1.0**.
+- `npm.cmd run validate` returned `validate passed`, and `npm.cmd run preflight -- --release-gate` returned `Structural metadata and privacy-file checks: PASS`.
+- `anna-app apps cut 0.1.0` returned **`cut immutable version 0.1.0 (version_id=2279)`**.
+- The subsequent **separate** `apps versions life-control-anna` returned **1** version, `v0.1.0 (id=2279, published=—)`.
+- `apps status life-control-anna` returned **name: Life Control**, **app_id: 908**, **status: draft**, **latest: v0.1.0 (id=2279, published=—)**, **versions: 1 total**.
+
+**Disposition:** **PASS — first immutable Anna version created** and independently verified by two CLI status reads. The platform has **not** received an App Review submission, and `published=—` means no Marketplace release. Anna CLI's hint to run `apps release` is not a user instruction or proof that the app is approved.
+
+**Scope / remaining gates:** The version's frozen source was cut from the last uploaded working draft (`r2`). Local `app.json` privacy/homepage permalink edits were made after that push, so remote Listing metadata is **not known** to be synchronized. Verify server-side Listing name/tagline/description/logo/real screenshot URLs/homepage/support/privacy and frozen candidate bundle readiness in Developer Console before separately authorizing App Review. Additional screen-reader and live failure testing remain distinct quality risks.
+
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. r2 installed-app branding has now passed visual inspection. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, additional authentic feature screenshots, remote Listing metadata/media and up-to-date privacy URL checks, and an explicit decision before freezing an immutable version. Marketplace review and builder grant eligibility are separate platform decisions.
+**Immutable version 0.1.0 (Anna version ID 2279) is cut and confirmed; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. r2 installed-app branding has now passed visual inspection. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, additional authentic feature screenshots, remote Listing metadata/media and up-to-date privacy URL checks, and an explicit decision before submitting the frozen version for App Review. Marketplace review and builder grant eligibility are separate platform decisions.
