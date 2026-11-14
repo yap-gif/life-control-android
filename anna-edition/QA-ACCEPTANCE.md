@@ -110,7 +110,15 @@ The Anna CLI's `apps status life-control-anna` reported **app ID 908**, **draft*
 
 The developer explicitly chose the public app name **Life Control**, without the former `Anna Edition` suffix. Anna CLI already reported remote app name **Life Control** for app ID **908**. The feature branch now aligns `app.json`, manifest window title, UI document title, visible brand label, user-facing erase messages and store listing copy to **Life Control**. The internal Anna app slug `life-control-anna`, storage key and app identity are deliberately unchanged.
 
-GitHub CI at commit `08a90b8ea930bc14c76e0b5ead14298c50ae9f35` passed **38/38** tests and Anna strict validation. The branding changes have **not** yet been pushed as a new Anna remote Working Draft revision; the installed `r1` must be updated and inspected before the new name can be considered deployed end-to-end.
+GitHub CI at commit `08a90b8ea930bc14c76e0b5ead14298c50ae9f35` passed **38/38** tests and Anna strict validation. The branding changes have now been pushed to Anna private Working Draft **r2** (7 files, bundle ready; app ID 908). The developer still needs to open/reinstall r2 in Anna Chat and confirm the new UI branding. No cut version or release occurred.
+
+## Private Working Draft branding upload — revision 2 (2026-11-14)
+
+Developer-provided PowerShell 5.1 log confirms all **38/38** tests passed, `anna-app validate --strict` passed, and `npm run preflight -- --release-gate` passed. The subsequent `apps push --dry-run` resolved the **existing app ID 908** and slug `life-control-anna`; the Windows CLI printed `UV_HANDLE_CLOSING` on exit after completing that preview.
+
+The actual `anna-app apps push` then staged a **7-file / 42.0 KB** working bundle, skipped **4/7 unchanged** files and returned **working draft updated (rev 2), status draft, bundle ready**. A fresh `apps status` reported remote **name Life Control**, app ID **908**, **draft**, no cut versions. This confirms an update to the existing private application, not a new app or public release.
+
+**Verification boundary:** revision 2 has been uploaded but the supplied logs do not show re-installation/opening of the updated branding in Anna Chat. The developer's earlier end-to-end functional smoke report applies to `r1`, not independently to `r2`.
 
 ## Next local check
 
@@ -125,4 +133,4 @@ GitHub CI at commit `08a90b8ea930bc14c76e0b5ead14298c50ae9f35` passed **38/38** 
 
 ## Release decision
 
-**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. Remaining release work includes an assistive-technology screen-reader audit, untested live quota/storage failure paths, developer approval of store assets, stable listing/privacy links, and an explicit decision before freezing an immutable version. Marketplace review and builder grant eligibility are separate platform decisions.
+**Functional regression accepted for this test scope; public release not yet approved.** PR #2 remains Draft; `main` is untouched. Markdown rendering, real APS persistence, consent-limited LLM input and the targeted non-empty ambiguous-title case have supporting logs. Installed Working Draft functional smoke acceptance is now developer-reported PASS. Remaining release work includes a direct r2 installed-app branding check, an assistive-technology screen-reader audit, untested live quota/storage failure paths, actual (non-generated) app screenshots, remote Listing logo/media checks and an explicit decision before freezing an immutable version. Marketplace review and builder grant eligibility are separate platform decisions.
