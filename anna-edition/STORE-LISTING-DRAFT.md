@@ -1,4 +1,4 @@
-# Life Control — Anna Edition | Store Listing Draft
+# Life Control | Store Listing Draft
 
 **Status: review copy only. App Working Draft was uploaded and privately installed on 2026-11-14; this listing remains provisional. No immutable version cut, App Review submission or public publication.**  
 **Candidate app:** `life-control-anna` (created in Developer Console as app ID 908, working revision 1)  
@@ -9,13 +9,13 @@
 ## Listing fields ready for review
 
 ### App name
-Life Control — Anna Edition
+Life Control
 
 ### Short description / tagline (within 160 characters)
 Track what matters. Get AI weekly reviews based only on the life data you choose to share.
 
 ### Long description
-Life Control — Anna Edition combines everyday planning with privacy-conscious AI reflection.
+Life Control combines everyday planning with privacy-conscious AI reflection.
 
 Manage your tasks and due dates, record income and expenses in MYR, log learning sessions, write a daily reflection, and forecast progress toward a personal savings goal—all in a single workspace.
 
@@ -23,7 +23,7 @@ Manage your tasks and due dates, record income and expenses in MYR, log learning
 
 Your records are saved through Anna's app storage. The app supports individual record deletion and a clear-workspace option. Please note that clearing local app-accessible records does not retract prior AI requests or guarantee removal of platform-side backups and logs.
 
-This independent Anna edition does not synchronize with the Life Control Android app, connect to banks, deliver background push notifications, or offer professional financial advice. AI requests may use Anna platform quota.
+This Anna-hosted app does not synchronize with the Life Control Android app, connect to banks, deliver background push notifications, or offer professional financial advice. AI requests may use Anna platform quota.
 
 ### Customer support URL
 https://github.com/yap-gif/life-control-android/issues
