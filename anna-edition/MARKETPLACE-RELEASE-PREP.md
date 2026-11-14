@@ -5,7 +5,7 @@
 **Developer handle:** `@lifecontroldev` (reported by developer)  
 **GitHub:** [PR #2](https://github.com/yap-gif/life-control-android/pull/2) — Draft
 
-This document prepares review material. **The developer has pushed and installed a private Working Draft (revision 1); no immutable version cut, App Review submission, public release or Marketplace publication has been performed.**
+This document prepares review material. **The developer has pushed and installed a private Working Draft (r1, later updated to r2); no immutable version cut, App Review submission, public release or Marketplace publication has been performed.**
 
 ## A. Draft Marketplace listing copy
 
@@ -84,7 +84,7 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 - Manual CRUD, Journal overwrite, erase/restart and Mobile checks: developer-reported
 - Keyboard-only smoke navigation: **developer-reported passed** in Harness; assistive-technology screen-reader audit still pending
 - Live AI quota failure and storage-permission failure UX: **pending manual**
-- Anna private Working Draft: **uploaded** as revision 1, 7-file UI bundle ready, app ID 908; **developer installed** reserved `0.0.0-draft` from console and reported all app functions work in Anna Chat on 2026-11-14; production API traces not independently inspected
+- Anna private Working Draft: **uploaded** as revision 2, 7-file UI bundle ready, app ID 908; **developer installed** reserved `0.0.0-draft` from console and reported all app functions work in Anna Chat on 2026-11-14; production API traces not independently inspected
 - Anna App Review and funding qualification: **not tested or guaranteed**
 
 ## D. Anna release sequence — informational only
@@ -93,7 +93,7 @@ Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish),
 
 1. Finalize listing copy, privacy link and public-facing screenshots/logo.
 2. Perform remaining accessibility and failure-path tests.
-3. **Completed with explicit developer action (2026-11-14):** `anna-app apps push` created private Working Draft revision 1; the developer installed `0.0.0-draft` from Anna Developer Console. This was **not** public publication.
+3. **Completed with explicit developer actions (2026-11-14):** first `apps push` created private Working Draft r1; the developer installed `0.0.0-draft`, tested its features and subsequently pushed the **Life Control** brand update as **r2**. The updated r2 should be reopened and checked in Anna Chat. Neither push was a public publication.
 4. **Developer-reported PASS (2026-11-14):** tested all features of the installed private Working Draft in Anna Chat. No per-operation production RPC receipts have been provided.
 5. **Only with explicit approval**, cut the planned immutable version (`anna-app apps cut 0.1.0`); review the resulting candidate.
 6. **Only with explicit approval**, submit that version for App Review. The platform may request UX/security fixes; review does not imply an automatic grant.
