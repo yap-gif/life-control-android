@@ -74,7 +74,7 @@ export function main(args = process.argv.slice(2)) {
   const privacyText = readFileSync(join(root, "PRIVACY.md"), "utf8");
   const { errors, warnings } = inspectListing(app, manifest, privacyText);
 
-  console.log("Life Control Anna Edition — local listing preflight");
+  console.log("Life Control — local listing preflight");
   console.log("Target:", app.slug, "| candidate:", app.version);
   console.log("Note: Anna Console Listing fields and uploaded media must be reviewed separately.");
   for (const msg of errors) console.error("ERROR:", msg);
