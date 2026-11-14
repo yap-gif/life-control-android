@@ -1,4 +1,4 @@
-/** Pure transformations for Life Control Anna Edition. No platform or network access. */
+/** Pure transformations for Life Control on Anna. No platform or network access. */
 export const STORAGE_KEY = "life-control-anna:v1";
 export const CONTEXT_CATEGORIES = Object.freeze(["tasks", "money", "learning", "journal"]);
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
