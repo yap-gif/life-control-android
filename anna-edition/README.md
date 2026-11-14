@@ -38,7 +38,7 @@ For a disclosure of data-handling boundaries and known platform-level limits, se
 
 ## Verification evidence (updated 2026-11-14)
 
-**Independent CI evidence:** `anna-app validate --strict` passed; 36 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
+**Independent CI evidence:** `anna-app validate --strict` passed; 37 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
 
 **Developer's real Windows Anna Harness logs:** The app opened successfully; after restarting in APS mode, `storage.get` returned the expected test records. A real `llm.complete` responded to a request containing Tasks and Learning, but no Money or Journal. The developer subsequently reported Task complete/reopen/delete, same-day Journal overwrite, erase-and-restart, and Mobile-mode form checks as successful. Those last items are user-reported manual checks, not independently repeated device tests.
 
@@ -50,7 +50,7 @@ Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 
 - [Store listing draft](./STORE-LISTING-DRAFT.md) — proposed name, tagline, short and long description, privacy disclosures, screenshot plan.
 - [Marketplace release plan](./MARKETPLACE-RELEASE-PREP.md) — production verification gates, logo and final screenshot requirements, approval boundaries.
-- A preliminary icon and three token-free application screenshots have been prepared separately for developer review; no binary images have been pushed to the public repository.
+- The developer approved a six-image AI-generated promotional direction, but these concepts must **not** be represented as real app screenshots. A separate package contains those six concepts, three genuine historical Harness crops and a candidate logo. Actual installed-App captures and Anna remote Listing/logo upload are still pending. No binary images have been pushed to the public repository.
 - Keyboard-only focus/confirmation interactions were developer-reported passed; an assistive-technology screen-reader audit is outstanding. The fixed `llm_disabled` explanation was observed working in the actual Anna Harness.
 
 ## Known limitations
@@ -89,7 +89,7 @@ The Anna CLI's official quickstart also suggests `anna-app doctor` to verify loc
 
 ## Release-candidate checks
 
-Run `npm run preflight` for local metadata/privacy validation. This intentionally reports warnings because the homepage and privacy URLs currently target a feature branch. The strict `npm run preflight -- --release-gate` must pass before release review, and it never reads the actual Anna Console Listing. See the [0.1.0 release-candidate gate](./RELEASE-CANDIDATE-0.1.0.md) for outstanding listing assets, stable public links, screen-reader testing and explicit authorization boundaries.
+Run `npm run preflight` for local metadata/privacy validation. This now passes without branch-link warnings because the homepage and privacy URLs are pinned to a publicly verified GitHub commit. The strict `npm run preflight -- --release-gate` is also a **local-only** check; it does not read the actual Anna Console Listing. CI has **37** tests passing. See the [0.1.0 release-candidate gate](./RELEASE-CANDIDATE-0.1.0.md) for outstanding listing assets, stable public links, screen-reader testing and explicit authorization boundaries.
 
 ## Verify before submitting
 
