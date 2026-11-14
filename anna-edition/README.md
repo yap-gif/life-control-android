@@ -36,13 +36,13 @@ AI context selection is enforced by `bundle/logic.js::buildReviewContext` and no
 
 For a disclosure of data-handling boundaries and known platform-level limits, see [PRIVACY.md](./PRIVACY.md).
 
-## Verification evidence (2026-11-13)
+## Verification evidence (updated 2026-11-14)
 
-**Independent CI evidence:** `anna-app validate --strict` passed; 31 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
+**Independent CI evidence:** `anna-app validate --strict` passed; 36 Node/Anna harness unit tests passed, including AI category filtering, new safe Markdown formatting, and evidence-only request contract; `anna-app dev --no-llm` launched and the dashboard responded.
 
 **Developer's real Windows Anna Harness logs:** The app opened successfully; after restarting in APS mode, `storage.get` returned the expected test records. A real `llm.complete` responded to a request containing Tasks and Learning, but no Money or Journal. The developer subsequently reported Task complete/reopen/delete, same-day Journal overwrite, erase-and-restart, and Mobile-mode form checks as successful. Those last items are user-reported manual checks, not independently repeated device tests.
 
-**Post-patch browser checks still needed:** Pull the latest commit; confirm that the new Markdown renderer displays headings/bold/lists as formatted text and that an AI review with an ambiguous task title avoids invented domain-specific steps. These controls can reduce unsupported output, not guarantee zero model errors.
+**Post-patch browser checks completed:** The developer supplied real Harness evidence for Markdown formatting, the ambiguous-task regression and safe `llm_disabled` feedback. The developer subsequently installed private Working Draft `life-control-anna` (app ID 908, revision 1) in Anna Chat and reported **all functions working**. These reports do not constitute a separate production RPC or screen-reader audit.
 
 Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 
@@ -51,7 +51,7 @@ Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 - [Store listing draft](./STORE-LISTING-DRAFT.md) — proposed name, tagline, short and long description, privacy disclosures, screenshot plan.
 - [Marketplace release plan](./MARKETPLACE-RELEASE-PREP.md) — production verification gates, logo and final screenshot requirements, approval boundaries.
 - A preliminary icon and three token-free application screenshots have been prepared separately for developer review; no binary images have been pushed to the public repository.
-- The latest keyboard/accessibility changes have **CI source tests** but still require interactive keyboard testing. The developer supplied a real `--no-llm --storage legacy` failure log: the UI remained usable and did not reveal host details. A subsequent patch adds the explicit `llm_disabled` explanation; its browser wording must be retested.
+- Keyboard-only focus/confirmation interactions were developer-reported passed; an assistive-technology screen-reader audit is outstanding. The fixed `llm_disabled` explanation was observed working in the actual Anna Harness.
 
 ## Known limitations
 
@@ -60,7 +60,7 @@ Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 3. **Forecast limitations:** Simple planning estimate based on manually entered savings amounts; no cashflow predictions or bank integration.
 4. **Storage failure:** Editing is blocked if the Anna storage connection cannot be loaded. If a save fails mid-session, the UI reports that the change may not persist.
 5. **Review outcome:** No guarantee of Anna App Review approval, qualified active users or grant funding. The in-app erase function does not remove Anna platform backups, logs or previously submitted AI prompts.
-6. **Not yet published:** Windows developer-harness, real APS storage restoration and a real LLM request have been observed. The new Markdown/prompt patch still requires browser retesting before marketplace submission.
+6. **Not yet publicly published:** The private Working Draft `0.0.0-draft` was installed and developer-reported functional in Anna Chat. No immutable `0.1.0` cut, App Review submission or Marketplace release has occurred.
 
 ## Start locally
 
@@ -70,6 +70,7 @@ Requires Node.js **22+**, `uv`, and Anna developer credentials.
 npm install
 npm test
 npm run validate
+npm run preflight
 npm run dev
 ```
 
@@ -80,10 +81,15 @@ cd anna-edition
 npm install
 npm test
 npm run validate
+npm run preflight
 npm run dev
 ```
 
 The Anna CLI's official quickstart also suggests `anna-app doctor` to verify local runtime requirements. Host UI requires Anna's sandbox: opening `index.html` directly in a browser will not connect to Anna and is not an end-to-end test.
+
+## Release-candidate checks
+
+Run `npm run preflight` for local metadata/privacy validation. This intentionally reports warnings because the homepage and privacy URLs currently target a feature branch. The strict `npm run preflight -- --release-gate` must pass before release review, and it never reads the actual Anna Console Listing. See the [0.1.0 release-candidate gate](./RELEASE-CANDIDATE-0.1.0.md) for outstanding listing assets, stable public links, screen-reader testing and explicit authorization boundaries.
 
 ## Verify before submitting
 
