@@ -1,0 +1,17 @@
+# Anna local developer runtime. May contain generated state or credentials.
+/.anna/
+
+# Local npm dependencies and build output.
+/node_modules/
+
+# Local development logs.
+/npm-debug.log*
+/*.log
+
+# Developer-specific environment files.
+/.env
+/.env.*
+!/.env.example
+
+# Intentionally do not ignore package-lock.json.
+# It should be reviewed and committed for reproducible npm installs.

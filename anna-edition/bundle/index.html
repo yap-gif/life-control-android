@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Life Control</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <main class="shell" id="main-content" tabindex="-1">
+    <header class="top">
+      <div><div class="eyebrow">LIFE CONTROL</div><h1>Build a life you can measure.</h1>
+        <p class="muted">Your progress. Your choices. Only your selected context reaches AI.</p></div>
+      <div class="pill" id="connection" role="status" aria-live="polite">Connecting to Anna...</div>
+    </header>
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+    <section class="summary grid-four" aria-label="Overview">
+      <div class="stat"><span>Open tasks</span><strong id="open-count">—</strong></div>
+      <div class="stat"><span>Due now / overdue</span><strong id="due-count">—</strong></div>
+      <div class="stat"><span>This week's learning</span><strong id="study-count">—</strong></div>
+      <div class="stat"><span>Weekly net cashflow</span><strong id="net-count">—</strong></div>
+    </section>
+    <div class="columns">
+      <div class="stack">
+        <section class="card" aria-labelledby="tasks-label">
+          <h2 id="tasks-label">Tasks & in-app reminders</h2>
+          <form id="task-form" class="form-row">
+            <label>Task <input name="title" maxlength="120" required placeholder="Write a clear next action"></label>
+            <label>Due <input name="date" type="date" required></label>
+            <button type="submit">Add task</button>
+          </form>
+          <ul id="task-list" class="entries"></ul>
+          <p class="footnote">Due dates are highlighted while this app is open; no device push notifications in this edition.</p>
+        </section>
+        <section class="card" aria-labelledby="money-label">
+          <h2 id="money-label">Money</h2>
+          <form id="money-form" class="form-row">
+            <label>Amount <input name="amount" type="number" min="0.01" max="100000000" step="0.01" required placeholder="RM"></label>
+            <label>Type <select name="type"><option value="income">Income</option><option value="expense">Expense</option></select></label>
+            <label>Category <input name="category" maxlength="48" required placeholder="Food / Work"></label>
+            <label>Date <input name="date" type="date" required></label>
+            <button type="submit">Record</button>
+          </form>
+          <ul id="money-list" class="entries"></ul>
+        </section>
+        <section class="card" aria-labelledby="learning-label">
+          <h2 id="learning-label">Learning</h2>
+          <form id="learning-form" class="form-row">
+            <label>Topic <input name="topic" maxlength="120" required placeholder="Kotlin, databases..."></label>
+            <label>Minutes <input name="minutes" type="number" min="1" max="1440" step="1" required></label>
+            <label>Date <input name="date" type="date" required></label>
+            <button type="submit">Log session</button>
+          </form>
+          <ul id="learning-list" class="entries"></ul>
+        </section>
+      </div>
+      <div class="stack">
+        <section class="card" aria-labelledby="journal-label">
+          <h2 id="journal-label">Daily journal</h2>
+          <form id="journal-form" class="form-grid">
+            <label>Date <input name="date" type="date" required></label>
+            <label>Reflection <textarea name="text" maxlength="2000" rows="3" required placeholder="What changed, what went well, what to improve?"></textarea></label>
+            <button type="submit">Save reflection</button>
+          </form>
+          <ul id="journal-list" class="entries"></ul>
+        </section>
+        <section class="card" aria-labelledby="forecast-label">
+          <h2 id="forecast-label">Savings goal forecast</h2>
+          <form id="goal-form" class="form-row">
+            <label>Goal (RM) <input name="goal" type="number" min="0" max="100000000" step="0.01" required></label>
+            <label>Saved (RM) <input name="saved" type="number" min="0" max="100000000" step="0.01" required></label>
+            <label>Planned monthly saving (RM) <input name="monthly" type="number" min="0" max="100000000" step="0.01" required></label>
+            <button type="submit">Save forecast</button>
+          </form>
+          <p id="forecast" class="forecast"></p>
+          <p class="footnote">Planning estimate only. Uses amounts you enter here, not bank data.</p>
+        </section>
+        <section class="card highlight" aria-labelledby="review-label">
+          <div class="head-row"><h2 id="review-label">AI weekly review</h2><span class="tag">Opt-in only</span></div>
+          <p class="muted">Choose exactly what the AI may read. Excluded categories are not included in the prompt. Your selected data is processed by Anna's AI provider when you confirm.</p>
+          <form id="review-form" class="review-form">
+            <fieldset><legend>Share only these categories</legend>
+              <label class="tick"><input type="checkbox" name="context" value="tasks" checked> Tasks</label>
+              <label class="tick"><input type="checkbox" name="context" value="money"> Money</label>
+              <label class="tick"><input type="checkbox" name="context" value="learning" checked> Learning</label>
+              <label class="tick"><input type="checkbox" name="context" value="journal"> Journal</label>
+            </fieldset>
+            <label class="tick consent"><input type="checkbox" id="ai-consent" required> I authorize this one AI review with only my selected categories. I understand AI calls may consume platform credits.</label>
+            <button type="submit" id="review-btn">Generate weekly review</button>
+          </form>
+          <div id="review-result" class="review-result" role="status" aria-live="polite" aria-busy="false">No AI request sent yet.</div>
+        </section>
+      </div>
+    </div>
+    <section class="privacy-controls" aria-label="Data management">
+      <div>
+        <strong>Data & privacy controls</strong>
+        <p>Data is stored by the Anna platform for this app. You can delete this workspace's saved records here. This does not retract data already sent in an authorized AI request or delete any platform-side logs or backups.</p>
+      </div>
+      <button type="button" class="danger" id="erase-data" aria-controls="erase-confirm-panel" aria-expanded="false" disabled>Erase saved data</button>
+      <div id="erase-confirm-panel" hidden class="erase-confirm" role="group" aria-labelledby="erase-confirm-title" aria-describedby="erase-confirm-detail">
+        <strong id="erase-confirm-title">Confirm workspace erasure</strong>
+        <p id="erase-confirm-detail">Delete all saved Life Control records and forecast settings? This cannot be undone.</p>
+        <button type="button" id="erase-cancel">Cancel</button>
+        <button type="button" class="danger" id="erase-confirm">Confirm erase</button>
+      </div>
+    </section>
+    <footer>Independent Anna-hosted data. No Android Room sync · No automatic AI calls · No external analytics.</footer>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

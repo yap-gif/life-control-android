@@ -1,0 +1,75 @@
+name: Anna Edition Source Checks
+
+on:
+  push:
+    paths:
+      - "anna-edition/**"
+      - ".github/workflows/anna-edition-tests.yml"
+  pull_request:
+    paths:
+      - "anna-edition/**"
+      - ".github/workflows/anna-edition-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: anna-edition
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check bundle/logic.js
+          node --check bundle/app.js
+          node --check bundle/review-contract.js
+          node --check bundle/review-format.js
+          node --check bundle/ui-feedback.js
+          node --check release-preflight.mjs
+      - name: Check JSON manifests
+        run: |
+          node -e "const f=require('fs'); ['manifest.json','app.json','package.json'].forEach(p=>JSON.parse(f.readFileSync(p,'utf8')))"
+      - name: Install Anna CLI (for official schema/Host API checks)
+        run: npm install --no-audit --no-fund
+      - name: Validate against Anna official CLI
+        run: npm run validate
+      - name: Read-only listing preflight (no Anna mutations)
+        run: npm run preflight
+      - name: Unit tests (no API calls)
+        run: npm test
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - name: Launch Anna local development harness (no account credentials)
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          npm run dev -- --no-llm --port 5180 > "$RUNNER_TEMP/anna-dev.log" 2>&1 &
+          child=$!
+          trap 'kill "$child" 2>/dev/null || true' EXIT
+          for i in $(seq 1 45); do
+            if curl --fail --silent --show-error --max-time 3 http://127.0.0.1:5180/ > "$RUNNER_TEMP/anna-dashboard.html" 2>/dev/null; then
+              echo "Anna local harness dashboard is reachable."
+              if curl --fail --silent --show-error --max-time 3 http://127.0.0.1:5180/anna-apps/life-control-anna/dev/index.html -o "$RUNNER_TEMP/anna-entry.html" 2>/dev/null; then
+                grep -q "Life Control" "$RUNNER_TEMP/anna-entry.html"
+                echo "Anna UI bundle entry HTML is served."
+              else
+                echo "Bundle entry URL not directly accessible without a window token; dashboard smoke test passed."
+              fi
+              exit 0
+            fi
+            if ! kill -0 "$child" 2>/dev/null; then
+              cat "$RUNNER_TEMP/anna-dev.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/anna-dev.log"
+          echo "Anna dev harness did not expose its local dashboard."
+          exit 1
