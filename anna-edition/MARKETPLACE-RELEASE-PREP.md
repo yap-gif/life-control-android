@@ -87,6 +87,12 @@ Before applying, articulate a clear AI-native use case: consent-aware reasoning 
 - Anna private Working Draft: **uploaded** as revision 2, 7-file UI bundle ready, app ID 908; **developer installed** reserved `0.0.0-draft` from console and reported all app functions work in Anna Chat on 2026-11-14; production API traces not independently inspected
 - Anna App Review and funding qualification: **not tested or guaranteed**
 
+## Developer community introduction (2026-11-16)
+
+Developer supplied an actual screenshot of a posted message in the Anna Discord `#👋-introductions` channel. The message presents Life Control as an independent Malaysia-developed Anna AI OS productivity app covering tasks, finances, learning, journal and goals, identifies **AI Weekly Review** as its primary AI feature, describes fresh category-specific AI consent, and correctly says **v0.1.0 is currently under App Review**.
+
+**Status:** Community introduction **posted** (user-supplied screenshot evidence). This is outreach, not proof of new installs, Qualified MAU, customer feedback, grant eligibility or App Review approval. Do not repost the same message unnecessarily. Continue gathering relevant feedback and monitor the review outcome before any release.
+
 ## D. Anna release sequence — informational only
 
 Sources: [Publishing an App](https://anna.partners/developers/apps/app-publish), [Listing Fields](https://anna.partners/developers/apps/app-listing), and [App Review Timeline](https://forum.anna.partners/t/app-review-timeline-process/318).
