@@ -5,6 +5,7 @@ import {
 } from "./logic.js";
 import { explainHostError, entryActionLabel } from "./ui-feedback.js";
 import { buildReviewRequest } from "./review-contract.js";
+import { summarizePatternPreview } from "./patterns.js";
 import { renderReviewMarkdown } from "./review-format.js";
 
 const $ = id => document.getElementById(id);
@@ -13,6 +14,7 @@ let anna = null;
 let state = normalizeState({});
 let saveChain = Promise.resolve();
 let reviewBusy = false;
+let lastGeneratedPlan = null;
 const TODAY = () => localDate();
 const money = n => "RM " + Number(n).toFixed(2);
 const id = () => "lc-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 11);
@@ -128,6 +130,32 @@ function render() {
     : forecast.status === "no-contribution" ? money(forecast.remaining) + " remaining. Add a positive monthly saving to estimate timing."
     : money(forecast.remaining) + " remaining · approximately " + forecast.months + " month(s) at your planned pace.";
   $("forecast").textContent = forecastText;
+  renderPatternPreview();
+}
+function selectedReviewCategories() {
+  return [...document.querySelectorAll('#review-form input[name="context"]:checked')].map(e => e.value);
+}
+function renderPatternPreview() {
+  const target = $("pattern-preview");
+  if (!target) return;
+  target.replaceChildren();
+  const categories = selectedReviewCategories();
+  let insights = [];
+  try {
+    insights = categories.length ? summarizePatternPreview(state, categories, TODAY()) :
+      ["Select a category to preview only the records you permit."];
+  } catch {
+    insights = ["Unable to build local preview. Check saved dates."];
+  }
+  insights.forEach(item => target.append(el("li", "", item)));
+  const plan = state.savedPlan;
+  $("saved-plan-status").textContent = plan ?
+    "Saved " + plan.savedAt + " · source categories: " + plan.categories.join(", ") +
+      ". Include it only with all these categories selected." :
+    "No saved plan. You may save the next AI response for a future comparison.";
+  $("include-saved-plan").disabled = !plan;
+  if (!plan) $("include-saved-plan").checked = false;
+  $("forget-plan-btn").disabled = !plan;
 }
 function bindForm(formId, handler) {
   $(formId).addEventListener("submit", event => {
@@ -202,26 +230,30 @@ function bindEntries() {
 async function handleReview(event) {
   event.preventDefault();
   if (reviewBusy) return;
-  const selected=[...document.querySelectorAll('#review-form input[name="context"]:checked')].map(e=>e.value);
+  const selected=selectedReviewCategories();
   if (!$("ai-consent").checked) { status("Please explicitly authorize this one AI request.",true); return; }
   let request;
-  try { request = buildReviewRequest(state, selected, TODAY()); }
+  try { request = buildReviewRequest(state, selected, TODAY(), { includeSavedPlan: $("include-saved-plan").checked }); }
   catch(error) { status(error.message,true); return; }
 
   // Per-request consent; a future review always needs another explicit approval.
   $("ai-consent").checked=false;
   reviewBusy=true;
   $("review-btn").disabled=true;
-  $("review-btn").textContent="Generating...";
+  $("review-btn").textContent="Analyzing history...";
+  lastGeneratedPlan = null;
+  $("save-plan-btn").disabled = true;
   $("review-result").setAttribute("aria-busy", "true");
-  $("review-result").textContent="Sending selected categories only and generating your weekly review...";
+  $("review-result").textContent="Analyzing selected historical evidence and developing a measurable next-week plan...";
   status("Only the selected categories are included in this AI request.");
   try {
     const reply=await anna.llm.complete(request);
     const output=reply?.content?.text;
     if(typeof output!=="string" || !output.trim()) throw new Error("AI did not return a usable review.");
     renderReviewMarkdown($("review-result"), output);
-    status("Review complete. No other categories were sent.");
+    lastGeneratedPlan = { savedAt: TODAY(), text: output.slice(0, 6000), categories: [...selected] };
+    $("save-plan-btn").disabled = false;
+    status("Evidence-based plan generated. Save it locally if you want an explicit comparison next week.");
   } catch(error) {
     const explanation = explainHostError(error, "ai");
     $("review-result").textContent=explanation;
@@ -230,7 +262,7 @@ async function handleReview(event) {
     $("review-result").setAttribute("aria-busy", "false");
     reviewBusy=false;
     $("review-btn").disabled=false;
-    $("review-btn").textContent="Generate weekly review";
+    $("review-btn").textContent="Analyze pattern & adjust plan";
   }
 }
 async function eraseWorkspace() {
@@ -251,10 +283,13 @@ async function eraseWorkspace() {
       await anna.storage.set({ key: STORAGE_KEY, value: normalizeState({}) });
     }
     state = normalizeState({});
+    lastGeneratedPlan = null;
+    $("save-plan-btn").disabled = true;
+    $("include-saved-plan").checked = false;
     for (const [key,value] of Object.entries(state.goal)) {
       $("goal-form").elements.namedItem(key).value = String(value);
     }
-    $("review-result").textContent = "No AI request sent yet.";
+    $("review-result").textContent = "No AI plan requested yet.";
     $("ai-consent").checked = false;
     render();
     status("Life Control records erased from this app's storage. Platform logs/backups and past AI requests are outside this control.");
@@ -286,7 +321,25 @@ async function boot() {
       $("goal-form").elements.namedItem(key).value=String(val);
     }
     bindEntries();
-    $("review-form").addEventListener("submit",handleReview);
+    $("review-form").addEventListener("submit", handleReview);
+    $("review-form").querySelectorAll('input[name="context"]').forEach(input => {
+      input.addEventListener("change", renderPatternPreview);
+    });
+    $("save-plan-btn").addEventListener("click", () => {
+      if (!lastGeneratedPlan || reviewBusy) return;
+      state.savedPlan = lastGeneratedPlan;
+      lastGeneratedPlan = null;
+      $("save-plan-btn").disabled = true;
+      persistAndRender();
+      status("AI plan saved to app storage. Future comparisons still require explicit opt-in.");
+    });
+    $("forget-plan-btn").addEventListener("click", () => {
+      if (!state.savedPlan || reviewBusy) return;
+      state.savedPlan = null;
+      $("include-saved-plan").checked = false;
+      persistAndRender();
+      status("Saved AI plan removed from app storage.");
+    });
     $("erase-data").disabled = false;
     const dismissErase = () => {
       $("erase-confirm-panel").hidden = true;
