@@ -49,6 +49,14 @@ At `v0.1.0` the model received only `buildReviewContext(..., currentWeek)` and g
 - `npm run preflight -- --review-gate` intentionally **fails** until at least three local screenshot URLs exist. Even PASS would only prove local format, not remote server persistence. Reviewer may expect a richer gallery; three is an internal quality gate, not an Anna platform minimum.
 - Independently verify Listing logo, headline, `0.1.1` description, public privacy notice and product screenshots match the actually installed revised bundle.
 
+## Windows local source verification and branch-switch anomaly (2026-11-17)
+
+Developer's Windows PowerShell 5.1 transcript shows that the direct refspec fetch `refs/heads/fix/life-control-ai-native-review-20261117:refs/remotes/origin/fix/life-control-ai-native-review-20261117` succeeded, but `git switch -c ... --track origin/...` returned **"cannot set up tracking information; starting point ... is not a branch"**. Git still reported the old feature branch while `git status --short` showed the new candidate's modifications in the **index** (`M ` / `A `), and an **untracked** `anna-edition/package-lock.json`. Local `app.json` and `package.json` both displayed version **0.1.1**; this is a checked-out working tree, not proof of a successful Git branch switch.
+
+On that **v0.1.1 local working tree**, `npm.cmd test` passed **47/47**, `npm.cmd run validate` returned **validate passed**, and `npm.cmd run preflight -- --review-gate` exited **1** with the **expected blocking error** for missing publicly accessible authentic screenshot URLs. These are developer-supplied local logs; prior remote GitHub CI independently passed the same 47-test source checks.
+
+**Next Git repair:** Protect all staged and untracked edits in a named `git stash push -u`, explicitly switch/create the local repair branch from the fetched remote commit **without auto-tracking**, then check that HEAD matches the remote ref. Retain stash until developer verifies branch integrity; do not blindly pop the stale staged patch over the correct source. No remote Anna changes were performed.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
