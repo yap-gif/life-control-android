@@ -105,3 +105,13 @@ test("follow-up prompt forbids using earlier saved-day records as compliance", (
   assert.match(payload,/"canAssessFollowThrough":false/);
   assert.match(payload,/"strictlyLaterDatedRecords":0/);
 });
+
+test("AI guidance only recommends fields the selected app modules actually support", () => {
+  const request = buildReviewRequest(data, ["learning"], "2026-11-17");
+  const instructions = request.messages[0].content.text;
+  assert.match(instructions, /Learning entries store only date, topic and minutes/);
+  assert.match(instructions, /do not ask users to record start\/end times/);
+  assert.match(instructions, /topic active\/paused status/);
+  assert.match(instructions, /If only Learning was selected/);
+  assert.match(instructions, /never suggest opening unselected categories/);
+});
