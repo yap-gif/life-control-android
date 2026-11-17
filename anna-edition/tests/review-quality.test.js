@@ -73,3 +73,20 @@ test("fenced code text is not interpreted as HTML", () => {
   const blocks = parseReviewMarkdown("```html\n<div onclick=bad()>text</div>\n```");
   assert.deepEqual(blocks, [{ kind: "code", text: "<div onclick=bad()>text</div>" }]);
 });
+
+test("review-section visibility obeys saved-plan opt-in", () => {
+  const noPlan = buildReviewRequest(data, ["learning"], "2026-11-17");
+  assert.doesNotMatch(noPlan.messages[0].content.text, /Saved-plan follow-up/);
+
+  const planState = {
+    ...data,
+    savedPlan: { savedAt: "2026-11-11", text: "Try a longer study session", categories: ["learning"] }
+  };
+  const notOptedIn = buildReviewRequest(planState, ["learning"], "2026-11-17");
+  assert.doesNotMatch(notOptedIn.messages[0].content.text, /Saved-plan follow-up/);
+  assert.doesNotMatch(notOptedIn.messages[1].content.text, /Try a longer study session/);
+
+  const optedIn = buildReviewRequest(planState, ["learning"], "2026-11-17", { includeSavedPlan: true });
+  assert.match(optedIn.messages[0].content.text, /Saved-plan follow-up/);
+  assert.match(optedIn.messages[1].content.text, /Try a longer study session/);
+});
