@@ -190,6 +190,14 @@ The exact five image files were independently confirmed to exist in the public G
 
 No new cut, submit-review, publish, or release was authorized or performed by this confirmation. App ID 908 Working Draft r3 remains the last verified deployed draft, and immutable v0.1.0 (ID 2279) stays unchanged.
 
+## Windows local final release preflight — owner-provided console output (2026-11-17)
+
+Owner's PowerShell 5.1 log confirms a **clean repository working tree before update**, explicit fetch and **fast-forward** from `46a9f4f` to `616450a` on branch `fix/life-control-ai-native-review-20261117`. The delta included five checked-in WebP marketplace screenshots, screenshot metadata in `anna-edition/app.json`, and test/doc changes.
+
+From `anna-edition`: `npm.cmd test` produced **53 tests, 53 pass, 0 fail**; `npm.cmd run validate` returned `validate passed` under Anna CLI v0.1.64; and `npm.cmd run preflight -- --review-gate` returned `Structural metadata and privacy-file checks: PASS.` with **exit code 0** (the subsequent conditional did not throw) and `LOCAL REVIEW GATE PASSED`. This confirms local structure, source tests, and five HTTPS screenshot URL entries; it does **not** perform authenticated server Listing retrieval or anonymously render each image via Anna.
+
+**Remaining release edge:** Reload authenticated **Life Control App ID 908 → Listing**, verify that the five URLs actually persist and resolve to images. Review/clear the Cover image URL that appeared to be a ChatGPT share page rather than a verified direct image. When owner explicitly elects to freeze, run `anna-app apps cut 0.1.1` on the existing app **after confirming the draft/target**, then `apps status` and `apps versions` to verify the new immutable version and bundle readiness. Only afterwards may the owner separately choose `apps submit-review`; **do not** submit the old v0.1.0 or publish directly.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
