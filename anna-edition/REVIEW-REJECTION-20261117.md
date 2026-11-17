@@ -120,6 +120,14 @@ At **08:48:49**, the app sent `storage.set` with the completed AI response store
 
 **Disposition: PASS** — nonempty Money **and** nonempty Journal excluded from Learning-only LLM input; real LLM generated a plausible evidence-based next-week plan using supported Learning fields; new plan saved in Anna storage (generation 21). **NOT TESTED BY THIS LOG** — later `llm.complete` including this new saved plan with `postPlanEvidence.canAssessFollowThrough: false`; the model not inferring compliance with zero strictly later-dated entries; actual follow-up with a later-dated activity; newly installed Cloud Agent end-to-end test; screenshots present and reloaded in Anna Listing. Continue to separate model prompt-source tests from deployed/installed-app claims.
 
+## Local Harness saved-plan same-day attribution retest (2026-11-17, 08:54)
+
+Developer supplied a new-session local Harness RPC trace (`sess-2`). The `08:54:19` `storage.get` returned the newly saved plan with `savedAt: 2026-11-17` (`generation: 21`) and the previously entered Learning records, as well as nonempty synthetic Money and Journal data.
+
+At `08:54:44`, `llm.complete` sent the expressly included `previousUserSavedPlan` and Learning evidence only. The follow-up payload contained **`postPlanEvidence.strictlyLaterDatedRecords: 0`, `learningSessions: 0`, `canAssessFollowThrough: false`**. No unselected Money/Journal values were sent. At `08:54:49`, `google/gemini-3-flash-preview` returned a completed answer (640 output tokens, 2416 total). Its `Saved-plan follow-up` explicitly recognized zero post-plan evidence and refused to claim compliance, completion or progress toward the saved plan.
+
+**Disposition:** **PASS — live local Harness model behaviour for zero-later-evidence plan attribution**, resolving the earlier same-day evidence defect for the tested case. Recovery, context authorization and nonempty category isolation are also corroborated. **Outstanding:** live test after genuinely later-dated logged activity (to prove useful plan adaptation), fresh Anna **Cloud Agent** install/end-to-end flow, and verified real screenshot URLs in the server-side **Listing**. The original rejected v0.1.0 remains unchanged; v0.1.1 is still a source candidate, not deployed, cut, resubmitted, or published.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
