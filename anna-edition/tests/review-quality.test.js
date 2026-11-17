@@ -90,3 +90,18 @@ test("review-section visibility obeys saved-plan opt-in", () => {
   assert.match(optedIn.messages[0].content.text, /Saved-plan follow-up/);
   assert.match(optedIn.messages[1].content.text, /Try a longer study session/);
 });
+
+test("follow-up prompt forbids using earlier saved-day records as compliance", () => {
+  const state = {
+    ...data,
+    learning: [{id:"l1",date:"2026-11-17",topic:"DBMS",minutes:40}],
+    savedPlan: {savedAt:"2026-11-17",text:"Study more next week",categories:["learning"]}
+  };
+  const req = buildReviewRequest(state, ["learning"], "2026-11-17", {includeSavedPlan:true});
+  const instructions = req.messages[0].content.text;
+  const payload = req.messages[1].content.text;
+  assert.match(instructions,/Records dated on or before savedAt are baseline/);
+  assert.match(instructions,/no post-plan evidence yet/);
+  assert.match(payload,/"canAssessFollowThrough":false/);
+  assert.match(payload,/"strictlyLaterDatedRecords":0/);
+});
