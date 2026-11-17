@@ -1,11 +1,13 @@
-# Life Control — Marketplace Review (v0.1.0 submitted)
+# Life Control — Marketplace Review (v0.1.0 rejected; v0.1.1 repair underway)
 
 **Prepared:** 2026-11-13  
-**Review candidate:** `v0.1.0` (immutable version ID **2279**), currently **PENDING_REVIEW**, unpublished  
+**Rejected candidate:** `v0.1.0` (immutable version ID **2279**), currently **REJECTED**, unpublished; separate v0.1.1 source candidate in development  
 **Developer handle:** `@lifecontroldev` (reported by developer)  
 **GitHub:** [PR #2](https://github.com/yap-gif/life-control-android/pull/2) — Draft
 
 This document prepares review material. The developer installed private Working Draft r2, froze immutable version **0.1.0 (ID 2279)**, and manually confirmed the Versions and Listing checks. **App Review was submitted on 2026-11-14 and independently confirmed as `PENDING_REVIEW`; public publication has not occurred.**
+
+**Latest 2026-11-17 decision:** Anna reviewer **REJECTED** v0.1.0. Reasons: no Listing screenshots visible to reviewer, and no meaningful AI-native value beyond routine tracking and a generic optional weekly review. Before resubmission the reviewer asks for multi-week AI pattern/plan adaptation and a full fresh Cloud Agent flow test. Details and remediation acceptance gates: [REVIEW-REJECTION-20261117.md](./REVIEW-REJECTION-20261117.md).
 
 ## A. Draft Marketplace listing copy
 
