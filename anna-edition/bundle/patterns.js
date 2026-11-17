@@ -101,10 +101,31 @@ export function buildPatternContext(rawState, selected, today, options = {}) {
     if (!plan.categories.every(cat => chosen.includes(cat))) {
       throw new Error("Select every category used in the saved plan, or uncheck 'Include saved plan'.");
     }
+    // Date-only activity entries cannot be ordered against a plan saved on the
+    // same day. Treat only strictly later-dated records as potential new evidence.
+    // Task due dates and CURRENT completion flags never prove post-plan action.
+    const laterActivity = {
+      learningSessions: chosen.includes("learning")
+        ? state.learning.filter(x => x.date > plan.savedAt && x.date <= today).length : undefined,
+      moneyEntries: chosen.includes("money")
+        ? state.money.filter(x => x.date > plan.savedAt && x.date <= today).length : undefined,
+      journalDays: chosen.includes("journal")
+        ? state.journal.filter(x => x.date > plan.savedAt && x.date <= today).length : undefined
+    };
+    const observedLaterRecords = Object.values(laterActivity).filter(Number.isInteger)
+      .reduce((a, b) => a + b, 0);
     result.previousUserSavedPlan = {
       savedAt: plan.savedAt,
       text: plan.text,
-      caveat: "This is a prior AI output the user deliberately saved, not proof they completed it."
+      postPlanEvidence: {
+        strictlyLaterDatedRecords: observedLaterRecords,
+        ...laterActivity,
+        canAssessFollowThrough: observedLaterRecords > 0,
+        note: observedLaterRecords > 0
+          ? "Later-dated records may inform follow-up, but do not prove adherence or completion of a particular plan."
+          : "No strictly later-dated eligible activity is recorded. Do not claim any plan action was completed."
+      },
+      caveat: "The saved plan is a previous AI output, not proof the user followed it. Dates have day precision only; entries dated on or before savedAt are historical baseline, NOT post-plan evidence. Task due dates and current done flags cannot establish plan compliance."
     };
   }
   return result;
