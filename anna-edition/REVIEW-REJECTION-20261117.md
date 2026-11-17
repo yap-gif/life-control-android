@@ -198,6 +198,29 @@ From `anna-edition`: `npm.cmd test` produced **53 tests, 53 pass, 0 fail**; `npm
 
 **Remaining release edge:** Reload authenticated **Life Control App ID 908 → Listing**, verify that the five URLs actually persist and resolve to images. Review/clear the Cover image URL that appeared to be a ChatGPT share page rather than a verified direct image. When owner explicitly elects to freeze, run `anna-app apps cut 0.1.1` on the existing app **after confirming the draft/target**, then `apps status` and `apps versions` to verify the new immutable version and bundle readiness. Only afterwards may the owner separately choose `apps submit-review`; **do not** submit the old v0.1.0 or publish directly.
 
+## Frozen immutable v0.1.1 on original App ID 908 — user CLI evidence (2026-11-17)
+
+Owner provided PowerShell 5.1 output showing final local **53/53 tests passed**, `anna-app validate --strict` **PASS**, and `npm run preflight -- --review-gate` **PASS** (`LOCAL REVIEW GATE PASSED`). After running `anna-app apps status life-control-anna`, the target was explicitly verified as **Life Control**, **App ID 908**, existing review status **rejected**, prior immutable **v0.1.0 / id 2279**, one cut version.
+
+The owner then ran `anna-app apps cut 0.1.1` and the **authenticated Anna CLI server returned**:
+
+```
+✓ apps/life-control-anna: cut immutable version 0.1.1 (version_id=2476)
+status: rejected
+```
+
+The follow-up server reads **independently confirmed**:
+```
+apps status: app_id=908; status=rejected; latest=v0.1.1 (id=2476, published=—); versions=2 total
+apps versions (2): v0.1.1 (id=2476, published=—); v0.1.0 (id=2279, published=—)
+```
+
+**Disposition: PASS — immutable v0.1.1 correctly frozen under the original app.** Neither version is published. The `rejected` app status is inherited from the **prior review**, **not** evidence that v0.1.1 has already been reviewed or rejected. The CLI prints a generic suggestion to run `apps release 0.1.1`, but **DO NOT release or publish directly while rejected**: the documented supported progression is **submit-review → approval → release/publish** (admin may publish upon approval). At submission, the **newest cut version v0.1.1** should be pinned as review candidate; verify it explicitly in the CLI result and Versions tab, and do not submit old v0.1.0.
+
+**Last outstanding Listing certainty:** The owner confirmed clicking Save successfully for five screenshots; a refresh/reopen inspection and ability to display the URLs in an unauthenticated viewer were not independently reported. Confirm those and validate the Cover image URL (previously a ChatGPT share link rather than direct image URL) before submitting. Do not represent server-side media as independently inspected without evidence.
+
+**Next user-controlled action, after the final Listing checks:** `anna-app apps submit-review` from the same authorized, original-app `anna-edition` directory; then `anna-app apps status life-control-anna` and `anna-app apps versions life-control-anna` plus the Console **Versions** tab to ensure status `pending_review` and candidate **v0.1.1 / id 2476**. No submit-review or publication has been executed here.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
