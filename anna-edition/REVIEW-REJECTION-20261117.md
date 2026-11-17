@@ -79,6 +79,18 @@ Developer provided the complete local Anna App Harness RPC log and a real app-wi
 
 **Disposition:** **PASS — local Harness multi-week model response and evidence-grounded plan generation.** **NOT YET VERIFIED** — clicking Save and storage persistence; follow-up with saved plan and renewed consent; filled-category exclusion against the real host; fresh Anna Cloud Agent install/run; authentic screenshots uploaded to Anna Listing. The Harness preview URL in the screenshot contains a session query token: crop/redact the entire Harness chrome/address strip and RPC panes before any public screenshot publication.
 
+## Local Harness saved-plan persistence and reuse (2026-11-17, 08:22–08:23)
+
+Developer supplied full RPC transcript from a **new local Anna App Harness session** (session `sess-4`). A successful `storage.get` at **08:22:54** returned `generation: 15` and a `savedPlan` object containing the prior AI response text, `savedAt: 2026-11-17`, and `categories: ["learning"]`. This proves the plan had been persisted from the prior session and successfully **restored**. The prior save operation's own `storage.set` is **not** included in the new transcript, but the restored object is direct persistence evidence.
+
+At **08:23:29**, a new `llm.complete` was invoked with `previousUserSavedPlan` explicitly present and only Learning evidence. Anna returned `endTurn` at **08:23:35** from `google/gemini-3-flash-preview`, **625 output tokens / 2182 total**, discussing the old plan and its current analysis. There is no Money or Journal content in the payload; the stored Money and Journal collections were empty, so nonempty exclusion remains a separate pending runtime case.
+
+**Acceptance:** PASS for **plan restoration** and **LLM receipt of selected prior-plan context**. The RPC does not independently show checkbox clicks, nor demonstrate a post-plan learning record or actual plan completion. **Persisting and reusing a saved AI plan is not yet evidence of adjusting the plan after a new week of logged activity.**
+
+**Important model attribution defect:** The model's `Saved-plan follow-up` described the 2026-11-17 DBMS session as successful weekly activity for a plan **saved on that same day**, despite the DBMS session already being in the earlier baseline. With date-only records, same-day order is unknown; it is incorrect to treat the entry as evidence of post-plan compliance. A GitHub source fix adds explicit `postPlanEvidence` with strictly later-dated selected activity counts and instructions to report **no post-plan evidence** when zero. Regression tests cover same-day and later-dated observations. This corrective source has **not yet been re-observed through the live model**.
+
+**Next:** Sync latest branch; check the no-newer-evidence wording with the actual LLM; verify saved-plan opt-out and Forget saved plan; verify nonempty excluded categories in a later local Harness test; complete a genuinely fresh Anna Cloud Agent full run. No remote Anna draft update or new cut/resubmission is claimed.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
