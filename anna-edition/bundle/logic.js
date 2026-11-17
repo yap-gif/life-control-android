@@ -44,7 +44,14 @@ export function normalizeState(raw) {
       { id: text(v.id, 60), date: v.date, topic: text(v.topic, 120), minutes: Number(v.minutes) } : null),
     journal: records(s.journal, v => v && validDate(v.date) && text(v.text, 2000) ?
       { id: text(v.id, 60), date: v.date, text: text(v.text, 2000) } : null),
-    goal: { goal: amount(goal.goal), saved: amount(goal.saved), monthly: amount(goal.monthly) }
+    goal: { goal: amount(goal.goal), saved: amount(goal.saved), monthly: amount(goal.monthly) },
+    savedPlan: s.savedPlan && typeof s.savedPlan === "object" &&
+      validDate(s.savedPlan.savedAt) && text(s.savedPlan.text, 6000) &&
+      Array.isArray(s.savedPlan.categories) &&
+      s.savedPlan.categories.length > 0 &&
+      s.savedPlan.categories.every(k => CONTEXT_CATEGORIES.includes(k)) ?
+      { savedAt: s.savedPlan.savedAt, text: text(s.savedPlan.text, 6000),
+        categories: [...new Set(s.savedPlan.categories)] } : null
   };
 }
 export function calculateForecast(goal) {
