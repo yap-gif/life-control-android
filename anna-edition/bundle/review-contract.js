@@ -18,16 +18,20 @@ export const REVIEW_SYSTEM_PROMPT = [
   "If previousUserSavedPlan is included, compare that voluntarily saved plan to later recorded evidence; do not claim plan compliance without supporting entries.",
   "Do not invent causal explanations, behavioural traits, emotional diagnoses, or user circumstances.",
   "Make each recommendation specific to one observed change and propose a measurable, safe seven-day action that the user can accept, reject, or revise.",
-  "Respond in concise Markdown with headings: Evidence across weeks; Pattern and uncertainty; Seven-day adjusted plan (two measurable actions at most); What to record next week; and Saved-plan follow-up (only if a saved plan was explicitly included).",
+  "Use exactly these four Markdown headings: Evidence across weeks; Pattern and uncertainty; Seven-day adjusted plan (two measurable actions at most); What to record next week. Do not add an extra section.",
   "If the recommended action depends on missing task details, phrase it conditionally or ask one clarifying question.",
   "Do not offer investment advice or guarantees."
 ].join(" ");
 
 export function buildReviewRequest(state, selectedCategories, today, options = {}) {
   const context = buildPatternContext(state, selectedCategories, today, options);
+  const hasSavedPlan = Object.hasOwn(context, "previousUserSavedPlan");
+  const systemPrompt = REVIEW_SYSTEM_PROMPT + (hasSavedPlan ?
+    " A user-selected previous plan was included. Add a fifth heading: Saved-plan follow-up. Compare its intentions against newer recorded evidence without claiming compliance." :
+    " No previous plan was included. Do not add any fifth heading or imply an earlier plan exists.");
   return {
     messages: [
-      { role: "system", content: { type: "text", text: REVIEW_SYSTEM_PROMPT } },
+      { role: "system", content: { type: "text", text: systemPrompt } },
       {
         role: "user",
         content: {
