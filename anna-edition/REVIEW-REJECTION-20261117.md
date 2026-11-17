@@ -221,6 +221,35 @@ apps versions (2): v0.1.1 (id=2476, published=—); v0.1.0 (id=2279, published=�
 
 **Next user-controlled action, after the final Listing checks:** `anna-app apps submit-review` from the same authorized, original-app `anna-edition` directory; then `anna-app apps status life-control-anna` and `anna-app apps versions life-control-anna` plus the Console **Versions** tab to ensure status `pending_review` and candidate **v0.1.1 / id 2476**. No submit-review or publication has been executed here.
 
+## New App Review submission accepted — v0.1.1, Version ID 2476 (2026-11-17)
+
+Owner supplied the complete authenticated Anna CLI v0.1.64 PowerShell transcript. Pre-submission `anna-app apps status life-control-anna` returned **Life Control App ID 908**, `status: rejected`, newest immutable **v0.1.1 / ID 2476**, two frozen versions. The owner then executed the consequential `anna-app apps submit-review` action, and Anna responded:
+
+```
+✓ apps/life-control-anna: submitted for review
+status: pending_review
+under review: v0.1.1
+```
+
+Subsequent separate server-side reads confirmed:
+
+```
+apps status life-control-anna:
+  app_id=908
+  status=pending_review
+  latest=v0.1.1 (id=2476, published=—)
+  in review=v0.1.1 (pinned at submit-review)
+  versions=2 total
+
+apps versions life-control-anna:
+  [review] v0.1.1 (id=2476, published=—)
+           v0.1.0 (id=2279, published=—)
+```
+
+**Disposition: PASS — new review submitted and exact v0.1.1 candidate successfully pinned.** The previous `rejected` status has changed to `pending_review`. **The app is not yet approved or published**, and no reviewer decision should be inferred. No additional `cut`, `release`, `publish`, `submit-review` or deletion action is needed at this stage. Later source documentation commits do not alter frozen version ID 2476 or the pinned review candidate.
+
+Await Anna reviewer feedback, usually via Developer Console or developer email. If approved, verify the actual published/approved state first; if rejected, inspect the specific new reviewer comments before modifying Working Draft. Any new cut during review is not automatically substituted into the pinned review candidate, per CLI output. The user-reported Listing Save and local screenshot review gate are recorded separately; this entry does not claim fresh independent remote Listing read or review outcome.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
