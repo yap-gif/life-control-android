@@ -27,6 +27,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check bundle/logic.js
+          node --check bundle/patterns.js
           node --check bundle/app.js
           node --check bundle/review-contract.js
           node --check bundle/review-format.js
