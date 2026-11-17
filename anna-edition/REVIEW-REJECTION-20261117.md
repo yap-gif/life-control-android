@@ -182,6 +182,14 @@ The local `anna-edition/app.json` was also updated with five **commit-pinned raw
 
 **No Anna app version cut, resubmission, release, publication, or old version rewrite occurred.**
 
+## Owner-confirmed Anna Listing screenshot save (2026-11-17)
+
+The owner explicitly confirmed **"已经save成功"** after pasting the five commit-pinned GitHub image URLs into the **original Life Control (App ID 908) → Developer Console → Listing → Screenshots** field and pressing **Save**. Treat this as **PASS — owner-reported successful Anna Listing save**, not as an independent server-side `GET` of Listing media. The previous screenshot of the Listing form showed the URLs entered and the Save control, but did not capture the post-save state.
+
+The exact five image files were independently confirmed to exist in the public GitHub repository at commit `b5f09e22b61ac05b7ae00b5c1ba55de316746f70`; the source manifest `anna-edition/app.json` includes five matching HTTPS image URLs. The corresponding local screenshot gate and GitHub CI are green. **Final remaining media verification:** refresh or leave and reopen the Listing tab; verify all five saved URLs persist; open the raw URLs without login to check that image bytes actually load. If any fail, repair the image/URL and repeat Save before claiming the reviewer-facing issue is definitively closed. Also review the separate Cover image URL, which previously appeared to be a ChatGPT share-page link rather than an image file URL; clear or replace with a validated image URL.
+
+No new cut, submit-review, publish, or release was authorized or performed by this confirmation. App ID 908 Working Draft r3 remains the last verified deployed draft, and immutable v0.1.0 (ID 2279) stays unchanged.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
