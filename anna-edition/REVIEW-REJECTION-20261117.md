@@ -57,6 +57,14 @@ On that **v0.1.1 local working tree**, `npm.cmd test` passed **47/47**, `npm.cmd
 
 **Next Git repair:** Protect all staged and untracked edits in a named `git stash push -u`, explicitly switch/create the local repair branch from the fetched remote commit **without auto-tracking**, then check that HEAD matches the remote ref. Retain stash until developer verifies branch integrity; do not blindly pop the stale staged patch over the correct source. No remote Anna changes were performed.
 
+## Local Anna Harness RPC observation — 2026-11-17, 08:11–08:13
+
+Developer provided a local Harness RPC log. The Host responded successfully to `window.hello`, `window.ready`, `storage.get` and three successive `storage.set` requests. The session identity in the log was the local Harness `anna-edition` app, not a verified fresh production Cloud Agent installation. Storage generations 6, 7 and 8 were acknowledged, with all three synthetic Learning records saved.
+
+**Test-data discrepancy:** All three saved learning entries have `date: 2026-11-17` (topics kotlin 120 min, kotlin 60 min, DBMS 40 min), totaling **220 min in the current partial calendar week**. They were intended for `2026-11-04` (120 min), `2026-11-11` (60 min), and `2026-11-17` (40 min). The corresponding expected complete-week comparison is **120 → 60 minutes**, with current partial-week 40 minutes separately labeled. Re-enter the two historical dates in the UI; the date input defaults back to today following each add.
+
+**Current disposition:** **PASS** for basic local Anna storage RPC; **NOT TESTED** for the intended multi-week preview, `llm.complete` (absent from the transcript), saved-plan persistence and authorized next-cycle adjustment; the fresh Cloud Agent end-to-end test remains **PENDING**. The log does not establish an app bug. Re-run the targeted data scenario before changing logic or claiming trend accuracy.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
