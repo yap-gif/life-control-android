@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { inspectListing } from "../release-preflight.mjs";
+import { inspectListing, inspectReviewScreenshots } from "../release-preflight.mjs";
 
 const app = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -63,4 +63,17 @@ test("public product name is Life Control across listing, manifest and app UI", 
   assert.match(index, /class="eyebrow">LIFE CONTROL<\/div>/);
   assert.doesNotMatch(index, /Anna Edition/i);
   assert.doesNotMatch(app.description, /Anna Edition/i);
+});
+
+test("review screenshot gate rejects missing screenshot evidence despite structural pass", () => {
+  assert.deepEqual(inspectListing(app, manifest, privacy).errors, []);
+  const missing = inspectReviewScreenshots(app);
+  assert.ok(missing.some(x => x.includes("three authentic")),
+    "Reviewer explicitly requires actual screenshots; structural preflight alone must not pass the review gate.");
+});
+test("review screenshot gate accepts well-formed public screenshot URLs for manual host verification", () => {
+  assert.deepEqual(inspectReviewScreenshots({
+    screenshots: ["https://example.org/actual1.png","https://example.org/actual2.png","https://example.org/actual3.png"]
+  }), []);
+  assert.ok(inspectReviewScreenshots({ screenshots: ["http://example.org/a.png"] }).length > 0);
 });
