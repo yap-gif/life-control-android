@@ -139,6 +139,14 @@ Developer supplied Windows PowerShell 5.1 output of local `npm test` (**52/52 PA
 
 **Next gate:** In Anna Developer Console → the original **Life Control (App ID 908)** → **Edit → Versions → Working draft → Install & test** the reserved `0.0.0-draft`. Confirm that the installed app is the new draft, not the old **Install v0.1.0** action. Test on a **new Anna Cloud Agent install/session**, use only synthetic data, verify actual live end-to-end consent, AI, storage, saved-plan follow-up and day-precision attribution. Capture authentic, app-only screenshots and populate/reopen the Console **Listing** screenshot URLs. Do not recut or resubmit until these steps are verified.
 
+## Anna main interface screenshot — in-platform UI startup observed (2026-11-17)
+
+Developer supplied a screenshot from the **Anna main interface** (left Anna navigation and a distinct Life Control app window; not the local Harness). The visible app includes the revised v0.1.1-style hero text **"See your patterns. Improve your next week."**, status **"Anna connected"**, four zero-state dashboard metrics, **"AI Pattern & Next-Week Plan"**, and **"Not enough comparable history"** in local preview. The app is visibly rendered rather than showing a launch error. The Anna OS dock overlaps the lower middle of the screenshot; that is an OS overlay rather than conclusive app layout failure.
+
+**Evidence disposition:** **PASS — updated AI-first UI renders inside Anna's main interface and local empty-history preview appears.** The screenshot by itself **does not prove** this is a freshly installed reserved `0.0.0-draft` on App ID 908, does not reveal installed build/version identification, and does not prove cloud storage or real LLM runtime behavior in this host. Verify version from the developer's Versions/installation UI and test the real host before closing the fresh-Cloud-Agent acceptance gate.
+
+**Store screenshot caveat:** The submitted screenshot includes Anna sidebar, OS chrome, and floating dock; it is **not yet an authentic app-only marketplace listing screenshot**. Capture from the live installed app window alone, without host navigation, floating overlays, tokens, sensitive data, or RPC/debug panels.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
