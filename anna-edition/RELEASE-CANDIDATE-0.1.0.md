@@ -1,9 +1,15 @@
 # Life Control | 0.1.0 release candidate gate
 
 **Prepared:** 2026-11-14  
-**Status:** **PENDING_REVIEW** — v0.1.0 (Anna version ID **2279**) pinned for Anna App Review; **not approved or published**  
-**Anna app:** `life-control-anna` (ID **908**), PENDING_REVIEW; Working Draft **r2** was tested; immutable **v0.1.0 (version ID 2279)** now exists and is not published  
+**Status:** **REJECTED** after review feedback received 2026-11-17; frozen **v0.1.0, version ID 2279**, never approved/published  
+**Anna app:** `life-control-anna` (ID **908**), **REJECTED**; Working Draft **r2** was tested; immutable **v0.1.0 (version ID 2279)** now exists and is not published  
 **GitHub:** [Draft PR #2](https://github.com/yap-gif/life-control-android/pull/2); `main` remains unchanged.
+
+## Review decision received (2026-11-17)
+
+The previous review request **was submitted successfully**, but Anna subsequently **rejected v0.1.0** for **absent Listing screenshots** and **no distinct AI-native workflow**. The reviewer requests a longitudinal AI pattern/plan-adjustment experience and a full fresh Cloud Agent install/test before resubmitting. The new source-only `v0.1.1` repair is isolated in branch `fix/life-control-ai-native-review-20261117`. No new version has been pushed, cut or submitted.
+
+**Historical note:** Earlier `PENDING_REVIEW` receipts and Listing checks below were accurate at that time, but the rejection conclusively supersedes any prior assumption that screenshots were accepted. The new screenshot gate is **BLOCKED** pending actual public HTTPS screenshot URLs and an authenticated Anna Listing save/reopen verification.
 
 ## Evidence already accepted
 
