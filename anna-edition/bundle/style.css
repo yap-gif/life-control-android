@@ -41,3 +41,12 @@ button:focus-visible,.entries button:focus-visible{outline:3px solid #d6edff;out
 .erase-confirm:focus-within{border-color:#e1a7b8}
 #message[aria-live="assertive"]{font-weight:700}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* v0.1.1 review-repair candidate: the AI pattern workflow is first, not a buried add-on. */
+.insight-stage{margin:0 0 17px}.insight-stage>.card{border-color:#548dbe;background:linear-gradient(140deg,#1b2d48 0%,#19273b 65%,#15273c 100%)}
+.pattern-evidence{padding:13px 15px;border:1px solid #476b91;border-radius:12px;background:#111d2d;margin:12px 0}
+.pattern-evidence strong{font-size:13px;color:#c4e0ff}.pattern-evidence ul{padding-left:20px;margin:10px 0 0;color:#bfe8e0;line-height:1.55}
+.pattern-evidence li{margin:5px 0}.plan-controls{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.plan-controls button{flex:1 1 200px}.plan-controls button:last-child{background:#30445f;color:#f1f6ff}
+.plan-controls button:last-child:hover{background:#435d80}
+@media(max-width:420px){.head-row{align-items:flex-start;flex-direction:column}.plan-controls button{flex-basis:100%}}
