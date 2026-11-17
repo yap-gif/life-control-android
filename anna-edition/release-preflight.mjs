@@ -68,6 +68,22 @@ export function inspectListing(app, manifest, privacyText) {
   return { errors, warnings };
 }
 
+
+/** This gate supplements, but cannot replace, an authenticated Anna Listing read. */
+export function inspectReviewScreenshots(app) {
+  const errors = [];
+  const urls = Array.isArray(app?.screenshots) ? app.screenshots : [];
+  if (urls.length < 3) errors.push("Review gate requires at least three authentic publicly accessible screenshot URLs in local metadata for audit parity (Anna permits up to six).");
+  for (const [i, url] of urls.entries()) {
+    try {
+      const u = new URL(url);
+      if (u.protocol !== "https:") errors.push("Screenshot " + (i + 1) + " requires HTTPS.");
+      if (!u.hostname) errors.push("Screenshot " + (i + 1) + " has no host.");
+    } catch { errors.push("Screenshot " + (i + 1) + " URL is invalid."); }
+  }
+  return errors;
+}
+
 export function main(args = process.argv.slice(2)) {
   const app = JSON.parse(readFileSync(join(root, "app.json"), "utf8"));
   const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
@@ -77,11 +93,14 @@ export function main(args = process.argv.slice(2)) {
   console.log("Life Control — local listing preflight");
   console.log("Target:", app.slug, "| candidate:", app.version);
   console.log("Note: Anna Console Listing fields and uploaded media must be reviewed separately.");
+  const reviewGate = args.includes("--review-gate");
+  if (reviewGate) errors.push(...inspectReviewScreenshots(app));
   for (const msg of errors) console.error("ERROR:", msg);
   for (const msg of warnings) console.warn("WARNING:", msg);
   if (errors.length === 0) console.log("Structural metadata and privacy-file checks: PASS.");
   if (warnings.length > 0) console.log("Stable public links are still a release gate.");
-  const strict = args.includes("--release-gate");
+  if (reviewGate) console.log("REVIEW GATE: final screenshots must ALSO be saved and re-opened in authenticated Anna Listing.");
+  const strict = args.includes("--release-gate") || reviewGate;
   if (errors.length > 0 || (strict && warnings.length > 0)) process.exitCode = 1;
 }
 
