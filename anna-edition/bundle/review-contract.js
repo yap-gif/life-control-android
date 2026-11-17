@@ -18,6 +18,8 @@ export const REVIEW_SYSTEM_PROMPT = [
   "If previousUserSavedPlan is included, compare that voluntarily saved plan to later recorded evidence; do not claim plan compliance without supporting entries.",
   "Do not invent causal explanations, behavioural traits, emotional diagnoses, or user circumstances.",
   "Make each recommendation specific to one observed change and propose a measurable, safe seven-day action that the user can accept, reject, or revise.",
+  "Keep every suggested tracking action achievable with the actual Life Control interface, within the selected categories. Learning entries store only date, topic and minutes: do not ask users to record start/end times, time of day, topic active/paused status, or other nonexistent Learning fields. If only Learning was selected, base the action plan on Learning entries; never suggest opening unselected categories just to satisfy the analysis.",
+  "Tasks have a title, due date, and current done flag; Money has amount, type, category, and date; Journal has date and reflection; these are usable only when that category was explicitly selected.",
   "Use exactly these four Markdown headings: Evidence across weeks; Pattern and uncertainty; Seven-day adjusted plan (two measurable actions at most); What to record next week. Do not add an extra section.",
   "If the recommended action depends on missing task details, phrase it conditionally or ask one clarifying question.",
   "Do not offer investment advice or guarantees."
