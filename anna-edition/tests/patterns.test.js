@@ -84,3 +84,30 @@ test("AI-first screen exposes opt-in stored-plan controls", () => {
     assert.ok(html.includes('id="' + id + '"'), "Missing: "+id);
   }
 });
+
+test("same-day prior activity is not post-plan evidence", () => {
+  const sameDay = normalizeState({
+    learning: [{id:"same",topic:"DBMS",date:"2026-11-17",minutes:40}],
+    savedPlan: {savedAt:"2026-11-17",text:"Study for 60 minutes",categories:["learning"]}
+  });
+  const c = buildPatternContext(sameDay, ["learning"], "2026-11-17", {includeSavedPlan:true});
+  assert.equal(c.previousUserSavedPlan.postPlanEvidence.strictlyLaterDatedRecords, 0);
+  assert.equal(c.previousUserSavedPlan.postPlanEvidence.canAssessFollowThrough, false);
+  assert.match(c.previousUserSavedPlan.caveat, /NOT post-plan evidence/);
+});
+
+test("only strictly later-dated selected records can inform saved plan follow-up", () => {
+  const data = normalizeState({
+    learning: [
+      {id:"pre",topic:"DBMS",date:"2026-11-17",minutes:40},
+      {id:"post",topic:"DBMS",date:"2026-11-18",minutes:65}
+    ],
+    money:[{id:"private",type:"expense",category:"SECRET",amount:18,date:"2026-11-18"}],
+    savedPlan:{savedAt:"2026-11-17",text:"Study at least once",categories:["learning"]}
+  });
+  const c=buildPatternContext(data,["learning"],"2026-11-18",{includeSavedPlan:true});
+  assert.equal(c.previousUserSavedPlan.postPlanEvidence.strictlyLaterDatedRecords,1);
+  assert.equal(c.previousUserSavedPlan.postPlanEvidence.learningSessions,1);
+  assert.equal(c.previousUserSavedPlan.postPlanEvidence.canAssessFollowThrough,true);
+  assert.doesNotMatch(JSON.stringify(c), /SECRET/);
+});
