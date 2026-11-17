@@ -1,5 +1,5 @@
 # Privacy notice — Life Control
-Updated: 2026-11-14 · Private draft / candidate v0.1.0
+Updated: 2026-11-17 · v0.1.1 review-repair source candidate (not deployed)
 
 ## Data entered into the app
 Users can enter tasks, due dates, expense/income categories and amounts, learning sessions, private journal reflections, and a savings target. This prototype stores these entries through the **Anna app storage API**. It does **not** read from or synchronize with the separate Android Life Control app, bank accounts, calendars, contacts, or local device files.
@@ -8,8 +8,9 @@ This is **not** a fully offline Android application and the platform controls st
 
 ## AI analysis and consent
 - AI analysis is **off by default**. Opening the app, viewing records, and editing data do not trigger an AI call.
-- To request a weekly review the user must select one or more of **Tasks, Money, Learning, Journal** and actively approve that request.
-- Only selected categories and their corresponding weekly records/aggregates are sent in the `anna.llm.complete` request. The checkbox approval is cleared for each subsequent call.
+- To request an AI pattern analysis and next-week plan the user must select one or more of **Tasks, Money, Learning, Journal** and actively approve that request.
+- Only selected categories and their corresponding multi-week records/aggregates are sent in the `anna.llm.complete` request. The analysis uses four completed calendar weeks plus the possibly partial current week; evidence is bounded. The checkbox approval is cleared for each subsequent call. Unselected category records are excluded even from derived trend metrics.
+- The user may deliberately **save** one AI-generated plan in Anna app storage, including its response text and the categories selected when it was generated. The saved plan is **never automatically sent** in a later AI request. To include it in a future comparison, the user must separately check **Include saved plan**, select all of its original categories and authorize that AI call. Saving a plan does not mean it was followed. The user can forget just the saved plan without erasing other records.
 - Selected records are processed using the user's Anna-hosted model and may consume their platform quota. The app developer cannot guarantee the model provider's data retention settings; review the applicable Anna and provider privacy terms.
 - The app does not include an advertising SDK, direct Gemini API key, or custom third-party analytics endpoint.
 
