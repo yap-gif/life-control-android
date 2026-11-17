@@ -99,6 +99,17 @@ At **08:31:33**, `storage.set` sent `savedPlan: null`; the Anna Host acknowledge
 
 **Still pending:** A real same-day-plan follow-up with `previousUserSavedPlan.postPlanEvidence.canAssessFollowThrough: false` and model language that does not infer compliance; a later-dated simulated record showing legitimate comparison; populated Money/Journal privacy exclusion in live RPC; and fresh Anna Cloud Agent and Listing screenshot verification. The latest source fixes must not be mistaken for verified production-host deployment.
 
+## Local Harness deletion-restart and nonempty Money scope isolation (2026-11-17, 08:36–08:38)
+
+Developer provided an Anna App Harness RPC transcript showing a new session and the following results.
+
+- At **08:36:01**, `storage.get` returned the existing three Learning records and **`savedPlan: null`**, with `generation: 16`. This independently **confirms deletion persistence across a new session**, not merely a successful same-session write.
+- At **08:36:50**, `storage.set` saved a nonempty `money` array with one synthetic income entry (`2026-11-17`, **RM 100**), with successful acknowledgement `generation: 17`.
+- At **08:37:01**, `llm.complete` carried only **Learning** evidence (Nov 4 120 min, Nov 11 60 min, Nov 17 40 min), **no Money key/amount/category**, and no saved plan. The system prompt requested the four expected headings, and the model returned successfully at **08:37:06**.
+- The model's answer correctly avoided the Money data, compared the two completed weeks and kept the current week partial. However, it also suggested recording Learning start/end times and a separate Kotlin active/paused status — **neither is a supported field** in the current Learning form, which stores only **topic, minutes, date**. This is an actionable AI-output quality issue, not an observed privacy leak.
+
+**Disposition:** **PASS** for saved-plan deletion across restart, **PASS** for excluding actual nonempty Money data from a Learning-only LLM request, and **PASS** for another real model response. **Journal nonempty exclusion remains untested in live Harness.** New source prompt guidance now prohibits recommending unsupported Learning fields and discourages suggesting unselected modules; a regression test verifies instructions, but its effect on actual model replies remains to be tested after a local source update. The current transcript does **not** show the corrected post-plan attribution logic running.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
