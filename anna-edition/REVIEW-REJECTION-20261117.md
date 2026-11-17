@@ -91,6 +91,14 @@ At **08:23:29**, a new `llm.complete` was invoked with `previousUserSavedPlan` e
 
 **Next:** Sync latest branch; check the no-newer-evidence wording with the actual LLM; verify saved-plan opt-out and Forget saved plan; verify nonempty excluded categories in a later local Harness test; complete a genuinely fresh Anna Cloud Agent full run. No remote Anna draft update or new cut/resubmission is claimed.
 
+## Local Harness saved-plan opt-out and deletion evidence (2026-11-17, 08:30–08:32)
+
+The developer supplied the next local Anna App Harness RPC transcript. At **08:31:00**, `storage.get` succeeded with the previously saved plan present (Learning source category, saved 2026-11-17). At **08:31:20**, a new `llm.complete` request with **Tasks + Learning** selected included ordinary task-count aggregates and Learning records, but **omitted `previousUserSavedPlan`** and its stored text. The system prompt explicitly stated that no previous plan was included. At **08:31:26**, Anna LLM succeeded and returned the four expected headings without a saved-plan follow-up. This is evidence of **saved-plan opt-out / payload exclusion**, not evidence that all categories other than Learning were excluded (Tasks was also selected).
+
+At **08:31:33**, `storage.set` sent `savedPlan: null`; the Anna Host acknowledged success at **08:31:34**, `generation: 16`. The Learning records were preserved. This supports **PASS — user-initiated saved-plan deletion persisted to Host storage**. However, this transcript does not contain a **subsequent new-session `storage.get`** after deletion, so deletion survival across restart is **not separately verified** here.
+
+**Still pending:** A real same-day-plan follow-up with `previousUserSavedPlan.postPlanEvidence.canAssessFollowThrough: false` and model language that does not infer compliance; a later-dated simulated record showing legitimate comparison; populated Money/Journal privacy exclusion in live RPC; and fresh Anna Cloud Agent and Listing screenshot verification. The latest source fixes must not be mistaken for verified production-host deployment.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
