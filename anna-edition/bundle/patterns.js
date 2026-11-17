@@ -25,7 +25,7 @@ export function buildPatternContext(rawState, selected, today, options = {}) {
   const firstMonday = shiftDay(currentMonday, -28);
   const result = {
     analysis: "Life Control history-to-plan",
-    period: { from: firstMonday, through: today, completedWeeks: 4, includesPartialCurrentWeek: true },
+    period: { from: firstMonday, through: today, completedWeeks: 4, includesPartialCurrentWeek: today !== shiftDay(currentMonday, 6) },
     interpretationRules: [
       "Historical task done flags reflect CURRENT status of tasks due that week; completion dates were not collected.",
       "No logging is not proof of no activity; distinguish recorded activity from actual activity.",
@@ -63,6 +63,17 @@ export function buildPatternContext(rawState, selected, today, options = {}) {
     }
     result.weeks.push(w);
   }
+
+  const hasActivity = w =>
+    (w.tasks && w.tasks.due > 0) ||
+    (w.money && w.money.loggedEntries > 0) ||
+    (w.learning && w.learning.loggedSessions > 0) ||
+    (w.journal && w.journal.loggedDays > 0);
+  result.observationCoverage = {
+    weeksWithRecords: result.weeks.filter(hasActivity).length,
+    completeWeeksWithRecords: result.weeks.filter(w => w.complete && hasActivity(w)).length,
+    note: "Counts cover only selected categories; unrecorded work or spending is unknown."
+  };
 
   const recent = x => x.date >= firstMonday && x.date <= today;
   if (chosen.includes("tasks")) {
@@ -107,19 +118,19 @@ export function summarizePatternPreview(raw, selected, today) {
   const previous = done[done.length - 2];
   const format = (n, unit) => n + " " + unit;
   const items = [];
-  if (latest && previous && latest.learning && previous.learning) {
+  if (latest && previous && latest.learning && previous.learning && latest.learning.loggedSessions && previous.learning.loggedSessions) {
     items.push("Learning: " + format(previous.learning.loggedMinutes, "min") +
       " → " + format(latest.learning.loggedMinutes, "min") + " (last two complete weeks)");
   }
-  if (latest && previous && latest.money && previous.money) {
+  if (latest && previous && latest.money && previous.money && latest.money.loggedEntries && previous.money.loggedEntries) {
     items.push("Expense: RM " + previous.money.expenses.toFixed(2) + " → RM " +
       latest.money.expenses.toFixed(2) + " (last two complete weeks)");
   }
-  if (latest && previous && latest.tasks && previous.tasks) {
+  if (latest && previous && latest.tasks && previous.tasks && latest.tasks.due && previous.tasks.due) {
     items.push("Tasks due: " + previous.tasks.due + " → " + latest.tasks.due +
       " (current completion states, not historical completion dates)");
   }
-  if (latest && previous && latest.journal && previous.journal) {
+  if (latest && previous && latest.journal && previous.journal && latest.journal.loggedDays && previous.journal.loggedDays) {
     items.push("Journal days: " + previous.journal.loggedDays + " → " +
       latest.journal.loggedDays + " (last two complete weeks)");
   }
