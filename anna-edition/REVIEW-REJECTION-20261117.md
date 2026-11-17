@@ -128,6 +128,17 @@ At `08:54:44`, `llm.complete` sent the expressly included `previousUserSavedPlan
 
 **Disposition:** **PASS — live local Harness model behaviour for zero-later-evidence plan attribution**, resolving the earlier same-day evidence defect for the tested case. Recovery, context authorization and nonempty category isolation are also corroborated. **Outstanding:** live test after genuinely later-dated logged activity (to prove useful plan adaptation), fresh Anna **Cloud Agent** install/end-to-end flow, and verified real screenshot URLs in the server-side **Listing**. The original rejected v0.1.0 remains unchanged; v0.1.1 is still a source candidate, not deployed, cut, resubmitted, or published.
 
+## Original Anna App ID 908 Working Draft v0.1.1 uploaded (2026-11-17)
+
+Developer supplied Windows PowerShell 5.1 output of local `npm test` (**52/52 PASS**), `npm run validate` (**strict validation PASS**), and authenticated Anna CLI v0.1.64.
+
+- `anna-app apps status life-control-anna` returned **App ID 908**, Life Control, **status: rejected**, latest immutable **v0.1.0 (ID 2279)**, **one** total cut version.
+- `anna-app apps push --dry-run` correctly identified `app_id=908` and `slug=life-control-anna` and the working bundle path, but the local process then ended with a Windows libuv `UV_HANDLE_CLOSING` assertion. This is a dry-run process exit error, **not evidence of a server-side push failure**.
+- The **subsequent real** `anna-app apps push` reported `staging working bundle: 8 files, 57.5 KB`, deduplication of 2 unchanged files, and `working bundle staged (8 files, status=ready)`. Server result: **`apps/life-control-anna: working draft updated (rev 3)`**; bundle **ready**; app **still rejected**, with changes relative to v0.1.0. The CLI specifically directs installation and testing of **reserved `0.0.0-draft`** in Developer Console before cutting v0.1.1.
+- This push **updates only the existing app's mutable Working Draft**. It does **not** edit the immutable v0.1.0, create a new app, publish, freeze v0.1.1, or submit review. It does not establish Cloud Agent runtime success or screenshot listing completeness.
+
+**Next gate:** In Anna Developer Console → the original **Life Control (App ID 908)** → **Edit → Versions → Working draft → Install & test** the reserved `0.0.0-draft`. Confirm that the installed app is the new draft, not the old **Install v0.1.0** action. Test on a **new Anna Cloud Agent install/session**, use only synthetic data, verify actual live end-to-end consent, AI, storage, saved-plan follow-up and day-precision attribution. Capture authentic, app-only screenshots and populate/reopen the Console **Listing** screenshot URLs. Do not recut or resubmit until these steps are verified.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
