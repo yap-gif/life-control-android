@@ -27,7 +27,7 @@ export function buildReviewRequest(state, selectedCategories, today, options = {
   const context = buildPatternContext(state, selectedCategories, today, options);
   const hasSavedPlan = Object.hasOwn(context, "previousUserSavedPlan");
   const systemPrompt = REVIEW_SYSTEM_PROMPT + (hasSavedPlan ?
-    " A user-selected previous plan was included. Add a fifth heading: Saved-plan follow-up. Compare its intentions against newer recorded evidence without claiming compliance." :
+    " A user-selected previous plan was included. Add a fifth heading: Saved-plan follow-up. Compare its intentions only to actual later-dated recorded evidence, using previousUserSavedPlan.postPlanEvidence. Records dated on or before savedAt are baseline, not proof of following the plan. Entries on the same day cannot be ordered against when the plan was saved. If canAssessFollowThrough is false, explicitly say there is no post-plan evidence yet and do not claim or imply any degree of compliance, completion, or progress toward that saved plan. Even with later records, do not infer intent or guaranteed compliance." :
     " No previous plan was included. Do not add any fifth heading or imply an earlier plan exists.");
   return {
     messages: [
