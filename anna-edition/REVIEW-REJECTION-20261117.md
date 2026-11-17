@@ -167,6 +167,21 @@ After viewing the existing App ID 908 **Working draft r3** and the live Anna Lif
 
 **Next reviewer blocker: missing Listing media.** Prepare at least **three authentic screenshots** (internal release quality threshold, not a provider minimum) from the in-platform Life Control screen: (1) opt-in category selection and local longitudinal preview, (2) real historical AI analysis, (3) measurable next-week plan and saved-plan status. Remove OS dock/translation overlay and personal/sensitive information; publish as public HTTPS image URLs; paste one per line in **Developer Console → original Life Control → Listing → Screenshots**, save, **reload the Listing and reopen the URLs** to prove persistence/accessibility. The previous rejection explicitly listed missing screenshots. The local `app.json` still has no screenshot URLs and the internal `--review-gate` is deliberately blocked. Do not run `apps cut 0.1.1`, `submit-review`, `publish`, or `release` until Listing screenshots and final reviewer gate are verified and the owner authorizes these actions.
 
+## Five authentic store screenshots committed to GitHub (2026-11-17)
+
+The owner requested direct GitHub upload of five screenshots they personally captured in the real Life Control app. **Completed.** Five **WebP image files** were committed to the existing public repository `yap-gif/life-control-android` under `anna-edition/store-screenshots/` on the **fix/life-control-ai-native-review-20261117** branch, by Git commit **`b5f09e22b61ac05b7ae00b5c1ba55de316746f70`**. Original screenshot content was preserved during PNG → WebP quality-80 conversion; no synthetic screenshot was generated. All five image Git blob SHAs were verified against the locally encoded image bytes and a GitHub recursive tree listing confirmed each filename and size. The screenshots include:
+1. `01-ai-dashboard-and-trend.webp` — 47,288 B
+2. `02-ai-analysis-and-plan.webp` — 86,034 B
+3. `03-productivity-modules.webp` — 37,014 B
+4. `04-learning-and-privacy.webp` — 36,326 B
+5. `05-saved-plan-follow-up.webp` — 84,148 B
+
+The local `anna-edition/app.json` was also updated with five **commit-pinned raw.githubusercontent.com HTTPS URLs**, allowing the local `npm run preflight -- --review-gate` screenshot URL check to run. A pre-existing test incorrectly expected `app.screenshots` always to be empty, causing one temporary CI failure; that fixture was corrected to pass an explicitly empty screenshot set, and a new test now asserts the five immutable image URLs are in metadata. The formal image folder includes `README.md` describing provenance and intended listing use.
+
+**Important separation:** The GitHub upload and local metadata do NOT update the remote **Anna Developer Console → Listing**. The owner must still copy these five URLs into the original Life Control **App ID 908 → Listing → Screenshots** field, save, refresh, reopen each image, and provide confirmation. Until then the reviewer-facing **Missing Screenshots** finding cannot be marked closed. The image host is the public GitHub repository; the raw image URLs are generated from a confirmed commit and path, and the binary files exist and are addressable via the public GitHub API. External anonymous image rendering / Anna server-side ingestion has not been independently observed. Several original views show a small Anna translation floating button near the edge, which may be improved via fresh genuine captures if desired.
+
+**No Anna app version cut, resubmission, release, publication, or old version rewrite occurred.**
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
