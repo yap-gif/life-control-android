@@ -65,11 +65,22 @@ test("public product name is Life Control across listing, manifest and app UI", 
   assert.doesNotMatch(app.description, /Anna Edition/i);
 });
 
-test("review screenshot gate rejects missing screenshot evidence despite structural pass", () => {
-  assert.deepEqual(inspectListing(app, manifest, privacy).errors, []);
-  const missing = inspectReviewScreenshots(app);
+test("review screenshot gate rejects a separate missing-media fixture despite structural pass", () => {
+  const withoutScreenshots = { ...app, screenshots: [] };
+  assert.deepEqual(inspectListing(withoutScreenshots, manifest, privacy).errors, []);
+  const missing = inspectReviewScreenshots(withoutScreenshots);
   assert.ok(missing.some(x => x.includes("three authentic")),
-    "Reviewer explicitly requires actual screenshots; structural preflight alone must not pass the review gate.");
+    "Missing screenshots must block local review readiness.");
+});
+
+test("current listing metadata includes five immutable public image URLs", () => {
+  assert.equal(app.screenshots.length, 5);
+  assert.deepEqual(inspectReviewScreenshots(app), []);
+  for (const imageUrl of app.screenshots) {
+    const url = new URL(imageUrl);
+    assert.equal(url.hostname, "raw.githubusercontent.com");
+    assert.match(url.pathname, /^\/yap-gif\/life-control-android\/[0-9a-f]{40}\/anna-edition\/store-screenshots\/\d\d-[a-z-]+\.webp$/);
+  }
 });
 test("review screenshot gate accepts well-formed public screenshot URLs for manual host verification", () => {
   assert.deepEqual(inspectReviewScreenshots({
