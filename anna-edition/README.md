@@ -1,4 +1,4 @@
-# Life Control — Anna-hosted build (0.1.0)
+# Life Control — Anna-hosted review-repair candidate (0.1.1)
 
 An independent, privacy-gated build of Life Control for the Anna platform. The original Android Kotlin/Room app remains unchanged.
 
@@ -15,13 +15,14 @@ This version adapts the product highlighted in the Anna Founding Builder invitat
 | Learning | Record topic + study minutes, weekly minutes |
 | Journal | Add or update one reflection per date |
 | Goal forecast | Explicit savings target, saved amount and planned monthly contribution; deterministic months-to-goal estimate |
-| AI weekly review | Real `anna.llm.complete` call with per-request consent, safe Markdown rendering, and evidence-only coaching instructions |
+| AI pattern and next-week plan | Local multi-week evidence preview + scoped Anna LLM request comparing four completed weeks and the partial current week, with a measurable seven-day plan and explicit evidence limits |
+| Plan follow-up | User can save one generated plan and, on a later separately authorized call, optionally include it only with all original category scopes; saved plans can be forgotten |
 | Anna storage | Per-app `anna.storage.get/set`, loaded before any editing is enabled |
 | Data erasure | Individual record deletion and confirmed erase with SDK delete when available, or empty-state overwrite when not available |
 | Accessibility | Skip-to-content link, record-specific action labels, focus restoration on task operations, keyboard-accessible erase confirmation |
 | Host failures | Stable, non-secret error guidance for AI quota, missing LLM runtime, invalid requests and storage permission failures |
 
-AI context selection is enforced by `bundle/logic.js::buildReviewContext` and not solely by UI labels. The model receives a JSON payload containing **only** the selected categories. No hidden full-data profile is appended.
+AI context selection is enforced by `bundle/patterns.js::buildPatternContext` and not solely by UI labels. The model receives a JSON payload containing **only** the selected categories. No hidden full-data profile is appended.
 
 ## Privacy
 
@@ -32,9 +33,19 @@ AI context selection is enforced by `bundle/logic.js::buildReviewContext` and no
 - When the user authorizes AI, selected data is processed by Anna's LLM service; the provider/model and quota are governed by Anna.
 - No direct third-party credentials, user token, advertising SDK, external endpoints, automatic AI triggers or hidden telemetry are coded into this module.
 - Journal data is rendered via `textContent`. AI responses use an allow-listed Markdown DOM formatter that creates only safe elements and assigns every model-derived string as `textContent` (no raw HTML injection).
-- Up to 100 records per collection are retained in the UI data model; the home screen displays the 12 most recent per category. Week reviews include bounded record counts to reduce disclosure and prompt size.
+- Up to 100 records per collection are retained in the UI data model; the home screen displays the 12 most recent per category. Multi-week analyses include bounded record counts to reduce disclosure and prompt size; the current week is flagged as partial to avoid false comparisons. One user-saved AI plan may be stored explicitly and separately deleted.
 
 For a disclosure of data-handling boundaries and known platform-level limits, see [PRIVACY.md](./PRIVACY.md).
+
+## November 17 review rejection / 0.1.1 work-in-progress
+
+The Anna reviewer rejected immutable v0.1.0 (ID 2279) because the server Listing was missing screenshots and the optional weekly AI review did not demonstrate a distinct AI-native workflow. This independent branch is a **source-code repair candidate only**. No updated working draft, cut v0.1.1 or resubmission is authorized or evidenced yet. The previous version remains immutable.
+
+The proposed AI-native experience uses multi-week observations, explicit evidence limits and plan adjustments. The historical task completion flag is **not** treated as proof of when tasks were finished. A saved AI response is optional and cannot be included in a new request without new consent and complete category overlap.
+
+A separate `npm run preflight -- --review-gate` checks local screenshot URLs. It will **fail deliberately** until genuine public screenshot links are recorded and their presence independently verified in Anna Console. No local script can prove that remote Listing fields have been saved.
+
+For the exact rejection and cloud-host QA checklist see [REVIEW-REJECTION-20261117.md](./REVIEW-REJECTION-20261117.md).
 
 ## Verification evidence (updated 2026-11-14)
 
