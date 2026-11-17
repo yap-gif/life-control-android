@@ -65,6 +65,20 @@ Developer provided a local Harness RPC log. The Host responded successfully to `
 
 **Current disposition:** **PASS** for basic local Anna storage RPC; **NOT TESTED** for the intended multi-week preview, `llm.complete` (absent from the transcript), saved-plan persistence and authorized next-cycle adjustment; the fresh Cloud Agent end-to-end test remains **PENDING**. The log does not establish an app bug. Re-run the targeted data scenario before changing logic or claiming trend accuracy.
 
+## Local Harness multi-week AI runtime verification (2026-11-17, 08:16–08:18)
+
+Developer provided the complete local Anna App Harness RPC log and a real app-window screenshot. This observation **supersedes** the earlier 08:11–08:13 incorrect test dates while preserving the history of the initial test.
+
+**Records and storage:** After removing the three misdated records, successful `storage.set` generations **12–14** saved synthetic Learning records: `2026-11-04 / kotlin / 120 min`, `2026-11-11 / kotlin / 60 min`, `2026-11-17 / DBMS / 40 min`.
+
+**Real LLM request:** At **08:18:15**, `llm.complete` was invoked with a payload containing precisely the selected **Learning** category and five correct date windows: four completed weeks starting 2026-10-19 plus a partial 2026-11-16–17 window. Complete weeks Nov 2–8 and Nov 9–15 contained 120 and 60 logged minutes, respectively; partial week Nov 16–17 contained 40. The transmitted payload had `completeWeeksWithRecords: 2` and `weeksWithRecords: 3`. The JSON contained no `money`, `journal`, tasks or unselected aggregates. **Important limit:** the actual stored Money and Journal categories were empty in this live test; exclusion of populated private data was separately unit-tested but not demonstrated with a nonempty confidential category in the current RPC trace.
+
+**Real LLM response:** At **08:18:21**, Anna returned an `endTurn` response from `google/gemini-3-flash-preview` with 541 output tokens / 1486 total. The response (1) distinguishes complete vs partial weeks; (2) says recorded `kotlin` minutes fell 120 → 60 (50%); (3) recognizes the new `DBMS` topic; (4) avoids inventing reasons for the change; and (5) proposes two conditional, measurable next-week learning actions. App screenshot confirms actual formatted Markdown rendered under **AI Pattern & Next-Week Plan**, and **Save this AI plan for next week's comparison** was enabled.
+
+**Issue observed and targeted source correction:** The LLM emitted a **Saved-plan follow-up** section even though `previousUserSavedPlan` was absent. This was an unnecessary empty follow-up, not a privacy leak. The prompt builder was subsequently amended to request **exactly four headings** when no saved plan was authorized and add a fifth only when the user explicitly opts in. A regression test checks the scoped system prompt and payload. New source change awaits a fresh runtime observation.
+
+**Disposition:** **PASS — local Harness multi-week model response and evidence-grounded plan generation.** **NOT YET VERIFIED** — clicking Save and storage persistence; follow-up with saved plan and renewed consent; filled-category exclusion against the real host; fresh Anna Cloud Agent install/run; authentic screenshots uploaded to Anna Listing. The Harness preview URL in the screenshot contains a session query token: crop/redact the entire Harness chrome/address strip and RPC panes before any public screenshot publication.
+
 ## Required fresh Cloud Agent acceptance
 
 **Do not mark any item PASSED without a platform or user-observed result.**
