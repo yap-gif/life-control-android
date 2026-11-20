@@ -169,6 +169,19 @@ The owner provided a fresh authenticated **Life Control → Listing** screenshot
 
 **Review status nuance:** Previously the Console displayed `pending_review` pinned to **v0.1.1** despite the owner's rejection email. Current official Anna developer documentation (`Anna-Partners/anna-developer-docs/docs/apps/app-publish.md`, updated 2026-11-02) allows **explicitly switching review candidates during `PENDING_REVIEW`** by cutting a new version and then running `apps submit-review` again; cutting alone never changes the pinned candidate. This may resolve the workflow without waiting for the old pending state to change, but **do not perform cut or re-pin until remote Listing is saved/reloaded and the local manifest and Working Draft are verified to match the final v0.1.2 screenshot metadata**. Confirm App ID 908 and the updated current server status before any consequential action.
 
+## 3H. Local final 79/79 gate passed; Anna private draft unchanged at r4 (2026-11-20)
+
+The owner uploaded a 260-line PowerShell 5.1 transcript, filename `Pasted text(20261120-035542).txt`. It confirms fast-forward merge on branch `fix/life-control-review-r2-20261120`, **79 tests / 79 passed / 0 failed**, `anna-app validate --strict` **PASS**, and `npm run preflight -- --review-gate` **PASS** for `life-control-anna` candidate `0.1.2` with six screenshots. The user checked the remote target and obtained **`TARGET VERIFIED: Life Control / 908`**.
+
+The authenticated `anna-app apps push` response was:
+```
+✓ apps/life-control-anna: working draft unchanged (rev 4)
+status: pending_review
+```
+This is **PASS — no new draft revision necessary**. The follow-up `apps status life-control-anna` confirmed **App ID 908, status `pending_review`, latest cut `v0.1.1` ID `2476`, pinned review `v0.1.1`, two cut versions**. No v0.1.2 cut, candidate re-pin, approval, or publication occurred.
+
+**Next gate remains Anna Console Listing media:** The preceding screenshot displayed the six `v0.1.2` screenshot URLs entered, but still showed a `chatgpt.com/s/...` Cover image URL and had no post-save refresh confirmation. Replace Cover URL with the first valid direct GitHub WebP URL already in the manifest, click Save and reload Listing, verify that **six** image URLs plus Cover actually persisted and load without login. CLI Working Draft `unchanged` does **not** imply Listing fields were saved. Once remote Listing verification succeeds, the next consequential owner-controlled actions are to cut `0.1.2`, confirm version identity, and explicitly resubmit/re-pin the review candidate, subject to fresh status and final safety checks. Official Anna documentation permits explicit re-pin even while `PENDING_REVIEW`, but none has been attempted yet.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
