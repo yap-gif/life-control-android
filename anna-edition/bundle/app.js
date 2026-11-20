@@ -49,13 +49,18 @@ function persistAndRender({ notify = true } = {}) {
     anna.storage.set({ key: STORAGE_KEY, value: snapshot })
   );
   saveChain = write;
-  return write.then(
-    () => { if (notify) status("Saved to your Anna app storage."); return true; },
-    error => {
-      status(explainHostError(error, "storage") + " Changes were not confirmed. Please retry.", true);
+  return withDeadline(write, 15000, "Anna storage did not confirm the write within 15 seconds.")
+    .then(() => {
+      if (notify) status("Saved to your Anna app storage.");
+      return true;
+    })
+    .catch(error => {
+      const hint = error?.message?.startsWith("Anna storage did not confirm")
+        ? "Anna storage is still responding. Your change is not confirmed; keep the app open or reopen to verify before retrying."
+        : explainHostError(error, "storage") + " Changes were not confirmed. Please retry.";
+      status(hint, true);
       return false;
-    }
-  );
+    });
 }
 function entry(li, primary, subtitle, buttons = [], recordId = "") {
   const content = el("div","entry-content");
@@ -312,7 +317,6 @@ async function handleReview(event) {
 
     // Keep the analysis separate from the user's deliberately saved plan.
     const generatedAt = TODAY();
-    const previousReview = state.lastReview;
     state.lastReview = { generatedAt, text: output.slice(0, 6000), categories: [...selected] };
     lastGeneratedPlan = {
       savedAt: generatedAt, text: state.lastReview.text, categories: [...selected]
