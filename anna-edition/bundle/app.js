@@ -355,19 +355,34 @@ async function handleReview(event) {
       " · Saving analysis for restoration after reopening...";
     $("save-plan-btn").disabled = false;
 
-    const confirmed = await persistAndRender({ notify: false });
+    let confirmed = await persistAndRender({ notify: false });
+    if (confirmed) {
+      // The latest analysis must survive Anna Storage readback before
+      // claiming it can be restored after the app is reopened.
+      try {
+        const readback = await withDeadline(anna.storage.get({ key: STORAGE_KEY }),
+          10000, "Analysis readback timed out.");
+        const remote = normalizeState(readback?.value).lastReview;
+        confirmed = !!remote &&
+          remote.text === state.lastReview.text &&
+          remote.generatedAt === generatedAt &&
+          remote.categories.join(",") === selected.join(",");
+      } catch {
+        confirmed = false;
+      }
+    }
     if (confirmed) {
       $("analysis-meta").textContent = "Generated " + generatedAt +
-        " · Analysis saved to Anna storage and can be restored after reopening.";
-      $("review-save-status").textContent = "Analysis persisted. Save as a comparison plan only if you choose.";
-      status("Evidence-based analysis generated and safely stored.");
+        " · Analysis saved and verified by Anna Storage readback.";
+      $("review-save-status").textContent = "Analysis verified in storage. Save as a comparison plan only if you choose.";
+      status("Evidence-based analysis generated and verified in Anna Storage.");
     } else {
       $("analysis-meta").textContent = "Generated " + generatedAt +
         " · Analysis is visible but NOT confirmed in storage.";
       $("retry-save-result").hidden = storageWriteUncertain;
       $("review-save-status").textContent = storageWriteUncertain
         ? "Storage confirmation timed out. Close and reopen to verify; do not retry here."
-        : "Storage could not confirm the analysis. Retry saving before closing the app.";
+        : "Storage could not confirm the analysis by readback. Retry saving before closing the app.";
       status("AI analysis was generated, but storage did not confirm it.", true);
     }
   } catch (error) {
