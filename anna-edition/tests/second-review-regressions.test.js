@@ -66,9 +66,9 @@ test("issue 2: save plan waits for Anna acknowledgment and does not claim false 
   assert.match(app,/withDeadline\(write, 15000/);
 });
 
-test("issue 3: failed persistence keeps an explicit retry path", () => {
+test("issue 3: definite storage failure keeps retry; uncertain timeout requires app reload", () => {
   assert.match(app,/state\.lastReview = \{ generatedAt, text: output\.slice\(0, 6000\)/);
-  assert.match(app,/\$\("retry-save-result"\)\.hidden = false/);
+  assert.match(app,/\$\("retry-save-result"\)\.hidden = storageWriteUncertain/);
   assert.match(app,/\$\("retry-save-result"\)\.addEventListener\("click"/);
   assert.match(html,/id="retry-save-result" hidden/);
 });
@@ -84,4 +84,11 @@ test("consent remains one-shot, never automatic when reopening", () => {
   assert.match(app,/if \(!\$\("ai-consent"\)\.checked\)/);
   assert.match(app,/\$\("ai-consent"\)\.checked = false/);
   assert.match(html,/id="ai-consent" required/);
+});
+
+test("uncertain storage timeout locks out subsequent writes pending reload", () => {
+  assert.match(app,/storageWriteUncertain = true/);
+  assert.match(app,/function lockUnsafeEdits\(\)/);
+  assert.match(app,/if \(storageWriteUncertain\) \{/);
+  assert.match(app,/Close and reopen this app to verify saved records/);
 });
