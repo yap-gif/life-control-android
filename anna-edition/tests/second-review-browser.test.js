@@ -32,7 +32,7 @@ async function waitFor(predicate,details="condition",ms=6000) {
   }
   throw new Error("Timed out waiting for "+details);
 }
-function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,hangPlanSave=false,fastStorageTimeout=false,missingKeyAs404=false,readError=null,modelCalls={count:0}}={}) {
+function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,ackWithoutPersistReview=false,hangPlanSave=false,fastStorageTimeout=false,missingKeyAs404=false,readError=null,modelCalls={count:0}}={}) {
   const dom=new JSDOM(html,{
     url:"https://anna.partners/apps/life-control-anna#overview",
     runScripts:"outside-only",
@@ -50,6 +50,7 @@ function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,
         if(hangPlanSave && value.savedPlan)return new Promise(()=>{});
         if(rejectPlanSave && value.savedPlan)throw new Error("mock storage rejected plan");
         if(ackWithoutPersist && value.savedPlan)return {etag:"fake-ack"};
+        if(ackWithoutPersistReview && value.lastReview)return {etag:"fake-ack"};
         database.set(key,JSON.parse(JSON.stringify(value)));
         return {etag:"mock-ack",generation:1};
       },
@@ -273,5 +274,26 @@ test("hung Anna storage write does not allow further edits or an endless queued 
     assert.equal(d.getElementById("retry-save-result").disabled,true);
     assert.equal(database.get(logic.STORAGE_KEY).savedPlan,null);
     assert.match(d.getElementById("message").textContent,/Close and reopen/);
+  }finally{app.window.close();}
+});
+
+test("AI report must not claim restart persistence when host falsely acknowledges write",async()=>{
+  const database=new Map();
+  const app=setup({database,ackWithoutPersistReview:true});
+  try{
+    const d=app.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","boot");
+    app.window.location.hash="#insights";
+    await waitFor(()=>!d.getElementById("view-insights").hidden,"AI screen");
+    d.getElementById("ai-consent").checked=true;
+    d.getElementById("review-form").dispatchEvent(
+      new app.window.Event("submit",{bubbles:true,cancelable:true}));
+    await waitFor(()=>d.getElementById("review-save-status").textContent.includes("could not confirm"),
+      "readback mismatch");
+    assert.equal(database.has(logic.STORAGE_KEY),false);
+    assert.equal(d.getElementById("retry-save-result").hidden,false);
+    assert.ok(d.getElementById("review-result").textContent.includes("120 minutes"),
+      "Generated result must remain visible even though not persisted");
+    assert.doesNotMatch(d.getElementById("review-save-status").textContent,/verified in storage/);
   }finally{app.window.close();}
 });
