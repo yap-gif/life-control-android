@@ -32,7 +32,7 @@ async function waitFor(predicate,details="condition",ms=6000) {
   }
   throw new Error("Timed out waiting for "+details);
 }
-function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,missingKeyAs404=false,readError=null,modelCalls={count:0}}={}) {
+function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,hangPlanSave=false,fastStorageTimeout=false,missingKeyAs404=false,readError=null,modelCalls={count:0}}={}) {
   const dom=new JSDOM(html,{
     url:"https://anna.partners/apps/life-control-anna#overview",
     runScripts:"outside-only",
@@ -47,6 +47,7 @@ function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,
         return {value:database.get(key)??null};
       },
       set:async({key,value})=>{
+        if(hangPlanSave && value.savedPlan)return new Promise(()=>{});
         if(rejectPlanSave && value.savedPlan)throw new Error("mock storage rejected plan");
         if(ackWithoutPersist && value.savedPlan)return {etag:"fake-ack"};
         database.set(key,JSON.parse(JSON.stringify(value)));
@@ -69,7 +70,8 @@ function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,
     AnnaAppRuntime:{connect:async()=>anna},
     logic,feedback,review,patterns,formatting,storageFlow
   };
-  window.eval(useDeps+script);
+  window.eval(useDeps+(fastStorageTimeout ?
+    script.replace("withDeadline(write, 15000,", "withDeadline(write, 85,") : script));
   return {dom,window,document:window.document,database,modelCalls};
 }
 
@@ -251,5 +253,25 @@ test("storage permission error must not create an empty workspace or enable edit
     assert.equal(d.getElementById("task-form").elements.namedItem("title").disabled,true);
     assert.equal(d.getElementById("retry-connect").hidden,false);
     assert.equal(app.database.size,0);
+  }finally{app.window.close();}
+});
+
+test("hung Anna storage write does not allow further edits or an endless queued retry",async()=>{
+  const database=new Map([[logic.STORAGE_KEY,logic.normalizeState({
+    lastReview:{generatedAt:logic.localDate(),text:"### Review\n- Example",categories:["learning"]}
+  })]]);
+  const app=setup({database,hangPlanSave:true,fastStorageTimeout:true});
+  try{
+    const d=app.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","boot");
+    d.getElementById("save-plan-btn").click();
+    await waitFor(()=>d.getElementById("review-save-status").textContent.includes("Storage status is uncertain"),
+      "bounded timeout and uncertainty lock",2000);
+    assert.equal(d.getElementById("save-plan-btn").disabled,true);
+    assert.equal(d.getElementById("review-btn").disabled,true);
+    assert.equal(d.getElementById("erase-data").disabled,true);
+    assert.equal(d.getElementById("retry-save-result").disabled,true);
+    assert.equal(database.get(logic.STORAGE_KEY).savedPlan,null);
+    assert.match(d.getElementById("message").textContent,/Close and reopen/);
   }finally{app.window.close();}
 });
