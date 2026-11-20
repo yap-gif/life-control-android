@@ -133,6 +133,16 @@ The owner explicitly clarified that they **personally deleted** the previously l
 
 This confirms the chronology as described by the owner, but the deletion operation itself was not accompanied by a host RPC trace. Treat updated-model output as **in-platform observation consistent with deletion**, not a test that conclusively proves every category-selection or privacy rule. Other release blockers remain: complete saved-plan recovery verification after reopen, fresh empty-storage Cloud Agent acceptance, non-AI form persistence, mobile/accessibility testing, new v0.1.2 screenshots and server Listing verification, and clarification of the still-pinned v0.1.1 pending review state. No frozen v0.1.2 or new submission is authorized here.
 
+## 3F. Owner confirms remaining v0.1.2 validation (2026-11-20)
+
+After reviewing the screenshot-confirmed draft installation, eight functional pages, live AI generation and Anna Storage readback, reopening/regeneration and the resolved DBMS data deletion, the owner stated explicitly **"我全部确认过了"** ("I personally verified everything") in reply to the outstanding acceptance list.
+
+**Disposition — PASS (owner-reported manual verification):** the owner confirms the formerly pending remaining in-app tests, including (1) saved AI plan remains recoverable after closing and reopening, (2) Tasks, Money, Journal and Savings save/reload operations, (3) narrow/mobile navigation, and (4) fresh-install behavior / new v0.1.2 visual checks. These are **owner attestations**, not independently available per-step RPC logs, mobile-screen captures or a fresh clean-storage transcript. The prior screenshots independently establish draft r4 installed, multi-page desktop layout, analysis and saved-plan readback state, and restored analysis indicator. The previously flagged 40-versus-0-minute discrepancy was explained by the owner's deliberate deletion of DBMS 40-minute record.
+
+**Remaining release-state work, not encompassed by manual feature confirmation:** the GitHub source manifest still references five **v0.1.1** screenshots and `store-screenshots/SOURCE-VERSION.txt` still reads **0.1.1**. Therefore **both `--review-gate` and `--release-gate` are deliberately blocked for source candidate v0.1.2**. New genuine v0.1.2 multi-page screenshot files must be hosted at immutable HTTPS links, reflected in `app.json`, and actually saved/reopened in Anna Console Listing; only then may the source-version marker be updated. Also verify a valid Cover image URL, and resolve/confirm the Console's old **`pending_review` pinned to v0.1.1** despite the reviewer email reporting v0.1.1 rejection, before considering v0.1.2 cut/resubmission. These platform/release checks cannot be inferred from "all tested."
+
+**No new immutable version cut, review submission or publication authorized or performed.** This attestation closes the owner's requested manual feature test round, but does not guarantee the app is bug-free.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
