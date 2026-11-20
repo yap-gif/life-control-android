@@ -5,14 +5,15 @@
   "tagline": "See real progress patterns. Turn selected history into a measurable AI action plan.",
   "description": "Life Control is an AI-powered progress-pattern coach built around consent-controlled personal records. Separate Overview, AI Insights, Tasks, Money, Learning, Journal, Savings, and Privacy pages make every feature easy to find. It lets you track tasks, MYR income and spending, learning sessions, daily reflections, and a savings target. With one-time authorization, the AI compares up to four completed weeks and the current week from only the categories you select, identifies observable changes and evidence limits, then proposes a measurable next-seven-day plan. After authorization, the latest AI analysis is retained in app storage and restored after reopening without triggering a new model call. Separately, you can save the AI plan in app storage and explicitly choose whether to include it in a later AI request to compare your intentions with newly logged activity and adjust the plan. Unselected categories and saved plans are not sent by default. Record storage uses Anna per-app storage. This application does not sync with the separate Android version, connect to banks, send device push notifications or make professional financial recommendations. Model usage may consume Anna platform credits; erasing this workspace cannot retract past AI requests or guarantee removal of platform-side logs or backups.",
   "category": "productivity",
-  "homepage_url": "https://github.com/yap-gif/life-control-android/tree/f72944d867da70aa206016b5ca5fa4a025855dba/anna-edition",
+  "homepage_url": "https://github.com/yap-gif/life-control-android/tree/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition",
   "support_url": "https://github.com/yap-gif/life-control-android/issues",
   "privacy_url": "https://github.com/yap-gif/life-control-android/blob/faec7300df56417b7ad938b7680e62405246bbc5/anna-edition/PRIVACY.md",
   "screenshots": [
-    "https://raw.githubusercontent.com/yap-gif/life-control-android/b5f09e22b61ac05b7ae00b5c1ba55de316746f70/anna-edition/store-screenshots/01-ai-dashboard-and-trend.webp",
-    "https://raw.githubusercontent.com/yap-gif/life-control-android/b5f09e22b61ac05b7ae00b5c1ba55de316746f70/anna-edition/store-screenshots/02-ai-analysis-and-plan.webp",
-    "https://raw.githubusercontent.com/yap-gif/life-control-android/b5f09e22b61ac05b7ae00b5c1ba55de316746f70/anna-edition/store-screenshots/03-productivity-modules.webp",
-    "https://raw.githubusercontent.com/yap-gif/life-control-android/b5f09e22b61ac05b7ae00b5c1ba55de316746f70/anna-edition/store-screenshots/04-learning-and-privacy.webp",
-    "https://raw.githubusercontent.com/yap-gif/life-control-android/b5f09e22b61ac05b7ae00b5c1ba55de316746f70/anna-edition/store-screenshots/05-saved-plan-follow-up.webp"
+    "https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/01-v012-overview.webp",
+    "https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/02-v012-ai-insights.webp",
+    "https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/03-v012-tasks.webp",
+    "https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/04-v012-learning.webp",
+    "https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/05-v012-ai-plan-storage.webp",
+    "https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/06-v012-ai-restored.webp"
   ]
 }
