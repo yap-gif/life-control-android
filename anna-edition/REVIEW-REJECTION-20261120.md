@@ -211,12 +211,29 @@ apps versions life-control-anna:
 
 The owner earlier verbally confirmed the updated Anna Console Listing saved successfully, but the persistence was not independently read through an authenticated API. This is classified as owner-confirmed rather than independently server-verified.
 
-## 4. Final acceptance status
+## 3J. v0.1.2 successfully pinned for new Anna App Review — ID 2720 (2026-11-20)
 
-- Reviewer issues: documented; source repairs committed on a separate branch.
-- Automated source checks: track the newest GitHub Actions run, report exact pass/fail counts from the log.
-- Anna Console installation of Working Draft r4 and eight separate desktop views: **VISUALLY VERIFIED**; fully clean Cloud Agent install, data-save/AI/reopen/retry end-to-end flows: **PENDING**.
-- New six genuine v0.1.2 screenshots and commit-pinned `app.json` URLs: **COMPLETED IN GITHUB**. Anna Console Listing save/reload and new Cover URL: **NOT YET VERIFIED**.
-- Original App ID 908 Working Draft **r4 uploaded by owner**; no frozen v0.1.2 or new review submission. Pending review remains pinned to v0.1.1; cut/new submission authorization **NOT GRANTED HERE**.
+The owner supplied a PowerShell 5.1 transcript for the **actual authenticated Anna CLI v0.1.64** submission. Before submitting, the script independently verified **App ID 908**, latest immutable version **v0.1.2 / ID 2720**, app **`pending_review`**, and previous review candidate **v0.1.1**. The owner then executed `anna-app apps submit-review` and received:
 
-It is not possible to guarantee a completely bug-free app. A passing source CI is necessary, but the release decision requires actual behavior and evidence under the target Anna Cloud Agent runtime.
+```text
+✓ apps/life-control-anna: submitted for review
+status: pending_review
+under review: v0.1.2
+```
+
+The script subsequently fetched `apps status life-control-anna` and `apps versions life-control-anna` and **both post-submit assertions passed**, ending with **`V0.1.2 REVIEW CANDIDATE VERIFIED`**. Those assertions explicitly checked `in review: v0.1.2` and `[review] v0.1.2 (id=2720)`.
+
+**Disposition: PASS — the review candidate was successfully re-pinned from v0.1.1 to frozen v0.1.2, ID 2720, under original Life Control App ID 908.** This is a real Anna server submission, **not** an approval, publication, or guarantee of reviewer acceptance. Earlier immutable v0.1.1 / ID 2476 and v0.1.0 / ID 2279 remain separate versions; no `apps release` or `publish` was performed. Do not change the review candidate, create new cuts, release, or resubmit absent a new reason and explicit approval.
+
+**Follow-up:** monitor Anna Developer Console and developer email for the official v0.1.2 review decision. If a new rejection arrives, preserve its precise findings before commencing a targeted new candidate. If approved, check whether Anna automatically published it or requires a separate authorized release step; do not assume either outcome in advance.
+
+## 4. Final acceptance status (as of owner-provided 2026-11-20 CLI response)
+
+- **79/79 local source tests and strict Anna validation: PASS** based on the owner's Windows output and tracked GitHub CI; tests are not a proof of absolute freedom from bugs.
+- **Anna-hosted Working Draft r4:** installation, separated UI, live AI generation, analysis and plan readback, and restored-analysis indicators supported by actual owner screenshots. Additional full-flow checks, including saved-plan recovery, non-AI forms, mobile and fresh install, were explicitly **attested PASS by owner** (not independently reproduced by this report).
+- **Six v0.1.2 screenshots, Cover and Listing:** GitHub source/URLs and local review gate PASS; Anna Console Save reported successful by owner. A fresh independently retrieved server-side Listing is not included in this evidence.
+- **Immutable version cut:** PASS — original App ID 908, **v0.1.2 / ID 2720**; old versions retained.
+- **App Review re-pin:** PASS — **`pending_review`, in review `v0.1.2`, `[review] v0.1.2 (id=2720)` verified by explicit post-submit CLI assertions**.
+- **Anna decision / approval / public release:** **NOT YET KNOWN; do not claim success or publish**.
+
+Next event: the platform's official review decision. No additional change or submission is required while v0.1.2 remains pending review.
