@@ -92,11 +92,21 @@ The authenticated `anna-app apps push` then **succeeded**, reporting: staged **9
 
 **Next safe step:** Install the **Working Draft r4** (`0.0.0-draft`) in a fresh Anna Cloud Agent. Run the full `R2-E2E` acceptance sequence below and save evidence for each reviewer defect. Fresh screenshots of the revised multipage UI are mandatory before lifting release/review gates. Do not run `apps cut 0.1.2`, `apps submit-review`, `apps release` or `publish` while the ambiguous pending-review state remains unresolved.
 
+## 3B. Anna Console draft install and eight separate desktop views — screenshots (2026-11-20)
+
+The owner supplied **nine screenshots** from Anna. **Versions** clearly displays **Working Draft r4**, green **Bundle ready**, content hash beginning `bf9be41d38f3`, the **Install draft** control and an Anna toast **"Installed working draft (0.0.0-draft) — now available in chat."** The same Console still displays **"In review: v0.1.1"** and identifies v0.1.1 as review candidate; no v0.1.2 cut/review is evidenced.
+
+The other **eight screenshots** show separate desktop views in the Anna-hosted Life Control window, with a consistent eight-item navigation bar and **"Anna connected"** status: **Overview**, **AI Insights**, **Tasks**, **Money**, **Learning**, **Journal**, **Savings**, and **Privacy**. The active tab changes appropriately. Overview displays dashboard and a direct AI Insights entry; AI Insights shows the local historical preview **Learning: 120 min → 60 min** and explicit category-selection checkboxes; Tasks and Money display their own empty form panels; Learning displays three earlier dated synthetic sessions **2026-11-04 Kotlin 120 min**, **2026-11-11 Kotlin 60 min**, **2026-11-17 DBMS 40 min**; Journal and Savings show their own input panels; Privacy shows the dedicated **Erase saved data** control and disclosure. No obvious desktop navigation overlap is visible; Anna's translation widget floats over the far right edge of some captures and should be excluded from store screenshots.
+
+**Disposition:** **PASS (in-platform visual evidence)** for reviewer finding **R2-UI-01** — the functions are visibly separated into distinct categories/pages, rather than one long scrolling surface. **PARTIAL** for R2-E2E-01 — desktop click navigation and form visibility shown, but narrow-mobile viewport, keyboard focus, browser back/forward and screen-reader support are not demonstrated. **PASS (visual only)** for reinstalled working draft launch and existing Learning record display. **NOT YET VERIFIED** for true blank-data fresh Cloud Agent (the reinstalled app shows pre-existing Learning records), live form submissions and storage persistence, LLM generation, saving next-week plan/host readback, relaunch review restoration and generate-button availability. Do **not** treat visible buttons as evidence their actions succeed.
+
+**Next priority:** In a fresh isolated Cloud Agent (or other confirmed clean test storage scope), do the full R2-E2E-02 through R2-E2E-05 sequence using synthetic records: generate a real AI analysis, verify it is stored, save the plan and verify readback, close/reopen, verify the analysis and plan are restored without an automatic LLM call, then re-consent and successfully generate another analysis. Keep evidence of the saved-plan state and real generated output. Re-capture v0.1.2 Listing screenshots only after the flow passes.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
 - Automated source checks: track the newest GitHub Actions run, report exact pass/fail counts from the log.
-- Anna Cloud Agent full fresh-install verification of **v0.1.2**: **NOT YET PERFORMED**.
+- Anna Console installation of Working Draft r4 and eight separate desktop views: **VISUALLY VERIFIED**; fully clean Cloud Agent install, data-save/AI/reopen/retry end-to-end flows: **PENDING**.
 - New screenshot Listing and refreshed privacy validation: **NOT YET VERIFIED**.
 - Original App ID 908 Working Draft **r4 uploaded by owner**; no frozen v0.1.2 or new review submission. Pending review remains pinned to v0.1.1; cut/new submission authorization **NOT GRANTED HERE**.
 
