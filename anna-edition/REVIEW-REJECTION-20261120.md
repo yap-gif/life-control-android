@@ -82,12 +82,22 @@ Take **new authentic** screenshots of the eight-page navigation, an AI trend/con
 
 **Release sequencing:** do not push to Anna, cut, submit review, release or publish solely because CI passes. Request owner approval for the private draft update; complete Cloud Agent acceptance; request a separate approval to cut `v0.1.2` and then submit that exact immutable version for review. The rejected v0.1.1 / ID 2476 remains immutable.
 
+## 3A. Owner's actual Anna Working Draft upload — revision 4 (2026-11-20)
+
+The owner supplied the PowerShell output of local source verification (**78 tests / 78 pass / zero fail**, Anna CLI `validate --strict` PASS, ordinary preflight PASS). The safety check correctly read `app_id: 908`, but **detected `status: pending_review` and threw** the message `An active review is pending. Stop.` **The owner continued manually afterward**, so the guard did not prevent the subsequent remote change.
+
+The authenticated `anna-app apps push` then **succeeded**, reporting: staged **9 UI bundle files**, **74.8 KB**, 3 unchanged files deduplicated; bundle `ready`; `apps/life-control-anna: working draft updated (rev 4)`. An additional `apps status life-control-anna` confirmed `app_id: 908`, `status: pending_review`, latest immutable `v0.1.1 (ID 2476, published=—)`, and `in review: v0.1.1 (pinned at submit-review)`, 2 total frozen versions.
+
+**Disposition:** **PASS for upload of the v0.1.2 source to the private original-app Working Draft r4**; **NOT PASS for a new review or actual Cloud Agent behavior**. The pending review is still explicitly pinned to v0.1.1; the new draft is not the candidate. The user also supplied an Anna Developer rejection email describing v0.1.1 issues, so there is a discrepancy between emailed review feedback and server-visible `pending_review`. Do not assume the server status was reset or that v0.1.2 has been submitted; check the Console/version review history or contact Anna Dev for clarification before any new `cut` or `submit-review`.
+
+**Next safe step:** Install the **Working Draft r4** (`0.0.0-draft`) in a fresh Anna Cloud Agent. Run the full `R2-E2E` acceptance sequence below and save evidence for each reviewer defect. Fresh screenshots of the revised multipage UI are mandatory before lifting release/review gates. Do not run `apps cut 0.1.2`, `apps submit-review`, `apps release` or `publish` while the ambiguous pending-review state remains unresolved.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
 - Automated source checks: track the newest GitHub Actions run, report exact pass/fail counts from the log.
 - Anna Cloud Agent full fresh-install verification of **v0.1.2**: **NOT YET PERFORMED**.
 - New screenshot Listing and refreshed privacy validation: **NOT YET VERIFIED**.
-- Approval to update App ID 908 Working Draft, immutable version cut and third review submission: **NOT GRANTED HERE**.
+- Original App ID 908 Working Draft **r4 uploaded by owner**; no frozen v0.1.2 or new review submission. Pending review remains pinned to v0.1.1; cut/new submission authorization **NOT GRANTED HERE**.
 
 It is not possible to guarantee a completely bug-free app. A passing source CI is necessary, but the release decision requires actual behavior and evidence under the target Anna Cloud Agent runtime.
