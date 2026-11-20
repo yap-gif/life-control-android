@@ -41,6 +41,14 @@ The reviewer explicitly requests the developer to **perform a complete fresh-ins
 - Failure tests reject `storage.set` and simulate a host claiming success without saving the plan: **the UI must not report a confirmed saved plan**.
 - These checks validate implementation paths in a simulated Anna host, **not actual cloud-network durability, quota, installation state or reviewer acceptance**.
 
+### November 20 further timeout and readback hardening
+
+After the owner reported **75/75 passing local source tests**, a follow-up code inspection identified another genuine edge case: the host `storage.set` Promise can remain pending after the app's 15-second UI deadline. Because writes are serialized, blindly retrying in the same session would queue behind the unresolved write indefinitely. Candidate fix: **mark storage durability as uncertain, stop new record/form writes, disable plan/retry/erase actions, and direct the user to close and reopen the app to reconcile actual Anna Storage contents**. Definite rejected writes remain recoverable via retry. The UI does **not** claim a timed-out operation was canceled or that its data was persisted.
+
+The candidate also verifies that the newly generated AI `lastReview` is actually returned by `anna.storage.get` before promising that the analysis survives reopening, matching the existing saved-plan readback check. Simulated browser tests include an unresolved plan write, a false ACK for analysis, and a false ACK for saved plans.
+
+**Latest verified GitHub CI:** 2026-11-20, commit `8bd542bba1f5be5ae8386682532ca6aeb89f83f0`, [workflow run 44662552638](https://github.com/yap-gif/life-control-android/actions/runs/44662552638): `validate --strict` PASS, **78 tests passed, zero failures**. This supersedes the owner's earlier local **75/75** run: the new commits still require a local fetch + test before Anna private-draft installation.
+
 ## 3. Mandatory fresh Cloud Agent acceptance before cutting v0.1.2
 
 Use a **fresh-install Cloud Agent**, not only the local Windows Harness or an already open stale draft. Confirm Anna Developer Console and CLI identify original **App ID 908**, new Working Draft bundle ready, and the new eight-section navigation. Use **synthetic test data only**.
