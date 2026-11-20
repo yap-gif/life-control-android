@@ -405,65 +405,128 @@ async function eraseWorkspace() {
 }
 
 async function boot() {
-  forms.forEach(fid=>{
-    $(fid).querySelectorAll("input,textarea,select,button").forEach(input=>input.disabled=true);
+  if (connectBusy) return;
+  connectBusy = true;
+  $("retry-connect").hidden = true;
+  forms.forEach(fid => {
+    $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = true);
   });
   try {
-    anna=await AnnaAppRuntime.connect();
-    const response=await anna.storage.get({key:STORAGE_KEY});
-    state=normalizeState(response?.value);
-    $("connection").textContent="Anna connected";
-    ["task-form","money-form","learning-form","journal-form"].forEach(fid=>{
-      $(fid).elements.namedItem("date").value=TODAY();
+    anna = await withDeadline(AnnaAppRuntime.connect(), 12000, "Anna connection timed out.");
+    const response = await withDeadline(anna.storage.get({ key: STORAGE_KEY }), 12000,
+      "Anna storage could not load your records in time.");
+    state = normalizeState(response?.value);
+    $("connection").textContent = "Anna connected";
+    ["task-form","money-form","learning-form","journal-form"].forEach(fid => {
+      $(fid).elements.namedItem("date").value = TODAY();
     });
-    for(const [key,val] of Object.entries(state.goal)){
-      $("goal-form").elements.namedItem(key).value=String(val);
+    for (const [key, val] of Object.entries(state.goal)) {
+      $("goal-form").elements.namedItem(key).value = String(val);
     }
-    bindEntries();
-    $("review-form").addEventListener("submit", handleReview);
-    $("review-form").querySelectorAll('input[name="context"]').forEach(input => {
-      input.addEventListener("change", renderPatternPreview);
+
+    // Bind once only: failed startup followed by Retry must not double-submit forms.
+    if (!listenersAttached) {
+      bindEntries();
+      $("review-form").addEventListener("submit", handleReview);
+      $("review-form").querySelectorAll('input[name="context"]').forEach(input => {
+        input.addEventListener("change", renderPatternPreview);
+      });
+      $("save-plan-btn").addEventListener("click", async () => {
+        if (!lastGeneratedPlan || reviewBusy || planSaving) return;
+        planSaving = true;
+        const previous = state.savedPlan;
+        const candidate = { ...lastGeneratedPlan, categories: [...lastGeneratedPlan.categories] };
+        $("save-plan-btn").disabled = true;
+        $("save-plan-btn").textContent = "Saving plan to Anna...";
+        $("review-save-status").textContent = "Waiting for Anna Storage confirmation...";
+        try {
+          state.savedPlan = candidate;
+          const confirmed = await persistAndRender({ notify: false });
+          if (confirmed) {
+            $("review-save-status").textContent =
+              "Saved plan confirmed in Anna storage. Reopen this app to verify restoration.";
+            status("AI plan saved and acknowledged by Anna Storage.");
+          } else {
+            state.savedPlan = previous;
+            render();
+            $("review-save-status").textContent =
+              "Plan save was NOT confirmed. Retry the save after verifying the connection.";
+            status("Plan was not confirmed as saved. Try again.", true);
+          }
+        } finally {
+          planSaving = false;
+          $("save-plan-btn").textContent = "Save this AI plan for next week's comparison";
+          $("save-plan-btn").disabled = !!(state.savedPlan &&
+            state.savedPlan.text === candidate.text &&
+            state.savedPlan.savedAt === candidate.savedAt);
+          $("review-btn").disabled = false;
+        }
+      });
+      $("forget-plan-btn").addEventListener("click", async () => {
+        if (!state.savedPlan || reviewBusy || planSaving) return;
+        planSaving = true;
+        const previous = state.savedPlan;
+        state.savedPlan = null;
+        $("include-saved-plan").checked = false;
+        const confirmed = await persistAndRender({ notify: false });
+        if (confirmed) {
+          status("Saved AI plan removed and confirmed by Anna Storage.");
+        } else {
+          state.savedPlan = previous;
+          render();
+          status("Could not confirm plan deletion. Try again.", true);
+        }
+        planSaving = false;
+      });
+      $("retry-save-result").addEventListener("click", async () => {
+        if (reviewBusy || planSaving || !state.lastReview) return;
+        $("retry-save-result").disabled = true;
+        $("review-save-status").textContent = "Retrying the analysis save...";
+        const confirmed = await persistAndRender({ notify: false });
+        $("retry-save-result").hidden = confirmed;
+        $("retry-save-result").disabled = false;
+        $("review-save-status").textContent = confirmed
+          ? "Analysis stored successfully. It will restore after reopening."
+          : "Still not confirmed. Do not assume the result is saved.";
+      });
+
+      $("erase-data").disabled = false;
+      const dismissErase = () => {
+        $("erase-confirm-panel").hidden = true;
+        $("erase-data").setAttribute("aria-expanded", "false");
+        $("erase-data").focus();
+      };
+      $("erase-data").addEventListener("click", () => {
+        $("erase-confirm-panel").hidden = false;
+        $("erase-data").setAttribute("aria-expanded", "true");
+        $("erase-cancel").focus();
+      });
+      $("erase-cancel").addEventListener("click", dismissErase);
+      $("erase-confirm-panel").addEventListener("keydown", event => {
+        if (event.key === "Escape") { event.preventDefault(); dismissErase(); }
+      });
+      $("erase-confirm").addEventListener("click", eraseWorkspace);
+      listenersAttached = true;
+    }
+    forms.forEach(fid => {
+      $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = false);
     });
-    $("save-plan-btn").addEventListener("click", () => {
-      if (!lastGeneratedPlan || reviewBusy) return;
-      state.savedPlan = lastGeneratedPlan;
-      lastGeneratedPlan = null;
-      $("save-plan-btn").disabled = true;
-      persistAndRender();
-      status("AI plan saved to app storage. Future comparisons still require explicit opt-in.");
-    });
-    $("forget-plan-btn").addEventListener("click", () => {
-      if (!state.savedPlan || reviewBusy) return;
-      state.savedPlan = null;
-      $("include-saved-plan").checked = false;
-      persistAndRender();
-      status("Saved AI plan removed from app storage.");
-    });
-    $("erase-data").disabled = false;
-    const dismissErase = () => {
-      $("erase-confirm-panel").hidden = true;
-      $("erase-data").setAttribute("aria-expanded", "false");
-      $("erase-data").focus();
-    };
-    $("erase-data").addEventListener("click", () => {
-      $("erase-confirm-panel").hidden = false;
-      $("erase-data").setAttribute("aria-expanded", "true");
-      // Begin focus on Cancel, not the destructive Confirm button.
-      $("erase-cancel").focus();
-    });
-    $("erase-cancel").addEventListener("click", dismissErase);
-    $("erase-confirm-panel").addEventListener("keydown", event => {
-      if (event.key === "Escape") { event.preventDefault(); dismissErase(); }
-    });
-    $("erase-confirm").addEventListener("click", eraseWorkspace);
-    forms.forEach(fid=>{
-      $(fid).querySelectorAll("input,textarea,select,button").forEach(input=>input.disabled=false);
-    });
+    $("retry-connect").hidden = true;
     render();
-    status("Ready. AI remains off until you explicitly authorize a review.");
-  } catch(error) {
-    $("connection").textContent="Connection unavailable";
-    status(explainHostError(error, "storage") + " Editing is disabled to prevent unsaved records.",true);
+    restoreAnalysis();
+    status(state.lastReview
+      ? "Ready. Your last AI analysis was restored. A new AI call still needs fresh consent."
+      : "Ready. AI remains off until you explicitly authorize a review.");
+  } catch (error) {
+    $("connection").textContent = "Connection unavailable";
+    $("retry-connect").hidden = false;
+    status("Anna data did not load. Editing is disabled to prevent overwriting records. Use Retry Anna connection.", true);
+  } finally {
+    connectBusy = false;
   }
 }
+
+window.addEventListener("hashchange", navigateToCurrentPage);
+navigateToCurrentPage();
+$("retry-connect").addEventListener("click", boot);
 boot();
