@@ -13,6 +13,7 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "@anna-ai/cli": "^0.1.64"
+    "@anna-ai/cli": "^0.1.64",
+    "jsdom": "^26.1.0"
   }
 }
