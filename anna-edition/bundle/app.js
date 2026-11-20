@@ -7,6 +7,7 @@ import { explainHostError, entryActionLabel } from "./ui-feedback.js";
 import { buildReviewRequest } from "./review-contract.js";
 import { summarizePatternPreview } from "./patterns.js";
 import { renderReviewMarkdown } from "./review-format.js";
+import { queueStorageWrite } from "./storage-flow.js";
 
 const $ = id => document.getElementById(id);
 const forms = ["task-form","money-form","learning-form","journal-form","goal-form","review-form"];
@@ -45,9 +46,7 @@ function persistAndRender({ notify = true } = {}) {
   render();
   const snapshot = JSON.parse(JSON.stringify(state));
   if (notify) status("Saving changes to Anna storage...");
-  const write = saveChain.catch(() => {}).then(() =>
-    anna.storage.set({ key: STORAGE_KEY, value: snapshot })
-  );
+  const write = queueStorageWrite(saveChain, anna.storage, STORAGE_KEY, snapshot);
   saveChain = write;
   return withDeadline(write, 15000, "Anna storage did not confirm the write within 15 seconds.")
     .then(() => {
