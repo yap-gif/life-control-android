@@ -102,7 +102,8 @@ export function main(args = process.argv.slice(2)) {
   console.log("Target:", app.slug, "| candidate:", app.version);
   console.log("Note: Anna Console Listing fields and uploaded media must be reviewed separately.");
   const reviewGate = args.includes("--review-gate");
-  if (reviewGate) {
+  const releaseGate = args.includes("--release-gate");
+  if (reviewGate || releaseGate) {
     errors.push(...inspectReviewScreenshots(app));
     const captured = readFileSync(join(root, "store-screenshots", "SOURCE-VERSION.txt"), "utf8").trim();
     errors.push(...inspectScreenshotFreshness(app.version, captured));
@@ -112,7 +113,7 @@ export function main(args = process.argv.slice(2)) {
   if (errors.length === 0) console.log("Structural metadata and privacy-file checks: PASS.");
   if (warnings.length > 0) console.log("Stable public links are still a release gate.");
   if (reviewGate) console.log("REVIEW GATE: final screenshots must ALSO be saved and re-opened in authenticated Anna Listing.");
-  const strict = args.includes("--release-gate") || reviewGate;
+  const strict = releaseGate || reviewGate;
   if (errors.length > 0 || (strict && warnings.length > 0)) process.exitCode = 1;
 }
 
