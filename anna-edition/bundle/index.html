@@ -15,13 +15,31 @@
       <div class="pill" id="connection" role="status" aria-live="polite">Connecting to Anna...</div>
     </header>
     <div id="message" class="message" role="status" aria-live="polite"></div>
-    <section class="summary grid-four" aria-label="Overview">
+    <button type="button" id="retry-connect" hidden>Retry Anna connection</button>
+    <nav class="feature-nav" aria-label="Life Control sections">
+      <a class="nav-link" href="#overview" data-nav="overview" aria-current="page">Overview</a>
+      <a class="nav-link" href="#insights" data-nav="insights" >AI Insights</a>
+      <a class="nav-link" href="#tasks" data-nav="tasks" >Tasks</a>
+      <a class="nav-link" href="#money" data-nav="money" >Money</a>
+      <a class="nav-link" href="#learning" data-nav="learning" >Learning</a>
+      <a class="nav-link" href="#journal" data-nav="journal" >Journal</a>
+      <a class="nav-link" href="#savings" data-nav="savings" >Savings</a>
+      <a class="nav-link" href="#privacy" data-nav="privacy" >Privacy</a>
+    </nav>
+    <section class="page" id="view-overview" data-page="overview" aria-labelledby="page-title-overview" >
+      <div class="page-head"><h2 id="page-title-overview">Overview</h2></div>
+      <section class="summary grid-four" aria-label="Overview">
       <div class="stat"><span>Open tasks</span><strong id="open-count">—</strong></div>
       <div class="stat"><span>Due now / overdue</span><strong id="due-count">—</strong></div>
       <div class="stat"><span>This week's learning</span><strong id="study-count">—</strong></div>
       <div class="stat"><span>Weekly net cashflow</span><strong id="net-count">—</strong></div>
     </section>
-    <div class="insight-stage">
+      <div class="card overview-card"><h3>One place for deliberate progress</h3><p class="muted">Track each area on its own page. Open AI Insights to compare recorded weeks and build an opt-in next-week plan.</p><a class="cta-link" href="#insights">Open AI Insights</a></div>
+    </section>
+
+    <section class="page" id="view-insights" data-page="insights" aria-labelledby="page-title-insights" hidden>
+      <div class="page-head"><h2 id="page-title-insights">AI Insights & Plans</h2></div>
+      <div class="insight-stage">
       <section class="card highlight" aria-labelledby="review-label">
           <div class="head-row"><h2 id="review-label">AI Pattern & Next-Week Plan</h2><span class="tag">History-aware · Opt-in</span></div>
           <p class="muted">Compare four full weeks and your current week, then receive a concrete, measurable seven-day plan based on the evidence. Only categories you approve are sent to Anna AI.</p>
@@ -42,16 +60,21 @@
             <label class="tick consent"><input type="checkbox" id="ai-consent" required> I authorize this one AI review with only my selected categories. I understand AI calls may consume platform credits.</label>
             <button type="submit" id="review-btn">Analyze pattern & adjust plan</button>
           </form>
+          <p id="analysis-meta" class="footnote" role="status" aria-live="polite"></p>
           <div id="review-result" class="review-result" role="status" aria-live="polite" aria-busy="false">No AI plan requested yet.</div>
+          <p id="review-save-status" class="footnote" role="status" aria-live="polite"></p>
+          <button type="button" id="retry-save-result" hidden>Retry saving this analysis</button>
           <div class="plan-controls">
             <button type="button" id="save-plan-btn" disabled>Save this AI plan for next week's comparison</button>
             <button type="button" id="forget-plan-btn" disabled>Forget saved AI plan</button>
           </div>
         </section>
     </div>
-    <div class="columns">
-      <div class="stack">
-        <section class="card" aria-labelledby="tasks-label">
+    </section>
+
+    <section class="page" id="view-tasks" data-page="tasks" aria-labelledby="page-title-tasks" hidden>
+      <div class="page-head"><h2 id="page-title-tasks">Tasks & reminders</h2></div>
+      <section class="card" aria-labelledby="tasks-label">
           <h2 id="tasks-label">Tasks & in-app reminders</h2>
           <form id="task-form" class="form-row">
             <label>Task <input name="title" maxlength="120" required placeholder="Write a clear next action"></label>
@@ -61,7 +84,11 @@
           <ul id="task-list" class="entries"></ul>
           <p class="footnote">Due dates are highlighted while this app is open; no device push notifications in this edition.</p>
         </section>
-        <section class="card" aria-labelledby="money-label">
+    </section>
+
+    <section class="page" id="view-money" data-page="money" aria-labelledby="page-title-money" hidden>
+      <div class="page-head"><h2 id="page-title-money">Money</h2></div>
+      <section class="card" aria-labelledby="money-label">
           <h2 id="money-label">Money</h2>
           <form id="money-form" class="form-row">
             <label>Amount <input name="amount" type="number" min="0.01" max="100000000" step="0.01" required placeholder="RM"></label>
@@ -72,7 +99,11 @@
           </form>
           <ul id="money-list" class="entries"></ul>
         </section>
-        <section class="card" aria-labelledby="learning-label">
+    </section>
+
+    <section class="page" id="view-learning" data-page="learning" aria-labelledby="page-title-learning" hidden>
+      <div class="page-head"><h2 id="page-title-learning">Learning</h2></div>
+      <section class="card" aria-labelledby="learning-label">
           <h2 id="learning-label">Learning</h2>
           <form id="learning-form" class="form-row">
             <label>Topic <input name="topic" maxlength="120" required placeholder="Kotlin, databases..."></label>
@@ -82,9 +113,11 @@
           </form>
           <ul id="learning-list" class="entries"></ul>
         </section>
-      </div>
-      <div class="stack">
-        <section class="card" aria-labelledby="journal-label">
+    </section>
+
+    <section class="page" id="view-journal" data-page="journal" aria-labelledby="page-title-journal" hidden>
+      <div class="page-head"><h2 id="page-title-journal">Daily journal</h2></div>
+      <section class="card" aria-labelledby="journal-label">
           <h2 id="journal-label">Daily journal</h2>
           <form id="journal-form" class="form-grid">
             <label>Date <input name="date" type="date" required></label>
@@ -93,7 +126,11 @@
           </form>
           <ul id="journal-list" class="entries"></ul>
         </section>
-        <section class="card" aria-labelledby="forecast-label">
+    </section>
+
+    <section class="page" id="view-savings" data-page="savings" aria-labelledby="page-title-savings" hidden>
+      <div class="page-head"><h2 id="page-title-savings">Savings forecast</h2></div>
+      <section class="card" aria-labelledby="forecast-label">
           <h2 id="forecast-label">Savings goal forecast</h2>
           <form id="goal-form" class="form-row">
             <label>Goal (RM) <input name="goal" type="number" min="0" max="100000000" step="0.01" required></label>
@@ -104,10 +141,11 @@
           <p id="forecast" class="forecast"></p>
           <p class="footnote">Planning estimate only. Uses amounts you enter here, not bank data.</p>
         </section>
+    </section>
 
-      </div>
-    </div>
-    <section class="privacy-controls" aria-label="Data management">
+    <section class="page" id="view-privacy" data-page="privacy" aria-labelledby="page-title-privacy" hidden>
+      <div class="page-head"><h2 id="page-title-privacy">Data & privacy</h2></div>
+      <section class="privacy-controls" aria-label="Data management">
       <div>
         <strong>Data & privacy controls</strong>
         <p>Data is stored by the Anna platform for this app. You can delete this workspace's saved records here. This does not retract data already sent in an authorized AI request or delete any platform-side logs or backups.</p>
@@ -119,6 +157,7 @@
         <button type="button" id="erase-cancel">Cancel</button>
         <button type="button" class="danger" id="erase-confirm">Confirm erase</button>
       </div>
+    </section>
     </section>
     <footer>Independent Anna-hosted data. No Android Room sync · No automatic AI calls · No external analytics.</footer>
   </main>
