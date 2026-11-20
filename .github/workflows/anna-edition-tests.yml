@@ -42,6 +42,8 @@ jobs:
         run: npm run validate
       - name: Read-only listing preflight (no Anna mutations)
         run: npm run preflight
+      - name: v0.1.2 screenshot source review gate (local only; remote Listing still manual)
+        run: npm run preflight -- --review-gate
       - name: Unit tests (no API calls)
         run: npm test
       - uses: astral-sh/setup-uv@v6
