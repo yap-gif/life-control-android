@@ -45,7 +45,7 @@ The v0.1.2 candidate includes eight separately routable pages (Overview, AI Insi
 
 Automated tests now include DOM-driven navigation, real form clicks, host mocked LLM generation and persistence, closing/reopening fresh DOM instances, false-ack rejection, failed-save retry, all other feature pages, and workspace erasure. These tests **are not a substitute for a fresh Anna Cloud Agent install**.
 
-**Release block:** Existing five store screenshots represent v0.1.1 and must be replaced with genuine v0.1.2 multi-page captures. The internal `npm run preflight -- --review-gate` will block until the screenshot source version matches this candidate, even when the HTTPS URLs are valid. No `apps push`, `apps cut 0.1.2`, or `apps submit-review` has been executed for this candidate.
+**Current release status (2026-11-20):** The owner uploaded v0.1.2 to the existing Anna App ID 908 **Working Draft r4**, installed it inside Anna, and manually confirmed the repaired flows. Six authentic v0.1.2 multi-page captures are now committed under `store-screenshots/v0.1.2/` and referenced by immutable public URLs in `app.json`. The source screenshot `--review-gate` now passes GitHub CI. **The authenticated Anna Console Listing remains a separate step:** save and reload six new screenshot URLs and correct the invalid cover URL. The old review remained pinned to v0.1.1 in last verified Console evidence; v0.1.2 has not been cut or resubmitted.
 
 See [second rejection remediation and acceptance plan](./REVIEW-REJECTION-20261120.md).
 
@@ -57,7 +57,7 @@ The Anna reviewer rejected immutable v0.1.0 (ID 2279) because the server Listing
 
 The proposed AI-native experience uses multi-week observations, explicit evidence limits and plan adjustments. The historical task completion flag is **not** treated as proof of when tasks were finished. A saved AI response is optional and cannot be included in a new request without new consent and complete category overlap.
 
-A separate `npm run preflight -- --review-gate` checks local screenshot URLs. For v0.1.2, it will **fail deliberately** until genuine replacement screenshots depicting v0.1.2 are supplied and manually re-verified in Anna Console. No local script can prove that remote Listing fields have been saved.
+A separate `npm run preflight -- --review-gate` checks local screenshot URLs. The v0.1.2 source check now **passes** with six authentic screenshots and matching version marker; remote Anna Console Listing save/reload still requires separate authenticated verification. No local script can prove that remote Listing fields have been saved.
 
 For the exact rejection and cloud-host QA checklist see [REVIEW-REJECTION-20261117.md](./REVIEW-REJECTION-20261117.md).
 
