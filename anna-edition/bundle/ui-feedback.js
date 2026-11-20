@@ -50,6 +50,23 @@ export function explainHostError(error, scope = "ai") {
   return "Anna storage could not complete this operation. Your latest changes may not have been saved.";
 }
 
+/** Only a definite missing storage KEY is a valid empty-workspace response.
+ * Do not turn generic API failures, offline errors, or permission denials
+ * into an empty workspace; those must leave editing disabled.
+ */
+export function isMissingStorageKey(error) {
+  const statuses = [
+    error?.status, error?.statusCode, error?.response?.status,
+    error?.data?.status, error?.httpStatus
+  ];
+  if (statuses.some(x => x === 404 || x === "404")) return true;
+  const code = hostErrorCode(error);
+  if (["404", "not_found", "key_not_found", "storage_key_not_found"].includes(code)) return true;
+  const message = [error?.message, error?.error?.message, error?.cause?.message]
+    .find(x => typeof x === "string") ?? "";
+  return /\bHTTP\s*404\b|\bstatus\s*404\b/i.test(message);
+}
+
 export function entryActionLabel(action, recordText) {
   const normalizedAction = String(action ?? "").trim().slice(0, 30);
   const normalizedRecord = String(recordText ?? "").trim().slice(0, 150);
