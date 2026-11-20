@@ -14,6 +14,9 @@ let anna = null;
 let state = normalizeState({});
 let saveChain = Promise.resolve();
 let reviewBusy = false;
+let planSaving = false;
+let listenersAttached = false;
+let connectBusy = false;
 let lastGeneratedPlan = null;
 const TODAY = () => localDate();
 const money = n => "RM " + Number(n).toFixed(2);
@@ -35,16 +38,23 @@ function limitEntries(key, nextEntry) {
   state[key].unshift(nextEntry);
   state[key] = state[key].slice(0, 100);
 }
-function persistAndRender() {
+// All writes are serialized. A button only reports success after Anna
+// acknowledges its write. Failed writes remain visible and can be retried.
+function persistAndRender({ notify = true } = {}) {
   state = normalizeState(state);
   render();
   const snapshot = JSON.parse(JSON.stringify(state));
-  saveChain = saveChain.catch(() => {}).then(async () => {
-    await anna.storage.set({ key: STORAGE_KEY, value: snapshot });
-  });
-  saveChain.then(
-    () => status("Saved to your Anna app storage."),
-    error => status(explainHostError(error, "storage"), true)
+  if (notify) status("Saving changes to Anna storage...");
+  const write = saveChain.catch(() => {}).then(() =>
+    anna.storage.set({ key: STORAGE_KEY, value: snapshot })
+  );
+  saveChain = write;
+  return write.then(
+    () => { if (notify) status("Saved to your Anna app storage."); return true; },
+    error => {
+      status(explainHostError(error, "storage") + " Changes were not confirmed. Please retry.", true);
+      return false;
+    }
   );
 }
 function entry(li, primary, subtitle, buttons = [], recordId = "") {
@@ -131,6 +141,41 @@ function render() {
     : money(forecast.remaining) + " remaining · approximately " + forecast.months + " month(s) at your planned pace.";
   $("forecast").textContent = forecastText;
   renderPatternPreview();
+}
+const PAGES = new Set(["overview","insights","tasks","money","learning","journal","savings","privacy"]);
+function navigateToCurrentPage() {
+  const requested = window.location.hash.slice(1);
+  const page = PAGES.has(requested) ? requested : "overview";
+  for (const el of document.querySelectorAll("[data-page]")) {
+    el.hidden = el.dataset.page !== page;
+  }
+  for (const link of document.querySelectorAll("[data-nav]")) {
+    if (link.dataset.nav === page) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  }
+  document.title = "Life Control · " + page[0].toUpperCase() + page.slice(1);
+}
+
+function restoreAnalysis() {
+  const previous = state.lastReview;
+  if (previous) {
+    renderReviewMarkdown($("review-result"), previous.text);
+    $("analysis-meta").textContent = "Restored analysis from " + previous.generatedAt +
+      " · Categories: " + previous.categories.join(", ") +
+      ". Reusing it in a future AI request still requires a separate saved-plan opt-in.";
+    lastGeneratedPlan = {
+      savedAt: previous.generatedAt, text: previous.text,
+      categories: [...previous.categories]
+    };
+    $("save-plan-btn").disabled = false;
+  } else {
+    $("review-result").textContent = "No AI analysis saved yet.";
+    $("analysis-meta").textContent = "";
+    lastGeneratedPlan = null;
+    $("save-plan-btn").disabled = true;
+  }
+  $("review-save-status").textContent = "";
+  $("retry-save-result").hidden = true;
 }
 function selectedReviewCategories() {
   return [...document.querySelectorAll('#review-form input[name="context"]:checked')].map(e => e.value);
