@@ -161,6 +161,14 @@ https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9
 https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/06-v012-ai-restored.webp
 ```
 
+## 3G. Listing screenshot URLs entered; Cover image and Save still need verification (2026-11-20)
+
+The owner provided a fresh authenticated **Life Control → Listing** screenshot after asking to continue. The six updated screenshot URLs are **visibly pasted**, and the first URL starts with the genuine v0.1.2 image commit `ccadc9676a997aab9c2f93ec2066ca309a576488`, path `anna-edition/store-screenshots/v0.1.2/01-v012-overview.webp`. This is evidence of the correct new screenshot **input**, not proof that the Console saved and reloaded the setting: the **Save** button is still visible and no subsequent refreshed Listing response was provided.
+
+**Remaining defect visible in the same screenshot:** Cover image URL is still the old `https://chatgpt.com/s/m_6af7e66d0d0881918bb14fe372f485ba` sharing page, not a publicly fetchable raw image URL. Replace with the *same first v0.1.2 Overview WebP direct HTTPS URL* used for Screenshots; click Save; reload Listing and verify the six URLs plus Cover persist and load. The source `anna-edition/app.json` already has `cover_url` configured to that Overview direct image. GitHub CI `44670234049` passed the v0.1.2 review gate; no new code action is required for this Console-only discrepancy.
+
+**Review status nuance:** Previously the Console displayed `pending_review` pinned to **v0.1.1** despite the owner's rejection email. Current official Anna developer documentation (`Anna-Partners/anna-developer-docs/docs/apps/app-publish.md`, updated 2026-11-02) allows **explicitly switching review candidates during `PENDING_REVIEW`** by cutting a new version and then running `apps submit-review` again; cutting alone never changes the pinned candidate. This may resolve the workflow without waiting for the old pending state to change, but **do not perform cut or re-pin until remote Listing is saved/reloaded and the local manifest and Working Draft are verified to match the final v0.1.2 screenshot metadata**. Confirm App ID 908 and the updated current server status before any consequential action.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
