@@ -1,4 +1,4 @@
-# Life Control — Anna-hosted review-repair candidate (0.1.1)
+# Life Control — Anna-hosted v0.1.2 second-review repair candidate
 
 An independent, privacy-gated build of Life Control for the Anna platform. The original Android Kotlin/Room app remains unchanged.
 
@@ -37,13 +37,27 @@ AI context selection is enforced by `bundle/patterns.js::buildPatternContext` an
 
 For a disclosure of data-handling boundaries and known platform-level limits, see [PRIVACY.md](./PRIVACY.md).
 
-## November 17 review rejection / 0.1.1 work-in-progress
+## November 20 second reviewer rejection — v0.1.2 source-only repair
 
-The Anna reviewer rejected immutable v0.1.0 (ID 2279) because the server Listing was missing screenshots and the optional weekly AI review did not demonstrate a distinct AI-native workflow. This independent branch is a **source-code repair candidate only**. No updated working draft, cut v0.1.1 or resubmission is authorized or evidenced yet. The previous version remains immutable.
+The Anna developer team tested immutable **v0.1.1 / ID 2476** and reported three defects: all features shared one long surface; saving a future-week AI plan stalled; and AI analysis disappeared / plan-generation became unavailable after reopening. This repair is implemented only on branch `fix/life-control-review-r2-20261120`. **Original App ID 908 / frozen v0.1.1 are NOT changed by these GitHub commits.**
+
+The v0.1.2 candidate includes eight separately routable pages (Overview, AI Insights, Tasks, Money, Learning, Journal, Savings, Privacy), a stored `lastReview` distinct from explicit opt-in `savedPlan`, on-launch review restoration with **no automatic model call**, responsive retry after startup failure, ordered Anna Storage writes, 15-second confirmation feedback, and a read-after-write check before reporting the AI plan as saved. A 45-second AI deadline prevents permanent disabled-button state after a hung model request. An explicit analysis-persistence retry button remains available on storage failure. Preserve user records under the existing `life-control-anna:v1` key.
+
+Automated tests now include DOM-driven navigation, real form clicks, host mocked LLM generation and persistence, closing/reopening fresh DOM instances, false-ack rejection, failed-save retry, all other feature pages, and workspace erasure. These tests **are not a substitute for a fresh Anna Cloud Agent install**.
+
+**Release block:** Existing five store screenshots represent v0.1.1 and must be replaced with genuine v0.1.2 multi-page captures. The internal `npm run preflight -- --review-gate` will block until the screenshot source version matches this candidate, even when the HTTPS URLs are valid. No `apps push`, `apps cut 0.1.2`, or `apps submit-review` has been executed for this candidate.
+
+See [second rejection remediation and acceptance plan](./REVIEW-REJECTION-20261120.md).
+
+## Historical November 17 reviewer rejection and v0.1.1 evidence
+
+### Original v0.1.1 notes
+
+The Anna reviewer rejected immutable v0.1.0 (ID 2279) because the server Listing was missing screenshots and the optional weekly AI review did not demonstrate a distinct AI-native workflow. This paragraph describes the historical status at the start of v0.1.1 remediation. The v0.1.1 release was later frozen and resubmitted, then received the second rejection on November 20. The previous versions remain immutable.
 
 The proposed AI-native experience uses multi-week observations, explicit evidence limits and plan adjustments. The historical task completion flag is **not** treated as proof of when tasks were finished. A saved AI response is optional and cannot be included in a new request without new consent and complete category overlap.
 
-A separate `npm run preflight -- --review-gate` checks local screenshot URLs. It will **fail deliberately** until genuine public screenshot links are recorded and their presence independently verified in Anna Console. No local script can prove that remote Listing fields have been saved.
+A separate `npm run preflight -- --review-gate` checks local screenshot URLs. For v0.1.2, it will **fail deliberately** until genuine replacement screenshots depicting v0.1.2 are supplied and manually re-verified in Anna Console. No local script can prove that remote Listing fields have been saved.
 
 For the exact rejection and cloud-host QA checklist see [REVIEW-REJECTION-20261117.md](./REVIEW-REJECTION-20261117.md).
 
@@ -61,7 +75,7 @@ Detailed status: [QA-ACCEPTANCE.md](./QA-ACCEPTANCE.md).
 
 - [Store listing draft](./STORE-LISTING-DRAFT.md) — proposed name, tagline, short and long description, privacy disclosures, screenshot plan.
 - [Marketplace release plan](./MARKETPLACE-RELEASE-PREP.md) — production verification gates, logo and final screenshot requirements, approval boundaries.
-- The developer approved a six-image AI-generated promotional direction, but these concepts must **not** be represented as real app screenshots. A separate package contains those six concepts, three genuine historical Harness crops and a candidate logo. Actual installed-App captures and Anna remote Listing/logo upload are still pending. No binary images have been pushed to the public repository.
+- The developer approved a six-image AI-generated promotional direction, but these concepts must **not** be represented as real app screenshots. A separate package contains those six concepts, three genuine historical Harness crops and a candidate logo. Five authentic v0.1.1 captures were subsequently pushed to the public repository and used for the previous Listing, but they are historical and not suitable evidence of the new v0.1.2 navigation.
 - Keyboard-only focus/confirmation interactions were developer-reported passed; an assistive-technology screen-reader audit is outstanding. The fixed `llm_disabled` explanation was observed working in the actual Anna Harness.
 
 ## Known limitations
