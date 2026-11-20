@@ -364,8 +364,8 @@ function withDeadline(promise, ms, message) {
 }
 
 async function eraseWorkspace() {
-  if (reviewBusy) {
-    status("An AI request is still running. Previously sent data cannot be recalled. Try erasing again after the request finishes.",true);
+  if (reviewBusy || planSaving) {
+    status("Another AI request or plan save is still running. Wait for confirmation before erasing this workspace.", true);
     return;
   }
   $("erase-confirm").disabled = true;
@@ -373,7 +373,8 @@ async function eraseWorkspace() {
   forms.forEach(fid => $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = true));
   try {
     // Always drain pending saves before deletion so an older save cannot revive erased data.
-    await saveChain.catch(() => {});
+    await withDeadline(saveChain.catch(() => {}), 15000,
+      "Pending storage writes did not finish. Erase was NOT attempted; reload and verify first.");
     if (typeof anna.storage.delete === "function") {
       await anna.storage.delete({ key: STORAGE_KEY });
     } else {
@@ -388,6 +389,9 @@ async function eraseWorkspace() {
       $("goal-form").elements.namedItem(key).value = String(value);
     }
     $("review-result").textContent = "No AI plan requested yet.";
+    $("analysis-meta").textContent = "";
+    $("review-save-status").textContent = "";
+    $("retry-save-result").hidden = true;
     $("ai-consent").checked = false;
     render();
     status("Life Control records erased from this app's storage. Platform logs/backups and past AI requests are outside this control.");
@@ -440,16 +444,31 @@ async function boot() {
         $("review-save-status").textContent = "Waiting for Anna Storage confirmation...";
         try {
           state.savedPlan = candidate;
-          const confirmed = await persistAndRender({ notify: false });
+          let confirmed = await persistAndRender({ notify: false });
+          if (confirmed) {
+            // Anna's write acknowledgment alone is not a durability proof.
+            // Re-read the exact plan before reporting that it can be recovered.
+            try {
+              const readback = await withDeadline(anna.storage.get({ key: STORAGE_KEY }),
+                10000, "Plan readback timed out.");
+              const remote = normalizeState(readback?.value).savedPlan;
+              confirmed = !!remote &&
+                remote.text === candidate.text &&
+                remote.savedAt === candidate.savedAt &&
+                remote.categories.join(",") === candidate.categories.join(",");
+            } catch {
+              confirmed = false;
+            }
+          }
           if (confirmed) {
             $("review-save-status").textContent =
-              "Saved plan confirmed in Anna storage. Reopen this app to verify restoration.";
-            status("AI plan saved and acknowledged by Anna Storage.");
+              "Saved plan verified by Anna Storage readback. It can be recovered after reopening.";
+            status("AI plan saved and verified by Anna Storage readback.");
           } else {
             state.savedPlan = previous;
             render();
             $("review-save-status").textContent =
-              "Plan save was NOT confirmed. Retry the save after verifying the connection.";
+              "Plan save was NOT confirmed by readback. Retry after verifying the connection.";
             status("Plan was not confirmed as saved. Try again.", true);
           }
         } finally {
