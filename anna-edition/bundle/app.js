@@ -274,42 +274,92 @@ function bindEntries() {
 }
 async function handleReview(event) {
   event.preventDefault();
-  if (reviewBusy) return;
-  const selected=selectedReviewCategories();
-  if (!$("ai-consent").checked) { status("Please explicitly authorize this one AI request.",true); return; }
+  if (reviewBusy || planSaving) return;
+  const selected = selectedReviewCategories();
+  if (!$("ai-consent").checked) {
+    status("Please explicitly authorize this one AI request.", true);
+    return;
+  }
   let request;
-  try { request = buildReviewRequest(state, selected, TODAY(), { includeSavedPlan: $("include-saved-plan").checked }); }
-  catch(error) { status(error.message,true); return; }
+  try {
+    request = buildReviewRequest(state, selected, TODAY(),
+      { includeSavedPlan: $("include-saved-plan").checked });
+  } catch (error) {
+    status(error.message, true);
+    return;
+  }
 
-  // Per-request consent; a future review always needs another explicit approval.
-  $("ai-consent").checked=false;
-  reviewBusy=true;
-  $("review-btn").disabled=true;
-  $("review-btn").textContent="Analyzing history...";
-  lastGeneratedPlan = null;
+  // Consent is consumed at request start and NEVER restored automatically.
+  $("ai-consent").checked = false;
+  reviewBusy = true;
+  $("review-btn").disabled = true;
+  $("review-btn").textContent = "Analyzing history...";
   $("save-plan-btn").disabled = true;
+  $("retry-save-result").hidden = true;
   $("review-result").setAttribute("aria-busy", "true");
-  $("review-result").textContent="Analyzing selected historical evidence and developing a measurable next-week plan...";
+  $("review-result").textContent =
+    "Analyzing selected historical evidence and developing a measurable next-week plan...";
+  $("analysis-meta").textContent = "";
+  $("review-save-status").textContent = "";
   status("Only the selected categories are included in this AI request.");
   try {
-    const reply=await anna.llm.complete(request);
-    const output=reply?.content?.text;
-    if(typeof output!=="string" || !output.trim()) throw new Error("AI did not return a usable review.");
-    renderReviewMarkdown($("review-result"), output);
-    lastGeneratedPlan = { savedAt: TODAY(), text: output.slice(0, 6000), categories: [...selected] };
+    const reply = await withDeadline(anna.llm.complete(request), 45000,
+      "The AI request took too long. Please retry with a new authorization.");
+    const output = reply?.content?.text;
+    if (typeof output !== "string" || !output.trim()) {
+      throw new Error("AI did not return a usable review.");
+    }
+
+    // Keep the analysis separate from the user's deliberately saved plan.
+    const generatedAt = TODAY();
+    const previousReview = state.lastReview;
+    state.lastReview = { generatedAt, text: output.slice(0, 6000), categories: [...selected] };
+    lastGeneratedPlan = {
+      savedAt: generatedAt, text: state.lastReview.text, categories: [...selected]
+    };
+    renderReviewMarkdown($("review-result"), state.lastReview.text);
+    $("analysis-meta").textContent = "Generated " + generatedAt +
+      " · Saving analysis for restoration after reopening...";
     $("save-plan-btn").disabled = false;
-    status("Evidence-based plan generated. Save it locally if you want an explicit comparison next week.");
-  } catch(error) {
-    const explanation = explainHostError(error, "ai");
-    $("review-result").textContent=explanation;
-    status(explanation,true);
+
+    const confirmed = await persistAndRender({ notify: false });
+    if (confirmed) {
+      $("analysis-meta").textContent = "Generated " + generatedAt +
+        " · Analysis saved to Anna storage and can be restored after reopening.";
+      $("review-save-status").textContent = "Analysis persisted. Save as a comparison plan only if you choose.";
+      status("Evidence-based analysis generated and safely stored.");
+    } else {
+      $("analysis-meta").textContent = "Generated " + generatedAt +
+        " · Analysis is visible but NOT confirmed in storage.";
+      $("retry-save-result").hidden = false;
+      $("review-save-status").textContent =
+        "Storage could not confirm the analysis. Retry saving before closing the app.";
+      status("AI analysis was generated, but storage did not confirm it.", true);
+    }
+  } catch (error) {
+    const explanation = error?.message?.startsWith("The AI request took too long")
+      ? "The AI request took too long. Please retry with a new authorization."
+      : explainHostError(error, "ai");
+    $("review-result").textContent = explanation;
+    status(explanation, true);
+    // Do not erase the previous saved analysis if the new AI request failed.
   } finally {
     $("review-result").setAttribute("aria-busy", "false");
-    reviewBusy=false;
-    $("review-btn").disabled=false;
-    $("review-btn").textContent="Analyze pattern & adjust plan";
+    reviewBusy = false;
+    $("review-btn").disabled = false;
+    $("review-btn").textContent = "Analyze pattern & adjust plan";
+    $("save-plan-btn").disabled = !lastGeneratedPlan;
   }
 }
+
+function withDeadline(promise, ms, message) {
+  let deadline;
+  const timeout = new Promise((_, reject) => {
+    deadline = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(deadline));
+}
+
 async function eraseWorkspace() {
   if (reviewBusy) {
     status("An AI request is still running. Previously sent data cannot be recalled. Try erasing again after the request finishes.",true);
