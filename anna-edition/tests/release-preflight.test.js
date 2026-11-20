@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { inspectListing, inspectReviewScreenshots } from "../release-preflight.mjs";
+import { inspectListing, inspectReviewScreenshots, inspectScreenshotFreshness } from "../release-preflight.mjs";
 
 const app = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "utf8"));
 const manifest = JSON.parse(readFileSync(new URL("../manifest.json", import.meta.url), "utf8"));
@@ -87,4 +87,16 @@ test("review screenshot gate accepts well-formed public screenshot URLs for manu
     screenshots: ["https://example.org/actual1.png","https://example.org/actual2.png","https://example.org/actual3.png"]
   }), []);
   assert.ok(inspectReviewScreenshots({ screenshots: ["http://example.org/a.png"] }).length > 0);
+});
+
+test("new multipage v0.1.2 cannot pass review using outdated single-page v0.1.1 screenshots", () => {
+  const sourceVersion = readFileSync(new URL("../store-screenshots/SOURCE-VERSION.txt", import.meta.url), "utf8").trim();
+  assert.equal(sourceVersion, "0.1.1");
+  assert.equal(app.version, "0.1.2");
+  const violations = inspectScreenshotFreshness(app.version, sourceVersion);
+  assert.equal(violations.length, 1);
+  assert.match(violations[0], /genuine screenshots of the new multi-page UI/);
+});
+test("fresh authentic v0.1.2 captures can clear the screenshot version gate", () => {
+  assert.deepEqual(inspectScreenshotFreshness("0.1.2", "0.1.2"), []);
 });
