@@ -51,7 +51,16 @@ export function normalizeState(raw) {
       s.savedPlan.categories.length > 0 &&
       s.savedPlan.categories.every(k => CONTEXT_CATEGORIES.includes(k)) ?
       { savedAt: s.savedPlan.savedAt, text: text(s.savedPlan.text, 6000),
-        categories: [...new Set(s.savedPlan.categories)] } : null
+        categories: [...new Set(s.savedPlan.categories)] } : null,
+    // The most recent authorized AI result is restored after reopening, but
+    // never included in a later LLM request unless savedPlan is separately opted in.
+    lastReview: s.lastReview && typeof s.lastReview === "object" &&
+      validDate(s.lastReview.generatedAt) && text(s.lastReview.text, 6000) &&
+      Array.isArray(s.lastReview.categories) &&
+      s.lastReview.categories.length > 0 &&
+      s.lastReview.categories.every(k => CONTEXT_CATEGORIES.includes(k)) ?
+      { generatedAt: s.lastReview.generatedAt, text: text(s.lastReview.text, 6000),
+        categories: [...new Set(s.lastReview.categories)] } : null
   };
 }
 export function calculateForecast(goal) {
