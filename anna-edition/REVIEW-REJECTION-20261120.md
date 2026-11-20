@@ -127,6 +127,12 @@ The owner supplied three additional images of the installed Life Control Draft r
 
 **Remaining gates:** Genuine fresh empty-storage Cloud Agent (this installation reused historical Learning records), Tasks/Money/Journal/Savings persistence and erase, 360 px narrow view/keyboard support, authentic v0.1.2 screenshots replacing the v0.1.1 store images and reloaded Anna Listing, and resolution of the old `pending_review v0.1.1` discrepancy. Do not cut or submit v0.1.2 until these are closed.
 
+## 3E. Data discrepancy reconciled by owner's deletion confirmation (2026-11-20)
+
+The owner explicitly clarified that they **personally deleted** the previously logged **2026-11-17 DBMS 40-minute Learning record** before the subsequent AI analysis showing 0 minutes in the 2026-11-16–20 partial week. Thus, the screenshots are of **different underlying Learning data states**. The earlier report with DBMS 40 minutes and the later report with 0 partial-week minutes are consistent with this intervening authorized deletion. **Disposition: RESOLVED — the previously suspected AI factual contradiction is not supported as a bug by the supplied evidence.**
+
+This confirms the chronology as described by the owner, but the deletion operation itself was not accompanied by a host RPC trace. Treat updated-model output as **in-platform observation consistent with deletion**, not a test that conclusively proves every category-selection or privacy rule. Other release blockers remain: complete saved-plan recovery verification after reopen, fresh empty-storage Cloud Agent acceptance, non-AI form persistence, mobile/accessibility testing, new v0.1.2 screenshots and server Listing verification, and clarification of the still-pinned v0.1.1 pending review state. No frozen v0.1.2 or new submission is authorized here.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
