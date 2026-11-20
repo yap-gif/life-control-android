@@ -60,8 +60,8 @@ test("issue 3: restored report does not leak into a fresh LLM request", () => {
 
 test("issue 2: save plan waits for Anna acknowledgment and does not claim false success", () => {
   assert.match(app,/const confirmed = await persistAndRender\(\{ notify: false \}\)/);
-  assert.match(app,/AI plan saved and acknowledged by Anna Storage/);
-  assert.match(app,/Plan save was NOT confirmed/);
+  assert.match(app,/AI plan saved and verified by Anna Storage readback/);
+  assert.match(app,/Plan save was NOT confirmed by readback/);
   assert.match(app,/planSaving = true/);
   assert.match(app,/withDeadline\(write, 15000/);
 });
