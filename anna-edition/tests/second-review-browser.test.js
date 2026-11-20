@@ -32,7 +32,7 @@ async function waitFor(predicate,details="condition",ms=6000) {
   }
   throw new Error("Timed out waiting for "+details);
 }
-function setup({database=new Map(),rejectPlanSave=false,modelCalls={count:0}}={}) {
+function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,modelCalls={count:0}}={}) {
   const dom=new JSDOM(html,{
     url:"https://anna.partners/apps/life-control-anna#overview",
     runScripts:"outside-only",
@@ -44,6 +44,7 @@ function setup({database=new Map(),rejectPlanSave=false,modelCalls={count:0}}={}
       get:async({key})=>({value:database.get(key)??null}),
       set:async({key,value})=>{
         if(rejectPlanSave && value.savedPlan)throw new Error("mock storage rejected plan");
+        if(ackWithoutPersist && value.savedPlan)return {etag:"fake-ack"};
         database.set(key,JSON.parse(JSON.stringify(value)));
         return {etag:"mock-ack",generation:1};
       },
@@ -88,7 +89,7 @@ test("reviewer issues 1 and 3: navigation and AI report survive closing and reop
     assert.equal(d.getElementById("review-btn").disabled,false);
     d.getElementById("save-plan-btn").click();
     await waitFor(()=>!!database.get(logic.STORAGE_KEY)?.savedPlan,"plan acknowledged");
-    assert.ok(d.getElementById("review-save-status").textContent.includes("confirmed"));
+    assert.ok(d.getElementById("review-save-status").textContent.includes("verified"));
   } finally {first.window.close();}
 
   const next=setup({database,modelCalls});
@@ -202,5 +203,22 @@ test("all non-AI pages still work and keep serialized state across navigation", 
     d.getElementById("erase-confirm").click();
     await waitFor(()=>!database.has(logic.STORAGE_KEY),"workspace erased");
     assert.equal(d.getElementById("open-count").textContent,"0");
+  }finally{app.window.close();}
+});
+
+test("reviewer issue 2: a fake successful write without stored plan must fail readback",async()=>{
+  const database=new Map([[logic.STORAGE_KEY,logic.normalizeState({
+    lastReview:{generatedAt:logic.localDate(),text:"### Review\n- Test",categories:["learning"]}
+  })]]);
+  const app=setup({database,ackWithoutPersist:true});
+  try{
+    const d=app.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","boot");
+    d.getElementById("save-plan-btn").click();
+    await waitFor(()=>d.getElementById("review-save-status").textContent.includes("NOT confirmed"),
+      "readback failure");
+    assert.equal(database.get(logic.STORAGE_KEY).savedPlan,null);
+    assert.equal(d.getElementById("save-plan-btn").disabled,false);
+    assert.doesNotMatch(d.getElementById("review-save-status").textContent,/verified by/);
   }finally{app.window.close();}
 });
