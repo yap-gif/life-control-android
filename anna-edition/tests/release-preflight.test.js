@@ -73,13 +73,13 @@ test("review screenshot gate rejects a separate missing-media fixture despite st
     "Missing screenshots must block local review readiness.");
 });
 
-test("current listing metadata includes five immutable public image URLs", () => {
-  assert.equal(app.screenshots.length, 5);
+test("current listing metadata includes six immutable v0.1.2 public image URLs", () => {
+  assert.equal(app.screenshots.length, 6);
   assert.deepEqual(inspectReviewScreenshots(app), []);
   for (const imageUrl of app.screenshots) {
     const url = new URL(imageUrl);
     assert.equal(url.hostname, "raw.githubusercontent.com");
-    assert.match(url.pathname, /^\/yap-gif\/life-control-android\/[0-9a-f]{40}\/anna-edition\/store-screenshots\/\d\d-[a-z-]+\.webp$/);
+    assert.match(url.pathname, /^\/yap-gif\/life-control-android\/[0-9a-f]{40}\/anna-edition\/store-screenshots\/v0\.1\.2\/\d\d-v012-[a-z-]+\.webp$/);
   }
 });
 test("review screenshot gate accepts well-formed public screenshot URLs for manual host verification", () => {
@@ -89,11 +89,15 @@ test("review screenshot gate accepts well-formed public screenshot URLs for manu
   assert.ok(inspectReviewScreenshots({ screenshots: ["http://example.org/a.png"] }).length > 0);
 });
 
-test("new multipage v0.1.2 cannot pass review using outdated single-page v0.1.1 screenshots", () => {
+test("review gate accepts new actual multipage v0.1.2 screenshots", () => {
   const sourceVersion = readFileSync(new URL("../store-screenshots/SOURCE-VERSION.txt", import.meta.url), "utf8").trim();
-  assert.equal(sourceVersion, "0.1.1");
+  assert.equal(sourceVersion, "0.1.2");
   assert.equal(app.version, "0.1.2");
-  const violations = inspectScreenshotFreshness(app.version, sourceVersion);
+  assert.deepEqual(inspectScreenshotFreshness(app.version, sourceVersion), []);
+  assert.equal(app.screenshots.length, 6);
+});
+test("review gate rejects outdated v0.1.1 screenshot fixtures", () => {
+  const violations = inspectScreenshotFreshness(app.version, "0.1.1");
   assert.equal(violations.length, 1);
   assert.match(violations[0], /genuine screenshots of the new multi-page UI/);
 });
