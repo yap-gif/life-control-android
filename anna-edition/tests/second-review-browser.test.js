@@ -17,7 +17,7 @@ if (/\bimport\s+/.test(script)) throw Error("Unexpected import remains in browse
 const useDeps=String.raw`
 const AnnaAppRuntime=window.__deps.AnnaAppRuntime;
 const {STORAGE_KEY,normalizeState,localDate,calculateForecast,calculateSummary,validDate}=window.__deps.logic;
-const {explainHostError,entryActionLabel}=window.__deps.feedback;
+const {explainHostError,entryActionLabel,isMissingStorageKey}=window.__deps.feedback;
 const {buildReviewRequest}=window.__deps.review;
 const {summarizePatternPreview}=window.__deps.patterns;
 const {renderReviewMarkdown}=window.__deps.formatting;
@@ -32,7 +32,7 @@ async function waitFor(predicate,details="condition",ms=6000) {
   }
   throw new Error("Timed out waiting for "+details);
 }
-function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,modelCalls={count:0}}={}) {
+function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,missingKeyAs404=false,readError=null,modelCalls={count:0}}={}) {
   const dom=new JSDOM(html,{
     url:"https://anna.partners/apps/life-control-anna#overview",
     runScripts:"outside-only",
@@ -41,7 +41,11 @@ function setup({database=new Map(),rejectPlanSave=false,ackWithoutPersist=false,
   const {window}=dom;
   const anna={
     storage:{
-      get:async({key})=>({value:database.get(key)??null}),
+      get:async({key})=>{
+        if(readError)throw readError;
+        if(missingKeyAs404 && !database.has(key))throw {status:404,code:"NOT_FOUND"};
+        return {value:database.get(key)??null};
+      },
       set:async({key,value})=>{
         if(rejectPlanSave && value.savedPlan)throw new Error("mock storage rejected plan");
         if(ackWithoutPersist && value.savedPlan)return {etag:"fake-ack"};
@@ -220,5 +224,32 @@ test("reviewer issue 2: a fake successful write without stored plan must fail re
     assert.equal(database.get(logic.STORAGE_KEY).savedPlan,null);
     assert.equal(d.getElementById("save-plan-btn").disabled,false);
     assert.doesNotMatch(d.getElementById("review-save-status").textContent,/verified by/);
+  }finally{app.window.close();}
+});
+
+test("fresh Cloud Agent install: a missing storage key (HTTP 404) is a usable new workspace",async()=>{
+  const app=setup({database:new Map(),missingKeyAs404:true});
+  try{
+    const d=app.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected",
+      "first install with missing storage key");
+    assert.equal(d.getElementById("task-form").elements.namedItem("title").disabled,false);
+    const form=d.getElementById("task-form");
+    form.elements.namedItem("title").value="New user's first task";
+    form.elements.namedItem("date").value=logic.localDate();
+    form.dispatchEvent(new app.window.Event("submit",{bubbles:true,cancelable:true}));
+    await waitFor(()=>app.database.get(logic.STORAGE_KEY)?.tasks.length===1,"first task persisted");
+  }finally{app.window.close();}
+});
+
+test("storage permission error must not create an empty workspace or enable editing",async()=>{
+  const app=setup({readError:{status:403,code:"FORBIDDEN"}});
+  try{
+    const d=app.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Connection unavailable",
+      "permission failure");
+    assert.equal(d.getElementById("task-form").elements.namedItem("title").disabled,true);
+    assert.equal(d.getElementById("retry-connect").hidden,false);
+    assert.equal(app.database.size,0);
   }finally{app.window.close();}
 });
