@@ -3,7 +3,7 @@ import {
   STORAGE_KEY, normalizeState, localDate, calculateForecast,
   calculateSummary, validDate
 } from "./logic.js";
-import { explainHostError, entryActionLabel } from "./ui-feedback.js";
+import { explainHostError, entryActionLabel, isMissingStorageKey } from "./ui-feedback.js";
 import { buildReviewRequest } from "./review-contract.js";
 import { summarizePatternPreview } from "./patterns.js";
 import { renderReviewMarkdown } from "./review-format.js";
@@ -416,8 +416,16 @@ async function boot() {
   });
   try {
     anna = await withDeadline(AnnaAppRuntime.connect(), 12000, "Anna connection timed out.");
-    const response = await withDeadline(anna.storage.get({ key: STORAGE_KEY }), 12000,
-      "Anna storage could not load your records in time.");
+    let response;
+    try {
+      response = await withDeadline(anna.storage.get({ key: STORAGE_KEY }), 12000,
+        "Anna storage could not load your records in time.");
+    } catch (error) {
+      if (!isMissingStorageKey(error)) throw error;
+      // First install: Anna may return 404 for an absent app storage key.
+      // Never convert permission/timeout errors into an empty workspace.
+      response = { value: null };
+    }
     state = normalizeState(response?.value);
     $("connection").textContent = "Anna connected";
     ["task-form","money-form","learning-form","journal-form"].forEach(fid => {
