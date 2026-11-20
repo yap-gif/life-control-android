@@ -143,12 +143,30 @@ After reviewing the screenshot-confirmed draft installation, eight functional pa
 
 **No new immutable version cut, review submission or publication authorized or performed.** This attestation closes the owner's requested manual feature test round, but does not guarantee the app is bug-free.
 
+## 3G. Six new genuine v0.1.2 store screenshots committed and source gate unblocked (2026-11-20)
+
+Following the owner's instruction to **directly update the screenshots and continue**, six images were sourced from their actual **Anna Working Draft r4** captures, showing Overview, AI Insights, Tasks, Learning, plan storage and restored AI analysis. The original uploaded PNG files were converted to WebP at quality 92 without replacing or inventing the displayed UI. All six blobs were uploaded and verified by their Git object SHA and byte count in the **public** GitHub repository under `anna-edition/store-screenshots/v0.1.2/`.
+
+**Immutable image-import commit:** `ccadc9676a997aab9c2f93ec2066ca309a576488`. The six image URLs in `anna-edition/app.json` are pinned to that exact commit (not a moving branch). `store-screenshots/SOURCE-VERSION.txt` was updated from `0.1.1` to `0.1.2`. The outdated-cover issue was addressed in source metadata by using the authentic v0.1.2 Overview image as `cover_url`, replacing the previously seen ChatGPT share URL. The homepage link also now points to an immutable v0.1.2 repository tree. Tests were updated to assert **six** version-appropriate screenshot URLs and still reject older 0.1.1 fixtures. CI now runs the **local `--review-gate`**, not just structural preflight.
+
+**Source-side disposition:** **PASS — six authentic screenshots uploaded; URLs and version stamp updated.** The originals previously supplied are authentic app captures, though Anna translation widgets and/or window chrome remain visible in some; the repo docs disclose this. Do **not** claim independently verified Anna remote Listing state: the **user's latest provided Console screenshot still displayed v0.1.1 image URLs and a ChatGPT cover link**. Updating the GitHub manifest is **not** an Anna Console Listing edit. The user must paste six new URLs and replace or clear Cover URL in the original **App ID 908 → Listing**, Save, refresh and verify image display. Live review remains **pinned to v0.1.1** according to last verified Console; v0.1.2 has **not** been cut, resubmitted or published.
+
+**Image URLs for direct Console paste (one per line):**
+```text
+https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/01-v012-overview.webp
+https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/02-v012-ai-insights.webp
+https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/03-v012-tasks.webp
+https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/04-v012-learning.webp
+https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/05-v012-ai-plan-storage.webp
+https://raw.githubusercontent.com/yap-gif/life-control-android/ccadc9676a997aab9c2f93ec2066ca309a576488/anna-edition/store-screenshots/v0.1.2/06-v012-ai-restored.webp
+```
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
 - Automated source checks: track the newest GitHub Actions run, report exact pass/fail counts from the log.
 - Anna Console installation of Working Draft r4 and eight separate desktop views: **VISUALLY VERIFIED**; fully clean Cloud Agent install, data-save/AI/reopen/retry end-to-end flows: **PENDING**.
-- New screenshot Listing and refreshed privacy validation: **NOT YET VERIFIED**.
+- New six genuine v0.1.2 screenshots and commit-pinned `app.json` URLs: **COMPLETED IN GITHUB**. Anna Console Listing save/reload and new Cover URL: **NOT YET VERIFIED**.
 - Original App ID 908 Working Draft **r4 uploaded by owner**; no frozen v0.1.2 or new review submission. Pending review remains pinned to v0.1.1; cut/new submission authorization **NOT GRANTED HERE**.
 
 It is not possible to guarantee a completely bug-free app. A passing source CI is necessary, but the release decision requires actual behavior and evidence under the target Anna Cloud Agent runtime.
