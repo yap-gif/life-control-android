@@ -182,6 +182,35 @@ This is **PASS — no new draft revision necessary**. The follow-up `apps status
 
 **Next gate remains Anna Console Listing media:** The preceding screenshot displayed the six `v0.1.2` screenshot URLs entered, but still showed a `chatgpt.com/s/...` Cover image URL and had no post-save refresh confirmation. Replace Cover URL with the first valid direct GitHub WebP URL already in the manifest, click Save and reload Listing, verify that **six** image URLs plus Cover actually persisted and load without login. CLI Working Draft `unchanged` does **not** imply Listing fields were saved. Once remote Listing verification succeeds, the next consequential owner-controlled actions are to cut `0.1.2`, confirm version identity, and explicitly resubmit/re-pin the review candidate, subject to fresh status and final safety checks. Official Anna documentation permits explicit re-pin even while `PENDING_REVIEW`, but none has been attempted yet.
 
+## 3I. Immutable v0.1.2 successfully frozen — version ID 2720 (2026-11-20)
+
+The owner supplied a complete Windows PowerShell 5.1 transcript. It confirms the `life-control-anna` manifest **v0.1.2** with **six screenshot links**, strict Anna CLI validation **PASS**, and `npm run preflight -- --review-gate` **PASS**. A pre-cut authenticated `apps status` returned the correct original **App ID 908**, `status: pending_review`, newest prior immutable `v0.1.1 (ID 2476)`, and review candidate pinned to `v0.1.1`. The draft synchronization before cut returned `working draft unchanged (rev 4)`.
+
+The owner ran `anna-app apps cut 0.1.2` and Anna returned:
+```
+✓ apps/life-control-anna: cut immutable version 0.1.2 (version_id=2720)
+status: pending_review
+```
+
+Two subsequent Anna server-side CLI reads confirmed:
+```
+apps status life-control-anna:
+  app_id: 908
+  status: pending_review
+  latest: v0.1.2 (id=2720, published=—)
+  in review: v0.1.1 (pinned at submit-review)
+  versions: 3 total
+
+apps versions life-control-anna:
+           v0.1.2 (id=2720, published=—)
+  [review] v0.1.1 (id=2476, published=—)
+           v0.1.0 (id=2279, published=—)
+```
+
+**Disposition: PASS — immutable v0.1.2 frozen on original App ID 908; old versions intact; no publication.** Cut **did not switch the candidate**. The remaining deliberate action is `anna-app apps submit-review` to re-pin the pending review to **v0.1.2 ID 2720**. Per current official `Anna-Partners/anna-developer-docs/docs/apps/app-publish.md`, candidate switching is allowed while `PENDING_REVIEW` after a newer cut; it re-runs precheck and preserves the previous review candidate if it fails. This is an actual external review submission; owner must execute it explicitly. Post-submit verification must confirm **`in review: v0.1.2`** and **`[review] v0.1.2 (id=2720)`**. Do not use the generic `apps release` hint from the Cut output.
+
+The owner earlier verbally confirmed the updated Anna Console Listing saved successfully, but the persistence was not independently read through an authenticated API. This is classified as owner-confirmed rather than independently server-verified.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
