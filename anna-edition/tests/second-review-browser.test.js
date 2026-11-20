@@ -1,0 +1,135 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { JSDOM } from "jsdom";
+import * as logic from "../bundle/logic.js";
+import * as feedback from "../bundle/ui-feedback.js";
+import * as review from "../bundle/review-contract.js";
+import * as patterns from "../bundle/patterns.js";
+import * as formatting from "../bundle/review-format.js";
+import * as storageFlow from "../bundle/storage-flow.js";
+
+const html=readFileSync(new URL("../bundle/index.html",import.meta.url),"utf8");
+const appSource=readFileSync(new URL("../bundle/app.js",import.meta.url),"utf8");
+const script=appSource.replace(/^import[\s\S]*?from\s+["'][^"']+["'];\s*/gm,"");
+if (/\bimport\s+/.test(script)) throw Error("Unexpected import remains in browser test bundle");
+
+const useDeps=String.raw`
+const AnnaAppRuntime=window.__deps.AnnaAppRuntime;
+const {STORAGE_KEY,normalizeState,localDate,calculateForecast,calculateSummary,validDate}=window.__deps.logic;
+const {explainHostError,entryActionLabel}=window.__deps.feedback;
+const {buildReviewRequest}=window.__deps.review;
+const {summarizePatternPreview}=window.__deps.patterns;
+const {renderReviewMarkdown}=window.__deps.formatting;
+const {queueStorageWrite}=window.__deps.storageFlow;
+`;
+
+async function waitFor(predicate,details="condition",ms=6000) {
+  const until=Date.now()+ms;
+  while(Date.now()<until) {
+    if(predicate()) return;
+    await new Promise(resolve=>setTimeout(resolve,15));
+  }
+  throw new Error("Timed out waiting for "+details);
+}
+function setup({database=new Map(),rejectPlanSave=false,modelCalls={count:0}}={}) {
+  const dom=new JSDOM(html,{
+    url:"https://anna.partners/apps/life-control-anna#overview",
+    runScripts:"outside-only",
+    pretendToBeVisual:true
+  });
+  const {window}=dom;
+  const anna={
+    storage:{
+      get:async({key})=>({value:database.get(key)??null}),
+      set:async({key,value})=>{
+        if(rejectPlanSave && value.savedPlan)throw new Error("mock storage rejected plan");
+        database.set(key,JSON.parse(JSON.stringify(value)));
+        return {etag:"mock-ack",generation:1};
+      },
+      delete:async({key})=>{database.delete(key);return {ok:true};}
+    },
+    llm:{
+      complete:async()=>{
+        modelCalls.count++;
+        return {
+          role:"assistant",content:{type:"text",
+            text:"### Evidence across weeks\n- 120 minutes then 60 minutes.\n\n### Seven-day adjusted plan\n- Record a learning session."},
+          model:"mock",stopReason:"endTurn",usage:{totalTokens:30}
+        };
+      }
+    }
+  };
+  window.__deps={
+    AnnaAppRuntime:{connect:async()=>anna},
+    logic,feedback,review,patterns,formatting,storageFlow
+  };
+  window.eval(useDeps+script);
+  return {dom,window,document:window.document,database,modelCalls};
+}
+
+test("reviewer issues 1 and 3: navigation and AI report survive closing and reopening",async()=>{
+  const database=new Map();
+  const modelCalls={count:0};
+  const first=setup({database,modelCalls});
+  try {
+    const d=first.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","Anna boot");
+    first.window.location.hash="#insights";
+    await waitFor(()=>!d.getElementById("view-insights").hidden,"insights page shown");
+    assert.ok(d.getElementById("view-tasks").hidden,"Tasks must be another page");
+    assert.ok(d.getElementById("view-money").hidden,"Money must be another page");
+    d.getElementById("ai-consent").checked=true;
+    d.getElementById("review-form").dispatchEvent(
+      new first.window.Event("submit",{bubbles:true,cancelable:true}));
+    await waitFor(()=>!!database.get(logic.STORAGE_KEY)?.lastReview,"AI report persisted");
+    assert.equal(modelCalls.count,1);
+    assert.equal(d.getElementById("ai-consent").checked,false);
+    assert.equal(d.getElementById("review-btn").disabled,false);
+    d.getElementById("save-plan-btn").click();
+    await waitFor(()=>!!database.get(logic.STORAGE_KEY)?.savedPlan,"plan acknowledged");
+    assert.ok(d.getElementById("review-save-status").textContent.includes("confirmed"));
+  } finally {first.window.close();}
+
+  const next=setup({database,modelCalls});
+  try {
+    const d=next.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","Anna reboot");
+    assert.equal(modelCalls.count,1,"Reopening must never call LLM automatically");
+    assert.ok(d.getElementById("review-result").textContent.includes("120 minutes"));
+    assert.ok(d.getElementById("analysis-meta").textContent.includes("Restored analysis"));
+    assert.equal(d.getElementById("review-btn").disabled,false,"Generation must remain clickable");
+    assert.equal(d.getElementById("ai-consent").checked,false,"Consent must be fresh");
+    assert.equal(database.get(logic.STORAGE_KEY).savedPlan.categories[0],"tasks");
+    next.window.location.hash="#learning";
+    await waitFor(()=>!d.getElementById("view-learning").hidden,"learning page");
+    assert.ok(d.getElementById("view-insights").hidden,"Insights must be a distinct page");
+    next.window.location.hash="#insights";
+    await waitFor(()=>!d.getElementById("view-insights").hidden,"insights after navigation");
+    d.getElementById("ai-consent").checked=true;
+    d.getElementById("review-form").dispatchEvent(
+      new next.window.Event("submit",{bubbles:true,cancelable:true}));
+    await waitFor(()=>modelCalls.count===2,"second deliberate AI call");
+    await waitFor(()=>!d.getElementById("review-btn").disabled,"generate button restored");
+  } finally {next.window.close();}
+});
+
+test("reviewer issue 2: failed plan save stays retryable and is not falsely labeled saved",async()=>{
+  const database=new Map([[logic.STORAGE_KEY,logic.normalizeState({
+    lastReview:{generatedAt:logic.localDate(),text:"### Evidence\n- Example",categories:["learning"]}
+  })]]);
+  const testApp=setup({database,rejectPlanSave:true});
+  try{
+    const d=testApp.document;
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","boot");
+    assert.equal(d.getElementById("save-plan-btn").disabled,false);
+    d.getElementById("save-plan-btn").click();
+    await waitFor(()=>d.getElementById("review-save-status").textContent.includes("NOT confirmed"),
+      "unconfirmed plan error");
+    assert.equal(d.getElementById("save-plan-btn").disabled,false,"Save should be retryable");
+    assert.equal(database.get(logic.STORAGE_KEY).savedPlan,null);
+    assert.doesNotMatch(d.getElementById("review-save-status").textContent,/Saved plan confirmed/);
+    assert.ok(d.getElementById("review-result").textContent.includes("Evidence"),
+      "Analysis must remain readable after failed plan save");
+  }finally{testApp.window.close();}
+});
