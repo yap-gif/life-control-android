@@ -133,3 +133,74 @@ test("reviewer issue 2: failed plan save stays retryable and is not falsely labe
       "Analysis must remain readable after failed plan save");
   }finally{testApp.window.close();}
 });
+
+test("all non-AI pages still work and keep serialized state across navigation", async()=>{
+  const database=new Map();
+  const app=setup({database});
+  const d=app.document;
+  const today=logic.localDate();
+  const submit=id=>d.getElementById(id).dispatchEvent(
+    new app.window.Event("submit",{bubbles:true,cancelable:true}));
+  const open=async(name)=>{
+    app.window.location.hash="#"+name;
+    await waitFor(()=>!d.getElementById("view-"+name).hidden,name+" view");
+  };
+  const getSaved=()=>database.get(logic.STORAGE_KEY);
+  try{
+    await waitFor(()=>d.getElementById("connection").textContent==="Anna connected","boot");
+
+    await open("tasks");
+    const task=d.getElementById("task-form");
+    task.elements.namedItem("title").value="Review task";
+    task.elements.namedItem("date").value=today;
+    submit("task-form");
+    await waitFor(()=>getSaved()?.tasks.length===1,"task persisted");
+    d.querySelector("#task-list button").click();
+    await waitFor(()=>getSaved()?.tasks[0]?.done===true,"completion persisted");
+    assert.equal(getSaved().tasks[0].title,"Review task");
+
+    await open("money");
+    const money=d.getElementById("money-form");
+    money.elements.namedItem("amount").value="33.50";
+    money.elements.namedItem("type").value="income";
+    money.elements.namedItem("category").value="Test income";
+    money.elements.namedItem("date").value=today;
+    submit("money-form");
+    await waitFor(()=>getSaved()?.money.length===1,"money persisted");
+    assert.equal(getSaved().money[0].amount,33.5);
+
+    await open("learning");
+    const learning=d.getElementById("learning-form");
+    learning.elements.namedItem("topic").value="Database";
+    learning.elements.namedItem("minutes").value="45";
+    learning.elements.namedItem("date").value=today;
+    submit("learning-form");
+    await waitFor(()=>getSaved()?.learning.length===1,"learning persisted");
+
+    await open("journal");
+    const journal=d.getElementById("journal-form");
+    journal.elements.namedItem("text").value="Fictional QA reflection";
+    journal.elements.namedItem("date").value=today;
+    submit("journal-form");
+    await waitFor(()=>getSaved()?.journal.length===1,"journal persisted");
+    assert.equal(getSaved().journal[0].text,"Fictional QA reflection");
+
+    await open("savings");
+    const goal=d.getElementById("goal-form");
+    goal.elements.namedItem("goal").value="1000";
+    goal.elements.namedItem("saved").value="250";
+    goal.elements.namedItem("monthly").value="100";
+    submit("goal-form");
+    await waitFor(()=>getSaved()?.goal.goal===1000,"savings persisted");
+    assert.equal(getSaved().goal.monthly,100);
+
+    await open("overview");
+    assert.ok(d.getElementById("study-count").textContent.includes("45 min"));
+    await open("privacy");
+    d.getElementById("erase-data").click();
+    assert.equal(d.getElementById("erase-confirm-panel").hidden,false);
+    d.getElementById("erase-confirm").click();
+    await waitFor(()=>!database.has(logic.STORAGE_KEY),"workspace erased");
+    assert.equal(d.getElementById("open-count").textContent,"0");
+  }finally{app.window.close();}
+});
