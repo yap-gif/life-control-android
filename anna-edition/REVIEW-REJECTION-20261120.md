@@ -113,6 +113,20 @@ The owner supplied two separate screenshots from the installed Life Control **Wo
 
 **Next essential closure test:** Fully close the Life Control app window, then reopen the installed `0.0.0-draft`; confirm the **exact prior analysis text** is restored without automatic AI invocation, the saved plan remains present, and **Analyze pattern & adjust plan** can be used with fresh explicit AI consent to generate another report after reopening. Check any unexpected stuck/disabled button or error message. Only then mark reviewer issue three complete. Also test a true clean storage scope, responsive mobile navigation, and real form writes before release freeze.
 
+## 3D. Reopen restored previous AI analysis; new AI output and data discrepancy (2026-11-20)
+
+The owner supplied three additional images of the installed Life Control Draft r4 UI, after the prior steps to fully close/reopen the app and run another authorized AI analysis.
+
+- **Screenshot 1:** AI Insights shows "Anna connected" and the startup message **"Ready. Your last AI analysis was restored. A new AI call still needs fresh consent."** The app still shows the multiweek local Learning preview **120 min → 60 min**, supporting restored host state and safe non-automatic consent UI.
+- **Screenshot 2:** An AI report is visible with the prior **Kotlin 120 and 60 min**, a **DBMS 40-minute entry in partial week 2026-11-16–20**, and a Tasks summary. Save and Forget plan buttons are visible.
+- **Screenshot 3:** The AI report shows **"Generated 2026-11-20 · Analysis saved and verified by Anna Storage readback."** A new analysis is visible, and the generation button is partly visible at the top; its content lists Kotlin 120/60 and **0 minutes in the 2026-11-16–20 partial week**, describing Kotlin as the only recorded topic. The report includes two specific next-week actions. This is consistent with successful user-initiated post-reopen regeneration and storage verification.
+
+**Disposition:** **PASS (in-platform screenshot evidence)** for reopening and showing the restored-analysis startup state, keeping navigation usable, and displaying a newly generated, readback-confirmed analysis. **PARTIAL** for complete R2-REST-03: the screenshot does not include the exact prior report side-by-side with the restored text or independent RPC proof of no automatic LLM call, although the visible UX is consistent with the intended implementation. **PENDING** for explicit saved-plan restored indicator following close/reopen and separate post-reopen inclusion with fresh authorization.
+
+**Important accuracy discrepancy — investigate before final review:** Screenshot 2 reports a **DBMS 40-minute** Learning entry on 2026-11-17, consistent with the earlier live Learning page screenshot. Screenshot 3 instead claims **0 partial-week minutes**, and reports Kotlin as the only topic. These outputs can both be legitimate **only if** the underlying Learning state, selected data categories, or scope changed between requests; the available screenshots do not establish such a change. Confirm the current Learning entries, category selection, and (if possible) selected JSON payload from the two `llm.complete` calls. If the 40-minute DBMS entry was still present and Learning was selected when Screenshot 3 was generated, treat this as **FAIL — factual contradiction in model analysis**, investigate and strengthen validation rather than submitting. Do not mislabel it as a definitively identified source bug without payload evidence.
+
+**Remaining gates:** Genuine fresh empty-storage Cloud Agent (this installation reused historical Learning records), Tasks/Money/Journal/Savings persistence and erase, 360 px narrow view/keyboard support, authentic v0.1.2 screenshots replacing the v0.1.1 store images and reloaded Anna Listing, and resolution of the old `pending_review v0.1.1` discrepancy. Do not cut or submit v0.1.2 until these are closed.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
