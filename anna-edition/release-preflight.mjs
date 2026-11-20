@@ -84,6 +84,14 @@ export function inspectReviewScreenshots(app) {
   return errors;
 }
 
+/** Screenshots must portray the exact candidate UI, not an older single-page build. */
+export function inspectScreenshotFreshness(candidateVersion, capturedVersion) {
+  return candidateVersion === capturedVersion ? [] :
+    ["Store screenshots depict v" + capturedVersion +
+     " but the candidate is v" + candidateVersion +
+     ". Capture genuine screenshots of the new multi-page UI before review."];
+}
+
 export function main(args = process.argv.slice(2)) {
   const app = JSON.parse(readFileSync(join(root, "app.json"), "utf8"));
   const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
@@ -94,7 +102,11 @@ export function main(args = process.argv.slice(2)) {
   console.log("Target:", app.slug, "| candidate:", app.version);
   console.log("Note: Anna Console Listing fields and uploaded media must be reviewed separately.");
   const reviewGate = args.includes("--review-gate");
-  if (reviewGate) errors.push(...inspectReviewScreenshots(app));
+  if (reviewGate) {
+    errors.push(...inspectReviewScreenshots(app));
+    const captured = readFileSync(join(root, "store-screenshots", "SOURCE-VERSION.txt"), "utf8").trim();
+    errors.push(...inspectScreenshotFreshness(app.version, captured));
+  }
   for (const msg of errors) console.error("ERROR:", msg);
   for (const msg of warnings) console.warn("WARNING:", msg);
   if (errors.length === 0) console.log("Structural metadata and privacy-file checks: PASS.");
