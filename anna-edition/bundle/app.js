@@ -18,6 +18,7 @@ let reviewBusy = false;
 let planSaving = false;
 let listenersAttached = false;
 let connectBusy = false;
+let storageWriteUncertain = false;
 let lastGeneratedPlan = null;
 const TODAY = () => localDate();
 const money = n => "RM " + Number(n).toFixed(2);
@@ -41,7 +42,22 @@ function limitEntries(key, nextEntry) {
 }
 // All writes are serialized. A button only reports success after Anna
 // acknowledges its write. Failed writes remain visible and can be retried.
+function lockUnsafeEdits() {
+  if (!storageWriteUncertain) return;
+  for (const fid of forms) {
+    $(fid).querySelectorAll("input,textarea,select,button")
+      .forEach(control => { control.disabled = true; });
+  }
+  for (const id of ["erase-data","save-plan-btn","forget-plan-btn","retry-save-result"]) {
+    $(id).disabled = true;
+  }
+}
 function persistAndRender({ notify = true } = {}) {
+  if (storageWriteUncertain) {
+    status("Anna Storage is still unconfirmed. Close and reopen this app to verify saved records before making more changes.", true);
+    lockUnsafeEdits();
+    return Promise.resolve(false);
+  }
   state = normalizeState(state);
   render();
   const snapshot = JSON.parse(JSON.stringify(state));
@@ -54,10 +70,16 @@ function persistAndRender({ notify = true } = {}) {
       return true;
     })
     .catch(error => {
-      const hint = error?.message?.startsWith("Anna storage did not confirm")
-        ? "Anna storage is still responding. Your change is not confirmed; keep the app open or reopen to verify before retrying."
-        : explainHostError(error, "storage") + " Changes were not confirmed. Please retry.";
-      status(hint, true);
+      const timedOut = error?.message?.startsWith("Anna storage did not confirm");
+      if (timedOut) {
+        // The host write may still be executing, so starting a second write
+        // could queue forever or produce an ambiguous snapshot order.
+        storageWriteUncertain = true;
+        lockUnsafeEdits();
+      }
+      status(timedOut
+        ? "Anna Storage did not confirm the write. Editing is paused. Close and reopen the app, check saved records, then try again if needed."
+        : explainHostError(error, "storage") + " Changes were not confirmed. Please retry.", true);
       return false;
     });
 }
@@ -75,6 +97,10 @@ function entry(li, primary, subtitle, buttons = [], recordId = "") {
       // Complete and Reopen are the same action, so retain keyboard focus.
       button.dataset.actionKey = ["Complete", "Reopen"].includes(b.label) ? "toggle" : b.label.toLowerCase();
       button.addEventListener("click", () => {
+        if (storageWriteUncertain) {
+          status("Storage state is unconfirmed. Reopen the app before editing.", true);
+          return;
+        }
         const fallbackInput = li.closest(".card")?.querySelector("input,textarea,select");
         const recordKey = button.dataset.entryId;
         const actionKey = button.dataset.actionKey;
@@ -209,6 +235,10 @@ function renderPatternPreview() {
 function bindForm(formId, handler) {
   $(formId).addEventListener("submit", event => {
     event.preventDefault();
+    if (storageWriteUncertain) {
+      status("Storage state is unconfirmed. Reopen the app before editing.", true);
+      return;
+    }
     try { handler(new FormData(event.currentTarget)); }
     catch (error) {
       // Form validation messages originate from this app. Never display arbitrary exceptions.
@@ -278,7 +308,7 @@ function bindEntries() {
 }
 async function handleReview(event) {
   event.preventDefault();
-  if (reviewBusy || planSaving) return;
+  if (reviewBusy || planSaving || storageWriteUncertain) return;
   const selected = selectedReviewCategories();
   if (!$("ai-consent").checked) {
     status("Please explicitly authorize this one AI request.", true);
@@ -334,9 +364,10 @@ async function handleReview(event) {
     } else {
       $("analysis-meta").textContent = "Generated " + generatedAt +
         " · Analysis is visible but NOT confirmed in storage.";
-      $("retry-save-result").hidden = false;
-      $("review-save-status").textContent =
-        "Storage could not confirm the analysis. Retry saving before closing the app.";
+      $("retry-save-result").hidden = storageWriteUncertain;
+      $("review-save-status").textContent = storageWriteUncertain
+        ? "Storage confirmation timed out. Close and reopen to verify; do not retry here."
+        : "Storage could not confirm the analysis. Retry saving before closing the app.";
       status("AI analysis was generated, but storage did not confirm it.", true);
     }
   } catch (error) {
@@ -352,6 +383,7 @@ async function handleReview(event) {
     $("review-btn").disabled = false;
     $("review-btn").textContent = "Analyze pattern & adjust plan";
     $("save-plan-btn").disabled = !lastGeneratedPlan;
+    lockUnsafeEdits();
   }
 }
 
@@ -364,8 +396,8 @@ function withDeadline(promise, ms, message) {
 }
 
 async function eraseWorkspace() {
-  if (reviewBusy || planSaving) {
-    status("Another AI request or plan save is still running. Wait for confirmation before erasing this workspace.", true);
+  if (reviewBusy || planSaving || storageWriteUncertain) {
+    status("An AI request or storage write is still unresolved. Reopen and verify before erasing.", true);
     return;
   }
   $("erase-confirm").disabled = true;
@@ -404,6 +436,7 @@ async function eraseWorkspace() {
     $("erase-confirm").disabled = false;
     $("erase-cancel").disabled = false;
     forms.forEach(fid => $(fid).querySelectorAll("input,textarea,select,button").forEach(input => input.disabled = false));
+    lockUnsafeEdits();
   }
 }
 
@@ -443,7 +476,7 @@ async function boot() {
         input.addEventListener("change", renderPatternPreview);
       });
       $("save-plan-btn").addEventListener("click", async () => {
-        if (!lastGeneratedPlan || reviewBusy || planSaving) return;
+        if (!lastGeneratedPlan || reviewBusy || planSaving || storageWriteUncertain) return;
         planSaving = true;
         const previous = state.savedPlan;
         const candidate = { ...lastGeneratedPlan, categories: [...lastGeneratedPlan.categories] };
@@ -475,9 +508,12 @@ async function boot() {
           } else {
             state.savedPlan = previous;
             render();
-            $("review-save-status").textContent =
-              "Plan save was NOT confirmed by readback. Retry after verifying the connection.";
-            status("Plan was not confirmed as saved. Try again.", true);
+            $("review-save-status").textContent = storageWriteUncertain
+              ? "Plan save timed out. Storage status is uncertain. Reopen and verify before another attempt."
+              : "Plan save was NOT confirmed by readback. Retry after verifying the connection.";
+            status(storageWriteUncertain
+              ? "Anna Storage is unconfirmed. Close and reopen to reconcile the saved plan."
+              : "Plan was not confirmed as saved. Try again.", true);
           }
         } finally {
           planSaving = false;
@@ -486,10 +522,11 @@ async function boot() {
             state.savedPlan.text === candidate.text &&
             state.savedPlan.savedAt === candidate.savedAt);
           $("review-btn").disabled = false;
+          lockUnsafeEdits();
         }
       });
       $("forget-plan-btn").addEventListener("click", async () => {
-        if (!state.savedPlan || reviewBusy || planSaving) return;
+        if (!state.savedPlan || reviewBusy || planSaving || storageWriteUncertain) return;
         planSaving = true;
         const previous = state.savedPlan;
         state.savedPlan = null;
@@ -503,9 +540,10 @@ async function boot() {
           status("Could not confirm plan deletion. Try again.", true);
         }
         planSaving = false;
+        lockUnsafeEdits();
       });
       $("retry-save-result").addEventListener("click", async () => {
-        if (reviewBusy || planSaving || !state.lastReview) return;
+        if (reviewBusy || planSaving || storageWriteUncertain || !state.lastReview) return;
         $("retry-save-result").disabled = true;
         $("review-save-status").textContent = "Retrying the analysis save...";
         const confirmed = await persistAndRender({ notify: false });
@@ -513,7 +551,10 @@ async function boot() {
         $("retry-save-result").disabled = false;
         $("review-save-status").textContent = confirmed
           ? "Analysis stored successfully. It will restore after reopening."
-          : "Still not confirmed. Do not assume the result is saved.";
+          : storageWriteUncertain
+            ? "Storage timed out. Close and reopen to verify before retrying."
+            : "Still not confirmed. Do not assume the result is saved.";
+        lockUnsafeEdits();
       });
 
       $("erase-data").disabled = false;
