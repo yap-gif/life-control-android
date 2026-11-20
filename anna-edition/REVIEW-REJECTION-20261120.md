@@ -102,6 +102,17 @@ The other **eight screenshots** show separate desktop views in the Anna-hosted L
 
 **Next priority:** In a fresh isolated Cloud Agent (or other confirmed clean test storage scope), do the full R2-E2E-02 through R2-E2E-05 sequence using synthetic records: generate a real AI analysis, verify it is stored, save the plan and verify readback, close/reopen, verify the analysis and plan are restored without an automatic LLM call, then re-consent and successfully generate another analysis. Keep evidence of the saved-plan state and real generated output. Re-capture v0.1.2 Listing screenshots only after the flow passes.
 
+## 3C. Actual Anna AI analysis and plan readback — UI evidence (2026-11-20)
+
+The owner supplied two separate screenshots from the installed Life Control **Working Draft r4** app window.
+
+1. The first shows a real generated cross-week AI analysis: four complete weeks plus partial week 2026-11-16–20, Kotlin **120 → 60 logged minutes**, a 40-minute DBMS session, uncertainty statements and a seven-day adjusted plan. The UI presents: **`Generated 2026-11-20 · Analysis saved and verified by Anna Storage readback.`** and **`Analysis verified in storage. Save as a comparison plan only if you choose.`**. AI consent is visibly not checked after the request, and the **Analyze pattern & adjust plan** button appears enabled.
+2. The second shows a generated report including measurable next-week actions, with the separate footer: **`Saved plan verified by Anna Storage readback. It can be recovered after reopening.`**. The Save button appears disabled after saving, while Forget remains available. The visible UI is consistent with a successful `storage.set` then `storage.get` readback match for an explicitly chosen saved plan.
+
+**Disposition:** **PASS (live in-platform UI evidence)** for generating analysis, reporting analysis persistence/readback verification, and reporting saved-plan persistence/readback verification without visible ongoing Saving lockup. This materially addresses the reviewer's second issue in the exercised normal path. The screenshots **do not** independently show the host RPC transactions, inject a real storage timeout, or demonstrate durability **after fully closing and reopening the app**. The two model outputs differ; do not infer sequence, number of calls, or which output was stored as the current comparison plan without further host evidence.
+
+**Next essential closure test:** Fully close the Life Control app window, then reopen the installed `0.0.0-draft`; confirm the **exact prior analysis text** is restored without automatic AI invocation, the saved plan remains present, and **Analyze pattern & adjust plan** can be used with fresh explicit AI consent to generate another report after reopening. Check any unexpected stuck/disabled button or error message. Only then mark reviewer issue three complete. Also test a true clean storage scope, responsive mobile navigation, and real form writes before release freeze.
+
 ## 4. Final acceptance status
 
 - Reviewer issues: documented; source repairs committed on a separate branch.
