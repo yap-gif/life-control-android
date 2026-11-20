@@ -50,3 +50,28 @@ button:focus-visible,.entries button:focus-visible{outline:3px solid #d6edff;out
 .plan-controls button{flex:1 1 200px}.plan-controls button:last-child{background:#30445f;color:#f1f6ff}
 .plan-controls button:last-child:hover{background:#435d80}
 @media(max-width:420px){.head-row{align-items:flex-start;flex-direction:column}.plan-controls button{flex-basis:100%}}
+
+/* v0.1.2: true one-section-at-a-time app navigation, not one long surface. */
+.feature-nav{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 23px;border-bottom:1px solid #3d516d;padding-bottom:13px}
+.nav-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border-radius:10px;color:#ccdaf0;text-decoration:none;border:1px solid #3b5170;background:#1a2940;font-weight:700;white-space:nowrap}
+.nav-link:hover,.nav-link:focus-visible{background:#314b73;color:#fff}
+.nav-link[aria-current="page"]{background:#86b5ff;color:#10203b;border-color:#86b5ff}
+.page{min-width:0;min-height:280px}
+.page-head{margin-bottom:15px}
+.page-head h2{font-size:23px;letter-spacing:-.03em;margin:0 0 9px}
+.page>.card,.page>.privacy-controls{width:100%;max-width:1000px}
+.page .stat{min-width:0}
+.overview-card{max-width:790px;padding:25px}
+.overview-card h3{font-size:20px;margin:0 0 10px}
+.cta-link{display:inline-flex;align-items:center;justify-content:center;background:#86b5ff;color:#10203b;border-radius:10px;min-height:44px;font-weight:750;text-decoration:none;padding:10px 16px;margin-top:8px}
+.cta-link:focus-visible{outline:3px solid #d5ecff;outline-offset:3px}
+#retry-connect,#retry-save-result{margin:10px 0;min-height:44px}
+#review-save-status,#analysis-meta{line-height:1.5}
+button{min-height:44px}
+.entries button{min-height:40px}
+@media(max-width:680px){
+  .feature-nav{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:12px}
+  .nav-link{flex:none}
+  .page-head h2{font-size:20px}
+  .page>.card{padding:16px}
+}
