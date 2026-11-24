@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {execFileSync} from "node:child_process";
 import {dayNumber,weekday,weekStart,monthEnd,reportPeriods} from "../bundle/v2/calendar.js";
 import {buildReport,buildTrend} from "../bundle/v2/reporting.js";
 import {emptyWorkspace} from "../bundle/v2/workspace.js";
@@ -106,4 +107,11 @@ test("chart-ready trend uses the same totals, chronological ranges and partial c
   assert.equal(buildTrend(w,{kind:"month",count:2,today,selected:["money"]})[1].values.money.netMinor,72500);
   assert.throws(()=>buildTrend(w,{kind:"week",count:25,today,selected:["money"]}));
   assert.throws(()=>buildTrend(w,{kind:"week",count:2,today,selected:["goals"]}));
+});
+
+test("civil calendar is identical under extreme timezone offsets",()=>{
+  const url=new URL("../bundle/v2/calendar.js",import.meta.url).href;
+  const script="import {reportPeriods,dayNumber,weekStart} from "+JSON.stringify(url)+"; console.log(JSON.stringify([dayNumber('2024-02-29'),weekStart('2027-01-01'),reportPeriods({kind:'month'},'2026-03-30')]));";
+  const run=TZ=>execFileSync(process.execPath,["--input-type=module","-e",script],{env:{...process.env,TZ},encoding:"utf8"}).trim();
+  assert.equal(run("Pacific/Kiritimati"),run("America/Adak"));assert.equal(run("UTC"),run("Asia/Kuching"));
 });
