@@ -105,3 +105,19 @@ test("candidate creation false ACK or competing writer never reported as success
   const h2=host(),r2=repo(h2,{atomicCreate:async({key,value})=>{h2.seed(key,{...value,revision:1});throw new Error("already exists");}});
   await assert.rejects(init(h2,r2),/already exists/);assert.equal(r2.locked,true);
 });
+
+test("domain validator must explicitly return true; false or asynchronous results cannot authorize writes",async()=>{
+  const h=host();
+  for(const validateDomain of [()=>false,()=>undefined,async()=>true]){
+    const r=repo(h,{validateDomain}),x=await r.inspect(opts);
+    await assert.rejects(r.initialize(x.workspace),{code:"DOMAIN_INVALID"});
+    assert.equal(h.writes,0);
+  }
+});
+test("conditional write races after the pre-read never overwrite another writer",async()=>{
+  const h=host(),r=repo(h),p=await init(h,r);
+  const original=h.set.bind(h);
+  h.set=async(args)=>{h.seed(WORKSPACE_KEY,{...p.workspace,revision:1,lastOperationId:"other"});return original(args);};
+  await assert.rejects(r.commit({previous:p.workspace,etag:p.etag,next:next(p),operationId:"op1"}),{code:"precondition_failed"});
+  assert.equal(h.records.get(WORKSPACE_KEY).value.lastOperationId,"other");assert.equal(r.locked,true);
+});
