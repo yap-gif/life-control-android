@@ -155,3 +155,19 @@ export function buildReport(workspace,spec,today,selected){
   }
   return result;
 }
+
+/** Chart-ready series of calendar periods, oldest first. Each point is derived
+ * from the same scoped reporting definitions; current partial period is labelled.
+ * Snapshot-only goals and monthly budget evidence remain outside the series. */
+export function buildTrend(workspace,{kind,count,today,selected}){
+  if(!["week","month"].includes(kind)||!Number.isSafeInteger(count)||count<1||count>24)throw new Error("Invalid trend range");
+  if(!Array.isArray(selected)||!selected.length||selected.some(k=>!REPORT_CATEGORIES.includes(k)||k==="goals"))throw new Error("Select period-based trend categories");
+  const start=kind==="week"?weekStart(today):monthStart(today);
+  return Array.from({length:count},(_,i)=>{
+    const offset=i-count+1,anchor=kind==="week"?shiftDay(start,offset*7):shiftMonth(start,offset);
+    const r=buildReport(workspace,{kind,anchor},today,selected);
+    const {budgets,...current}=r.current;
+    return {range:r.periods.current,coverageNote:r.coverageNote,values:current,
+      metrics:r.metrics.filter(m=>m.id.endsWith(".current")&&!m.id.includes(".budget:"))};
+  });
+}
