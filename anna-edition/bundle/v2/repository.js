@@ -8,14 +8,42 @@ function deadline(p,ms){
 }
 function exact(a,b){return canonicalJSON(a)===canonicalJSON(b);}
 function validEtag(e){return typeof e==="string"&&e.trim().length>0;}
-/** Only explicit exists=false or a precise storage key-not-found code is absent.
- * HTTP 404 without a precise key error is deliberately ambiguous. */
+const own=(r,k)=>Object.hasOwn(r,k);
+const field=(r,k)=>own(r,k)?r[k]:undefined;
+const ambiguous=()=>error("AMBIGUOUS_READ","Storage read is missing or contradicts explicit value/absence evidence");
+function plainResponse(r){
+  return r!==null&&typeof r==="object"&&!Array.isArray(r)&&
+    (Object.getPrototypeOf(r)===Object.prototype||Object.getPrototypeOf(r)===null)&&
+    Reflect.ownKeys(r).every(k=>typeof k==="string"&&Object.hasOwn(Object.getOwnPropertyDescriptor(r,k),"value"));
+}
+function compatibleStatus(status,expected){
+  return status===undefined||status===null||
+    (Number.isInteger(status)&&expected(status));
+}
+/** Conservative candidate policy, not a verified real APS contract.
+ * Null-only legacy responses, generic not_found/404 and contradictions never
+ * establish absence. Explicit key errors are accepted only without conflicting
+ * HTTP status. Never infer create permission from an empty prefix listing. */
 export async function readKey(storage,key,timeoutMs=12000){
   let r;
   try{r=await deadline(storage.get({key}),timeoutMs);}
-  catch(e){if(e?.code==="KEY_NOT_FOUND"||e?.code==="key_not_found")return {exists:false,etag:null};throw e;}
-  if(r?.exists===false){if(r.value!=null||r.etag!=null)throw error("AMBIGUOUS_READ","Conflicting absence response");return {exists:false,etag:null};}
-  if(!r||r.exists===false||r.value==null||!validEtag(r.etag))throw error("AMBIGUOUS_READ","Storage read lacks value/etag");
+  catch(e){
+    if(e?.code==="KEY_NOT_FOUND"||e?.code==="key_not_found"){
+      if(![e.status,e.statusCode,e.response?.status].every(s=>compatibleStatus(s,n=>n===404)))throw ambiguous();
+      return {exists:false,etag:null};
+    }
+    throw e;
+  }
+  if(!plainResponse(r))throw ambiguous();
+  if(own(r,"exists")&&typeof r.exists!=="boolean")throw ambiguous();
+  if((own(r,"ok")&&r.ok!==true)||field(r,"error")!=null||field(r,"code")!=null||
+    ![field(r,"status"),field(r,"statusCode")].every(s=>compatibleStatus(s,n=>n>=200&&n<300)))throw ambiguous();
+  if(field(r,"exists")===false){
+    // Unknown generation/tombstone semantics cannot establish safe absence.
+    if(["value","etag","generation"].some(k=>own(r,k)&&r[k]!==null))throw ambiguous();
+    return {exists:false,etag:null};
+  }
+  if(!own(r,"value")||r.value==null||!own(r,"etag")||!validEtag(r.etag))throw ambiguous();
   return {exists:true,etag:r.etag,value:r.value};
 }
 function checkLegacy(w,legacy){
