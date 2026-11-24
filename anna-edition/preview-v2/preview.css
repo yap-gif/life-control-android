@@ -4,3 +4,6 @@
 @media(max-width:768px){.shell{display:block}.sidebar{position:static;height:auto;overflow:visible;border-right:0;border-bottom:1px solid var(--line);padding:12px 14px;gap:10px}.sidebar-footer{display:none}nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}nav a{padding:8px;justify-content:center;font-size:.82rem;gap:4px}.nav-num{display:none}main{padding:18px 14px}.grid{grid-template-columns:1fr}}
 @media(max-width:420px){.fields{grid-template-columns:1fr}.metrics{gap:8px}.metric,.panel{padding:12px}.entry{grid-template-columns:1fr}.entry .actions{justify-content:flex-start}.bar-line{grid-template-columns:minmax(65px,1fr) minmax(0,1fr) auto;font-size:.77rem}.topbar{align-items:flex-start}.date-pill{font-size:.75rem}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* QA: preserve nested management forms within narrow cards. */
+.entry>div{min-width:0}.entry .stack>.panel{padding:12px}.entry:has(.stack){grid-template-columns:minmax(0,1fr)}.entry:has(.stack)>.actions{justify-content:flex-start}.toolbar{min-width:0}.toolbar>*{max-width:100%}.payload{max-width:100%}summary{min-height:44px;padding:10px 0;cursor:pointer}summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}

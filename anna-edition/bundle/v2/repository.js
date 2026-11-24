@@ -33,17 +33,19 @@ export async function inspectWorkspace(storage,{timezone,migrationId,timeoutMs=1
 export function createWorkspaceRepository({storage,atomicCreate=null,capability=null,timeoutMs=12000,validateDomain=null}){
   if(!storage||typeof storage.get!=="function"||typeof storage.set!=="function")throw error("CONFIG","Storage adapter required");
   if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1)throw error("CONFIG","Invalid timeout");
+  const verified=capability?.verified===true,maxBytes=capability?.maxBytes;
   let locked=false,busy=false;
   function checkReady(){
     if(locked)throw error("LOCKED","Reconcile storage before further writes");
     if(busy)throw error("BUSY","Another mutation is in progress");
-    if(capability?.verified!==true||!Number.isSafeInteger(capability.maxBytes)||capability.maxBytes<1||typeof validateDomain!=="function")throw error("CAPABILITY_UNVERIFIED","Real storage capability and complete domain validation required");
+    if(!verified||!Number.isSafeInteger(maxBytes)||maxBytes<1||typeof validateDomain!=="function")throw error("CAPABILITY_UNVERIFIED","Real storage capability and complete domain validation required");
   }
   function snapshot(w){
-    validateWorkspaceEnvelope(w);
-    if(validateDomain(w)!==true)throw error("DOMAIN_INVALID","Complete synchronous domain validation must explicitly pass");
     const value=JSON.parse(canonicalJSON(w));
-    if(utf8Bytes(value)>capability.maxBytes)throw error("CAPACITY","Workspace exceeds verified capacity; no records removed");
+    validateWorkspaceEnvelope(value);
+    const before=canonicalJSON(value);
+    if(validateDomain(value)!==true||canonicalJSON(value)!==before)throw error("DOMAIN_INVALID","Complete synchronous non-mutating domain validation must explicitly pass");
+    if(utf8Bytes(value)>maxBytes)throw error("CAPACITY","Workspace exceeds verified capacity; no records removed");
     return value;
   }
   async function confirm(value){
@@ -62,7 +64,14 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
   return {
     get locked(){return locked;},
     get busy(){return busy;},
-    inspect:options=>inspectWorkspace(storage,{...options,timeoutMs}),
+    async inspect(options){
+      const result=await inspectWorkspace(storage,{...options,timeoutMs});
+      if(typeof validateDomain==="function"){
+        const before=canonicalJSON(result.workspace);
+        if(validateDomain(result.workspace)!==true||canonicalJSON(result.workspace)!==before)throw error("DOMAIN_INVALID","Workspace domain validation failed");
+      }
+      return result;
+    },
     initialize(candidate){
       return mutate(async mark=>{
         if(typeof atomicCreate!=="function")throw error("CREATE_UNVERIFIED","Atomic create-only operation not established");
@@ -78,8 +87,7 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
     commit({previous,etag,next,operationId}){
       return mutate(async mark=>{
         if(!validEtag(etag)||typeof operationId!=="string"||!operationId.trim())throw error("INVALID_WRITE","Expected etag and operation ID");
-        validateWorkspaceEnvelope(previous);
-        const baseline=JSON.parse(canonicalJSON(previous));
+        const baseline=snapshot(previous);
         const value=snapshot(next);
         if(value.revision!==baseline.revision+1||value.lastOperationId!==operationId||!exact(value.migration,baseline.migration))throw error("INVALID_WRITE","Revision or migration contract mismatch");
         const remote=await readKey(storage,WORKSPACE_KEY,timeoutMs);

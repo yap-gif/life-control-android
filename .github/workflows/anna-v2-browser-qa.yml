@@ -1,0 +1,42 @@
+name: Anna v2 Isolated Browser QA
+on:
+  push:
+    branches: ["feature/life-control-v020-architecture-20261124"]
+    paths: ["anna-edition/**", ".github/workflows/anna-v2-browser-qa.yml"]
+  pull_request:
+    paths: ["anna-edition/**", ".github/workflows/anna-v2-browser-qa.yml"]
+permissions:
+  contents: read
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: anna-edition
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install isolated browser test dependency
+        run: npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test 360, 768 and 1040 px real Chromium viewports
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/lc-qa-http.log 2>&1 &
+          child=$!
+          trap 'kill "$child" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/preview-v2/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node qa/browser-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isolated-v2-browser-evidence
+          path: anna-edition/qa-artifacts/
+          if-no-files-found: warn

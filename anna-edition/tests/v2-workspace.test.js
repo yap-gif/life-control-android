@@ -109,7 +109,9 @@ test("candidate creation false ACK or competing writer never reported as success
 test("domain validator must explicitly return true; false or asynchronous results cannot authorize writes",async()=>{
   const h=host();
   for(const validateDomain of [()=>false,()=>undefined,async()=>true]){
-    const r=repo(h,{validateDomain}),x=await r.inspect(opts);
+    const r=repo(h,{validateDomain});
+    await assert.rejects(r.inspect(opts),{code:"DOMAIN_INVALID"});
+    const x=await inspectWorkspace(h,opts);
     await assert.rejects(r.initialize(x.workspace),{code:"DOMAIN_INVALID"});
     assert.equal(h.writes,0);
   }

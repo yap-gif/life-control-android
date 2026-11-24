@@ -80,7 +80,7 @@ export function createConsentController({transport,timeoutMs=45000}){
   return {
     async preview(request){
       const epoch=++generation;current=null;
-      const body=previewRequest(request),snapshot=copy(request),hash=await digest(body);
+      const snapshot=copy(request),body=previewRequest(snapshot),hash=await digest(body);
       ok(epoch===generation,"Preview superseded");
       current={body,hash,request:snapshot,consented:false};
       return {payload:body,digest:hash,creditNotice:"One model call may use Anna credits. No automatic retry."};
@@ -93,6 +93,7 @@ export function createConsentController({transport,timeoutMs=45000}){
     async run({digest:hash,request,workspace}){
       ok(!busy&&current?.consented&&current.hash===hash,"Missing or stale consent");
       const p=current;current=null;
+      request=copy(request);
       ok(previewRequest(request)===p.body,"Request changed; preview again");
       // Compare against the actual current workspace including historical plan opt-in.
       validateDomain(workspace);ok(workspace.revision===p.request.snapshotRevision,"Workspace changed; preview again");
@@ -102,7 +103,7 @@ export function createConsentController({transport,timeoutMs=45000}){
       used.add(p.request.requestId);current=null;busy=true;const epoch=generation;
       let timer;
       try{
-        const raw=await Promise.race([Promise.resolve().then(()=>transport(JSON.parse(p.body))),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("Model outcome unconfirmed; no retry")),timeoutMs);})]);
+        const raw=await Promise.race([Promise.resolve().then(()=>{ok(epoch===generation,"Consent invalidated before transport");return transport(JSON.parse(p.body));}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("Model outcome unconfirmed; no retry")),timeoutMs);})]);
         ok(epoch===generation,"Request superseded; result discarded");
         ok(typeof raw==="string"&&new TextEncoder().encode(raw).length<=MAX_RESPONSE_BYTES,"Invalid model response");
         const result=JSON.parse(raw);validateResult(result,p.request);

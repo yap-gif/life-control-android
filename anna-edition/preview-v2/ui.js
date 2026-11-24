@@ -24,7 +24,7 @@ export async function mountPreview(doc,win,store){
   const small=t=>el("p","muted",t);
   const empty=t=>el("p","empty",t);
   const link=(route,label)=>{const a=el("a","",label);a.href="#"+route;return a;};
-  let route="",dirty=false,busy=false,editor=null,request=null,preview=null,receipt=null;
+  let route="",dirty=false,dirtyForm=null,busy=false,editor=null,request=null,preview=null,receipt=null;
   const filterState=new Map(),reportState={kind:"month",from:"2026-11-01",through:DEMO_DAY,selected:[...REPORT_CATEGORIES],trend:"week"};
   const coachState={question:"",focus:"custom",kind:"month",from:"2026-11-01",through:DEMO_DAY,selected:[],prior:""};
   const controller=createConsentController({transport:demoTransport});
@@ -35,7 +35,9 @@ export async function mountPreview(doc,win,store){
   const confirm=t=>win.confirm(t)===true;
   const abandon=()=>!dirty||confirm("Discard unsaved edits?");
   function invalidate(){controller.invalidate();request=null;preview=null;receipt=null;}
-  function clearEditor(){editor=null;dirty=false;}
+  function clearEditor(){editor=null;dirty=false;dirtyForm=null;}
+  function markDirty(form){dirty=true;dirtyForm=form;}
+  function guardOtherDraft(form){return !dirty||dirtyForm===form||abandon();}
   const button=(label,fn,cls="",disabled=false)=>{const b=el("button",cls,label);b.type="button";b.disabled=disabled;b.addEventListener("click",async()=>{if(busy)return;try{await fn();}catch(e){notify(safeError(e),true);}});return b;};
   function setBusy(value){busy=value;page.setAttribute("aria-busy",String(value));page.querySelectorAll("button,input,select,textarea").forEach(n=>{if(value){if(n.dataset.wasDisabled===undefined)n.dataset.wasDisabled=String(n.disabled);n.disabled=true;}else if(n.dataset.wasDisabled!==undefined){n.disabled=n.dataset.wasDisabled==="true";delete n.dataset.wasDisabled;}});}
   async function commit(command,ai=false){
@@ -62,11 +64,11 @@ export async function mountPreview(doc,win,store){
   function formBox(title,defs,onSubmit,{track=false,submit="Save",cancel=null}={}){
     const form=el("form","stack"),fields=el("div","fields");form.dataset.form=title;form.append(fields);
     for(const def of defs)field(def,fields);
-    if(track)form.addEventListener("input",()=>{dirty=true;});
+    if(track)form.addEventListener("input",()=>{markDirty(form);});
     const b=el("button","primary",submit);b.type="submit";b.disabled=store.locked;
     const actions=append(el("div","actions"),b);
     if(cancel)actions.append(button("Cancel",cancel));form.append(actions);
-    form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked)return;try{await onSubmit(values(form));}catch(err){notify(safeError(err),true);}});
+    form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;try{await onSubmit(values(form));}catch(err){notify(safeError(err),true);}});
     return section(title,form);
   }
   function openEditor(kind,row=null,parent=null){if(!abandon())return;clearEditor();editor={kind,row,parent};render();page.querySelector("form[data-form] input,form[data-form] select")?.focus();}
@@ -192,10 +194,10 @@ export async function mountPreview(doc,win,store){
   function goals(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["goals","habits"]),out=[section("Goals & habits",small("Progress is manually recorded; it is not inferred from cashflow."),append(el("div","actions"),addButton("goals","Add goal"),addButton("habits","Add habit"))),editorView()];
     out.push(filterList("goals","Goals",g=>{const x=r.currentGoalSnapshot.find(a=>a.id===g.id),format=g.kind==="savings"?fmt:n=>n+" "+g.unit;
       const details=append(el("div","stack"),small(format(g.progress)+" / "+format(g.target)+" · "+(x.percent===null?"N/A":x.percent.toFixed(1)+"%")),g.kind==="savings"?small("Planned monthly "+fmt(g.plannedMonthlyMinor)+" · Estimated months "+(x.months??"Unknown")):null,addButton("milestones","Add milestone",g.id));
-      for(const m of c().milestones.filter(m=>m.goalId===g.id))details.append(listEntry(m.title,(m.done?"Completed":"Open")+" · "+(m.targetDate??"No target date"),[editButton("milestones",m,g.id),commandButton(m.done?"Reopen":"Complete",{type:"milestone.transition",id:m.id,done:!m.done}),delButton("milestones",m)]));
+      details.append(filterList("milestones","Milestones",m=>listEntry(m.title,(m.done?"Completed":"Open")+" · "+(m.targetDate??"No target date"),[editButton("milestones",m,g.id),commandButton(m.done?"Reopen":"Complete",{type:"milestone.transition",id:m.id,done:!m.done}),delButton("milestones",m)]),{parentId:g.id}));
       return listEntry(g.title,g.kind,[editButton("goals",g),delButton("goals",g)],details);},{statusChoices:["savings","general"]}));
     out.push(filterList("habits","Habits",h=>{const x=r.current.habits.find(a=>a.id===h.id),details=append(el("div","stack"),small("Scheduled weekdays: "+h.scheduledWeekdays.join(", ")+" · Start "+h.startDate),small(x.completed+" / "+x.eligible+" eligible days · Streak "+x.streakWithinPeriod),addButton("habitCheckins","Record check-in",h.id));
-      const rows=c().habitCheckins.filter(a=>a.habitId===h.id).sort((a,b)=>b.date.localeCompare(a.date));for(const a of rows)details.append(listEntry(a.date,a.status,[editButton("habitCheckins",a,h.id),delButton("habitCheckins",a)]));
+      details.append(filterList("habitCheckins","Check-ins",a=>listEntry(a.date,a.status,[editButton("habitCheckins",a,h.id),delButton("habitCheckins",a)]),{parentId:h.id,query:false}));
       return listEntry(h.title,h.archivedAt?"Archived from "+h.archivedAt:"Active",[editButton("habits",h),commandButton("Archive tomorrow",{type:"habit.archive",id:h.id,effectiveDate:shiftDay(DEMO_DAY,1)},"Archive from tomorrow? Past check-ins stay intact."),delButton("habits",h)],details);}));
     return stack(out);
   }
@@ -211,8 +213,8 @@ export async function mountPreview(doc,win,store){
         const box=el("fieldset");box.append(el("legend","",x.title),small("Proposed target: "+val({...m.get(x.target.metricId),value:x.target.quantity})));
         field(f("pick:"+x.id,"Include in plan","checkbox",false,{disabled:used}),box);field(f("title:"+x.id,"Action title","text",x.title,{required:true,maxLength:120,disabled:used}),box);field(f("due:"+x.id,"Due date","date",x.dueDate,{required:true,disabled:used}),box);form.append(box);
       }
-      form.addEventListener("input",()=>{dirty=true;});const b=el("button","primary","Save selected plan");b.type="submit";b.disabled=store.locked;form.append(b);
-      form.addEventListener("submit",async e=>{e.preventDefault();try{const v=values(form),actions=r.actions.filter(x=>v["pick:"+x.id]).map(x=>({id:store.id("action"),sourceActionId:x.id,title:v["title:"+x.id],dueDate:v["due:"+x.id]}));if(!actions.length)throw new Error("Select at least one action");if(confirm("Save selected plan? No tasks will be created yet."))await commit({type:"plan.save",id:store.id("plan"),analysisId:a.id,actions,confirm:true},true);}catch(err){notify(safeError(err),true);}});out.push(form);
+      form.addEventListener("input",()=>{markDirty(form);});const b=el("button","primary","Save selected plan");b.type="submit";b.disabled=store.locked;form.append(b);
+      form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;try{const v=values(form),actions=r.actions.filter(x=>v["pick:"+x.id]).map(x=>({id:store.id("action"),sourceActionId:x.id,title:v["title:"+x.id],dueDate:v["due:"+x.id]}));if(!actions.length)throw new Error("Select at least one action");if(confirm("Save selected plan? No tasks will be created yet."))await commit({type:"plan.save",id:store.id("plan"),analysisId:a.id,actions,confirm:true},true);}catch(err){notify(safeError(err),true);}});out.push(form);
     }
     return stack(out);
   }
@@ -225,20 +227,20 @@ export async function mountPreview(doc,win,store){
     field(f("prior","Prior plan (optional)","select",coachState.prior,{choices:[["","Do not include"],...c().plans.filter(p=>!p.legacyReadOnly).map(p=>[p.id,p.id])]}),fields);form.append(fields);
     const fs=el("fieldset");fs.append(el("legend","","Explicitly authorize categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",coachState.selected.includes(k)),fs);form.append(fs);
     const sync=()=>{const v=values(form);Object.assign(coachState,{question:v.question,focus:v.focus,kind:v.kind,from:v.from,through:v.through,prior:v.prior,selected:REPORT_CATEGORIES.filter(k=>v[k])});};
-    form.addEventListener("input",()=>{sync();invalidate();dirty=true;const old=page.querySelector("[data-consent-panel]");old?.remove();page.querySelector("[data-unsaved-analysis]")?.remove();notify("Request changed; a new preview and consent are required.");});
+    form.addEventListener("input",()=>{sync();invalidate();markDirty(form);const old=page.querySelector("[data-consent-panel]");old?.remove();page.querySelector("[data-unsaved-analysis]")?.remove();notify("Request changed; a new preview and consent are required.");});
     const b=el("button","primary","Preview exact AI request");b.type="submit";b.disabled=store.locked;form.append(b);
-    form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked)return;sync();invalidate();setBusy(true);try{request=buildCoachRequest(ws(),{requestId:store.id("request"),question:coachState.question,focus:coachState.focus,spec:specFor(coachState.kind,coachState.from,coachState.through),selected:coachState.selected,asOf:store.now(),previousPlanId:coachState.prior||null});preview=await controller.preview(request);dirty=false;render();notify("Preview ready. No model called.");}catch(err){invalidate();notify(safeError(err),true);}finally{setBusy(false);}});
+    form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;sync();invalidate();setBusy(true);try{request=buildCoachRequest(ws(),{requestId:store.id("request"),question:coachState.question,focus:coachState.focus,spec:specFor(coachState.kind,coachState.from,coachState.through),selected:coachState.selected,asOf:store.now(),previousPlanId:coachState.prior||null});preview=await controller.preview(request);dirty=false;dirtyForm=null;render();notify("Preview ready. No model called.");}catch(err){invalidate();notify(safeError(err),true);}finally{setBusy(false);}});
     const out=[section("AI Personal Coach",small("Mock transport only. Nothing is sent outside this preview. In the real product, one authorized call may consume Anna credits."),form)];
     if(preview&&request){
       const box=section("Exact authorized payload",small("SHA-256: "+preview.digest),el("pre","payload",preview.payload),small(preview.creditNotice),small("Demo: no credits used. No automatic retries."));
       box.dataset.consentPanel="true";const consent=el("div");const tick=field(f("consent","I authorize this one simulated analysis","checkbox",false),consent);box.append(consent);
-      const run=button("Run simulated analysis",async()=>{if(!tick.checked)return;setBusy(true);const p=preview,r=request;notify("Running isolated simulated analysis…");try{controller.consent(p.digest,true);receipt=await controller.run({digest:p.digest,request:r,workspace:ws()});preview=null;request=null;notify("Validated simulated result · not saved yet.");dirty=true;render();}catch(err){invalidate();render();notify(safeError(err),true);}finally{setBusy(false);}},"primary",true);
+      const run=button("Run simulated analysis",async()=>{if(!tick.checked)return;setBusy(true);const p=preview,r=request;notify("Running isolated simulated analysis…");try{controller.consent(p.digest,true);receipt=await controller.run({digest:p.digest,request:r,workspace:ws()});preview=null;request=null;notify("Validated simulated result · not saved yet.");dirty=true;dirtyForm=null;render();}catch(err){invalidate();render();notify(safeError(err),true);}finally{setBusy(false);}},"primary",true);
       tick.addEventListener("change",()=>{run.disabled=!tick.checked||busy;});box.append(run);out.push(box);
     }
     if(receipt){const unsaved=section("Unsaved analysis",analysisView(receipt,true));unsaved.dataset.unsavedAnalysis="true";out.push(unsaved);}
     const hist=section("Analysis history");
     for(const a of c().analyses){const state=historyState(ws(),a.id),details=el("details");details.append(el("summary","",a.legacyReadOnly?"Legacy analysis · read-only":a.request.question+" · "+(state.stale?"Historical snapshot":"Current snapshot")),a.legacyReadOnly?el("p","",a.legacyText):analysisView(a));
-      details.append(button("Delete analysis",async()=>{if(confirm("Delete this analysis? Linked plans must be deleted first. Historical copies may remain."))await commit({type:"analysis.delete",id:a.id,confirm:true,retainHistoricalCopies:true},true);},"danger",store.locked));hist.append(details);}
+      details.append(button("Delete analysis",async()=>{if(abandon()&&confirm("Delete this analysis? Linked plans must be deleted first. Historical copies may remain."))await commit({type:"analysis.delete",id:a.id,confirm:true,retainHistoricalCopies:true},true);},"danger",store.locked));hist.append(details);}
     if(!c().analyses.length)hist.append(empty("No saved analysis. Reopening history never invokes a model."));out.push(hist);
     const plans=section("Saved plans");
     for(const p of c().plans){const box=section(p.legacyReadOnly?"Legacy plan · read-only":p.id,small("Source categories: "+p.sourceCategories.join(", ")));

@@ -11,9 +11,13 @@ function count(v,label,min=0,max=Number.MAX_SAFE_INTEGER){assert(Number.isSafeIn
 export function canonicalJSON(v){
   if(v===null||typeof v==="boolean"||typeof v==="string")return JSON.stringify(v);
   if(typeof v==="number"){assert(Number.isFinite(v),"Non-finite JSON number");return JSON.stringify(v);}
-  if(Array.isArray(v)){assert(Object.keys(v).length===v.length,"Sparse or extended array");return "["+v.map(canonicalJSON).join(",")+"]";}
+  if(Array.isArray(v)){
+    const keys=Object.keys(v);assert(keys.length===v.length&&keys.every((k,i)=>k===String(i))&&Object.getOwnPropertySymbols(v).length===0,"Sparse or extended array");
+    return "["+v.map(canonicalJSON).join(",")+"]";
+  }
   object(v,"JSON object");
   assert(Object.getPrototypeOf(v)===Object.prototype||Object.getPrototypeOf(v)===null,"Non-JSON object");
+  assert(Reflect.ownKeys(v).every(k=>typeof k==="string"&&Object.prototype.propertyIsEnumerable.call(v,k)&&Object.hasOwn(Object.getOwnPropertyDescriptor(v,k),"value")),"Non-JSON property");
   return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+canonicalJSON(v[k])).join(",")+"}";
 }
 export function utf8Bytes(v){return new TextEncoder().encode(canonicalJSON(v)).length;}
