@@ -34,3 +34,6 @@ From anna-edition:
 - `node qa/v2-release-status.mjs --release` -> exit 2 (release remains blocked); integrity error -> exit 1.
 - `npm test` -> source regressions including dossier integrity/negative tests.
 The helper intentionally has no path to authorize a release, no network calls and no deployment command. It verifies reviewed local evidence identities, not remote platform truth. A fresh application change requires re-baselining the actual evidence; do not edit BLOCKED to PASS to bypass tests.
+
+## Windows checkout compatibility
+The nine pinned protected files are text. The checker accepts exact blob bytes or a uniform CRLF checkout only when byte-preserving CRLF-to-LF normalization yields the exact pinned Git blob hash. It rejects content changes, BOM and mixed newline forms. No production gate is changed. Windows local checkout evidence remains separate from Anna platform evidence.

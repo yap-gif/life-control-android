@@ -21,6 +21,16 @@ const FROZEN=Object.freeze({
 const SOURCE_COMMIT="90557b9de7149ff4b852b0367f38330d13310670";
 const LEDGER=new URL("../docs/v0.2.0/release-readiness-v2.json",import.meta.url);
 const sha1Blob=bytes=>createHash("sha1").update("blob "+bytes.length+"\0").update(bytes).digest("hex");
+// Only the nine explicitly allowlisted text files may use checkout CRLF.
+// Preserve every non-line-ending byte; do not decode/re-encode UTF-8, trim,
+// accept a BOM, or apply arbitrary Git clean filters. Reject mixed endings.
+function matchesProtectedText(bytes,expected){
+  if(!Buffer.isBuffer(bytes))return false;
+  if(sha1Blob(bytes)===expected)return true;
+  const text=bytes.toString("latin1");
+  if(!text.includes("\r\n")||/(^|[^\r])\n/.test(text)||/\r(?!\n)/.test(text))return false;
+  return sha1Blob(Buffer.from(text.replace(/\r\n/g,"\n"),"latin1"))===expected;
+}
 export function inspectReadiness(ledger,readFrozen){
   const errors=[];
   if(!ledger||typeof ledger!=="object"||ledger.schemaVersion!==1||ledger.targetVersion!=="0.2.0"||ledger.stage!=="P07-A"||ledger.candidateKind!=="isolated-preview-not-deployable"||ledger.applicationSourceCommit!==SOURCE_COMMIT||ledger.productionRelease!=="BLOCKED")errors.push("Unexpected readiness ledger identity or status.");
@@ -32,7 +42,7 @@ export function inspectReadiness(ledger,readFrozen){
   if(!Array.isArray(list)||list.length!==HARD_GATES.length||HARD_GATES.some(id=>list.filter(g=>g?.id===id&&g?.status==="BLOCKED"&&typeof g.required==="string"&&g.required.trim()).length!==1))errors.push("Hard gate ledger is missing, duplicated, or prematurely promoted.");
   for(const [path,expected] of Object.entries(FROZEN)){
     if(ledger?.frozenBaseline?.localBlobChecks?.[path]!==expected)errors.push("Protected blob ledger mismatch: "+path);
-    try{if(sha1Blob(readFrozen(path))!==expected)errors.push("Protected source changed: "+path);}
+    try{if(!matchesProtectedText(readFrozen(path),expected))errors.push("Protected source changed: "+path);}
     catch{errors.push("Cannot verify protected source: "+path);}
   }
   return {integrity:errors.length===0?"PASS":"FAIL",release:"BLOCKED",sourceCommit:SOURCE_COMMIT,blockedGates:[...HARD_GATES],errors};
