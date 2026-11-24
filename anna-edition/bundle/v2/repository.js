@@ -79,9 +79,12 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
     if(utf8Bytes(value)>maxBytes)throw error("CAPACITY","Workspace exceeds verified capacity; no records removed");
     return value;
   }
-  async function confirm(value){
+  async function confirm(value,previousEtag=null){
     const back=await readKey(storage,WORKSPACE_KEY,timeoutMs);
     if(!back.exists||!exact(back.value,value))throw error("READBACK_MISMATCH","Workspace write not confirmed");
+    // A changed revision must not retain the previous conditional-write token.
+    // Candidate safety policy only; real APS token semantics remain unverified.
+    if(previousEtag!==null&&back.etag===previousEtag)throw error("ETAG_UNCHANGED","Changed workspace retained the previous ETag");
     checkLegacy(value,await readKey(storage,LEGACY_KEY,timeoutMs));
     return {workspace:back.value,etag:back.etag};
   }
@@ -127,7 +130,7 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
         if(baseline.lastOperationId===operationId)throw error("DUPLICATE_OPERATION","Do not replay an already confirmed operation");
         mark();
         await deadline(storage.set({key:WORKSPACE_KEY,value:detachedJSON(value),if_match:etag}),timeoutMs);
-        return confirm(value);
+        return confirm(value,etag);
       });
     }
   };
