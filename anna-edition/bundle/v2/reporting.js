@@ -2,7 +2,6 @@ import {dayNumber,shiftDay,weekday,weekStart,monthStart,monthEnd,shiftMonth,repo
 
 export const REPORT_CATEGORIES=Object.freeze(["money","learning","tasks","journal","goals","habits"]);
 const COVERAGE="Recorded activity only; missing records do not establish inactivity.";
-const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 export function integer(n,label="quantity",min=0){
   if(!Number.isSafeInteger(n)||n<min)throw new Error("Invalid "+label);
   return n;
@@ -122,11 +121,13 @@ export function buildReport(workspace,spec,today,selected){
       for(const [k,v,n] of [["income",m.incomeMinor,m.incomeCount],["expense",m.expenseMinor,m.expenseCount],["net",m.netMinor,m.entryCount]])metric("money",k,v,"MYR_sen",r,n,side);
       metric("money","netIncomeRatio",m.netIncomeRatio,"percent",r,m.entryCount,side);
       for(const g of m.expenseCategories)metric("money","expenseCategory:"+encodeURIComponent(g.key),g.total,"MYR_sen",r,g.count,side);
+      for(const b of o.budgets){const k="budget:"+b.month+":"+encodeURIComponent(b.categoryKey);for(const [name,value] of [["limit",b.limitMinor],["spent",b.spentMinor],["remaining",b.remainingMinor]])metric("money",k+":"+name,value,"MYR_sen",b,null,side,"Monthly budget as of report cutoff; actuals are recorded expenses.");}
     }
     if(categories.includes("learning")){
       const l=o.learning=learning(c,r,workspace.settings);
       metric("learning","minutes",l.minutes,"minutes",r,l.sessions,side);metric("learning","sessions",l.sessions,"count",r,l.sessions,side);
       for(const g of l.topics)metric("learning","topic:"+encodeURIComponent(g.key),g.total,"minutes",r,g.count,side);
+      if(l.weeklyTargetMinutes!=null)metric("learning","weeklyTarget",l.weeklyTargetMinutes,"minutes",r,null,side,"Current configured weekly target, not historical target.");
     }
     if(categories.includes("tasks")){
       const t=o.tasks=tasks(c,r);
@@ -135,10 +136,17 @@ export function buildReport(workspace,spec,today,selected){
     if(categories.includes("journal")){
       const j=o.journal=journal(c,r);metric("journal","days",j.days,"count",r,j.entries,side);
     }
-    if(categories.includes("habits"))o.habits=habits(c,r);
+    if(categories.includes("habits")){o.habits=habits(c,r);for(const h of o.habits){const k="habit:"+encodeURIComponent(h.id);metric("habits",k+":completed",h.completed,"count",r,h.eligible,side);metric("habits",k+":eligible",h.eligible,"count",r,h.eligible,side);}}
   }
-  if(categories.includes("goals"))result.currentGoalSnapshot=goals(c,today);
-  for(const m of result.metrics.filter(m=>m.id.endsWith(".current")&&m.unit!=="percent")){
+  if(categories.includes("goals")){result.currentGoalSnapshot=goals(c,today);for(const g of result.currentGoalSnapshot){const k="goal:"+encodeURIComponent(g.id);for(const name of ["target","progress","remaining"])metric("goals",k+":"+name,g[name],g.unit,{from:today,through:today},null,"snapshot",g.coverage);}}
+  // Union of topic/category keys: absence is zero recorded activity, never fabricated actual activity.
+  for(const m of [...result.metrics]){
+    if(!/^(money\.expenseCategory:|learning\.topic:)/.test(m.id))continue;
+    const side=m.id.endsWith(".current")?"previous":"current";
+    const id=m.id.replace(/\.(current|previous)$/,"."+side);
+    if(!result.metrics.some(x=>x.id===id))metric(m.category,m.id.slice(m.category.length+1,m.id.lastIndexOf(".")),0,m.unit,periods[side],0,side);
+  }
+  for(const m of result.metrics.filter(m=>m.id.endsWith(".current")&&m.unit!=="percent"&&!m.id.includes(".budget:")&&!m.id.includes(".weeklyTarget."))){
     const p=result.metrics.find(v=>v.id===m.id.replace(/\.current$/,".previous"));
     if(!p)continue;
     const delta=add(m.value,-p.value);
