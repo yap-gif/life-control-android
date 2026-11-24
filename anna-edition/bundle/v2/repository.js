@@ -40,7 +40,8 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
     if(capability?.verified!==true||!Number.isSafeInteger(capability.maxBytes)||capability.maxBytes<1||typeof validateDomain!=="function")throw error("CAPABILITY_UNVERIFIED","Real storage capability and complete domain validation required");
   }
   function snapshot(w){
-    validateWorkspaceEnvelope(w);validateDomain(w);
+    validateWorkspaceEnvelope(w);
+    if(validateDomain(w)!==true)throw error("DOMAIN_INVALID","Complete synchronous domain validation must explicitly pass");
     const value=JSON.parse(canonicalJSON(w));
     if(utf8Bytes(value)>capability.maxBytes)throw error("CAPACITY","Workspace exceeds verified capacity; no records removed");
     return value;
@@ -78,12 +79,13 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
       return mutate(async mark=>{
         if(!validEtag(etag)||typeof operationId!=="string"||!operationId.trim())throw error("INVALID_WRITE","Expected etag and operation ID");
         validateWorkspaceEnvelope(previous);
+        const baseline=JSON.parse(canonicalJSON(previous));
         const value=snapshot(next);
-        if(value.revision!==previous.revision+1||value.lastOperationId!==operationId||!exact(value.migration,previous.migration))throw error("INVALID_WRITE","Revision or migration contract mismatch");
+        if(value.revision!==baseline.revision+1||value.lastOperationId!==operationId||!exact(value.migration,baseline.migration))throw error("INVALID_WRITE","Revision or migration contract mismatch");
         const remote=await readKey(storage,WORKSPACE_KEY,timeoutMs);
-        if(!remote.exists||remote.etag!==etag||!exact(remote.value,previous))throw error("CONFLICT","Workspace changed; reload required");
+        if(!remote.exists||remote.etag!==etag||!exact(remote.value,baseline))throw error("CONFLICT","Workspace changed; reload required");
         checkLegacy(value,await readKey(storage,LEGACY_KEY,timeoutMs));
-        if(previous.lastOperationId===operationId)throw error("DUPLICATE_OPERATION","Do not replay an already confirmed operation");
+        if(baseline.lastOperationId===operationId)throw error("DUPLICATE_OPERATION","Do not replay an already confirmed operation");
         mark();
         await deadline(storage.set({key:WORKSPACE_KEY,value,if_match:etag}),timeoutMs);
         return confirm(value);
