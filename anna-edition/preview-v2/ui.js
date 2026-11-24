@@ -172,15 +172,23 @@ export async function mountPreview(doc,win,store){
       out.push(section("Expense breakdown",m.expenseCategories.length?chart(m.expenseCategories.map(x=>[x.label,x.total]),fmt):empty("No recorded expenses."),table(["Category","Amount","Share"],m.expenseCategories.map(x=>[x.label,fmt(x.total),x.sharePercent.toFixed(1)+"%"])),
         el("h3","","Monthly budgets"),small("Budget actuals may cover earlier days in the same month; see each evidence range."),table(["Category","Coverage","Limit","Spent","Remaining"],r.current.budgets.map(b=>[b.category,dates(b),fmt(b.limitMinor),fmt(b.spentMinor),fmt(b.remainingMinor)]))));}
     if(r.current.learning)out.push(section("Learning topics",chart(r.current.learning.topics.map(x=>[x.label,x.total]),n=>n+" min"),table(["Topic","Minutes","Sessions"],r.current.learning.topics.map(x=>[x.label,x.total,x.count]))));
+    const summaryRows=[];
+    if(r.current.learning)summaryRows.push(["Learning",r.current.learning.minutes+" minutes · "+r.current.learning.sessions+" sessions"]);
+    if(r.current.tasks){const t=r.current.tasks;summaryRows.push(["Tasks due in range",t.dueCount+" · "+t.dueOpenNow+" currently open"],["Recorded task events",t.completionEvents+" completed · "+t.reopenEvents+" reopened"]);}
+    if(r.current.journal)summaryRows.push(["Journal",r.current.journal.days+" recorded days"]);
+    if(r.current.habits)summaryRows.push(["Habits",r.current.habits.reduce((n,h)=>n+h.completed,0)+" / "+r.current.habits.reduce((n,h)=>n+h.eligible,0)+" eligible days completed"]);
+    if(r.currentGoalSnapshot)summaryRows.push(["Goals · current snapshot",r.currentGoalSnapshot.length+" recorded goals"]);
+    if(summaryRows.length)out.push(section("Activity at a glance",small("Task due status and goal progress are current snapshots, not reconstructed history."),table(["Category","Recorded activity"],summaryRows)));
+    const disclosure=(title,...children)=>{const d=el("details","panel report-disclosure");d.append(el("summary","",title),...children);return d;};
     const trends=reportState.selected.filter(k=>k!=="goals");
     if(trends.length){
       const data=buildTrend(ws(),{kind:reportState.trend,count:6,today:DEMO_DAY,selected:trends});
       for(const k of trends){const metricKey={money:"money.net.current",learning:"learning.minutes.current",tasks:"tasks.completionEvents.current",journal:"journal.days.current"}[k];if(!metricKey)continue;
         const rows=data.map(p=>[p.range.from+(p.range.partial?" *":""),p.metrics.find(m=>m.id===metricKey)?.value??0]);
-        out.push(section(categoryNames[k]+" trend · "+reportState.trend,chart(rows,k==="money"?fmt:String),table(["Period start (*partial)","Recorded value"],rows.map(([d,n])=>[d,k==="money"?fmt(n):n]))));}
-      if(trends.includes("habits"))out.push(section("Habit trend",table(["Period","Completed scheduled days","Eligible days"],data.map(p=>[p.range.from+(p.range.partial?" *":""),p.values.habits.reduce((n,h)=>n+h.completed,0),p.values.habits.reduce((n,h)=>n+h.eligible,0)]))));
+        out.push(disclosure(categoryNames[k]+" trend · "+reportState.trend,chart(rows,k==="money"?fmt:String),table(["Period start (*partial)","Recorded value"],rows.map(([d,n])=>[d,k==="money"?fmt(n):n]))));}
+      if(trends.includes("habits"))out.push(disclosure("Habit trend",table(["Period","Completed scheduled days","Eligible days"],data.map(p=>[p.range.from+(p.range.partial?" *":""),p.values.habits.reduce((n,h)=>n+h.completed,0),p.values.habits.reduce((n,h)=>n+h.eligible,0)]))));
     }
-    const map=new Map(r.metrics.map(m=>[m.id,m]));out.push(section("Canonical evidence",table(["Metric","Value","Evidence range","Samples"],r.metrics.map(m=>[m.id,val(m),dates(m.range),m.sampleCount??"—"])),el("h3","","Period changes"),table(["Metric","Recorded change","Percent"],r.changes.map(x=>[x.metricId,val({...map.get(x.metricId),value:x.delta}),x.percentChange===null?"N/A":x.percentChange.toFixed(1)+"%"]))));
+    const map=new Map(r.metrics.map(m=>[m.id,m]));out.push(disclosure("Canonical evidence",small("Expand for the complete selected metrics and comparison data. Wide tables scroll inside their own container."),table(["Metric","Value","Evidence range","Samples"],r.metrics.map(m=>[m.id,val(m),dates(m.range),m.sampleCount??"—"])),el("h3","","Period changes"),table(["Metric","Recorded change","Percent"],r.changes.map(x=>[x.metricId,val({...map.get(x.metricId),value:x.delta}),x.percentChange===null?"N/A":x.percentChange.toFixed(1)+"%"]))));
     return stack(out);
   }
   function tasks(){return stack(section("Task management",small("Actual completion and reopen events are recorded separately from due dates."),addButton("tasks","Add task")),editorView(),

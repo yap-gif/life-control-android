@@ -21,6 +21,17 @@ try{
         await page.locator('nav a[aria-current="page"][data-route="'+id+'"]').waitFor();
         const dimensions=await page.evaluate(()=>({viewport:innerWidth,scroll:document.documentElement.scrollWidth,body:document.body.scrollWidth,unlabelled:[...document.querySelectorAll("input,select,textarea")].filter(e=>!e.labels?.length&&!e.getAttribute("aria-label")).length,renderFailed:document.querySelector("#page").textContent.includes("Unable to render")}));
         const row={width,route:id,elapsedMs:Math.round(performance.now()-t),...dimensions};
+        if(id==="reports"){
+          const height=await page.evaluate(()=>document.documentElement.scrollHeight);row.defaultHeight=height;
+          if(height>4500)failures.push({width,route:id,defaultHeight:height,reason:"Default report exceeds compact-height budget for fixed fixture"});
+          const details=page.locator("details.report-disclosure").filter({hasText:"Canonical evidence"});assert.equal(await details.count(),1);assert.equal(await details.evaluate(e=>e.open),false);
+          await details.locator("summary").click();assert.equal(await details.evaluate(e=>e.open),true);
+          assert.ok(await details.locator("table").count()>=2);assert.ok(await details.locator("td").count()>30);
+          const expanded=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,body:document.body.scrollWidth}));
+          if(expanded.scroll>width+1||expanded.body>width+1)failures.push({width,route:id,expanded});
+          await details.locator("summary").click();assert.equal(await details.evaluate(e=>e.open),false);
+          row.disclosureVerified=true;
+        }
         results.push(row);
         if(dimensions.scroll>width+1||dimensions.body>width+1||dimensions.unlabelled||dimensions.renderFailed)failures.push(row);
         await page.screenshot({path:out+"/"+width+"-"+id+".png",fullPage:true});

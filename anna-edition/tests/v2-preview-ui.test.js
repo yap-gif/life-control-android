@@ -36,6 +36,7 @@ test("overview and reports use exact fixture and accessible numerical tables",as
   const x=await setup();try{assert.match(x.d.getElementById("page").textContent,/725/);
     await x.navigate("reports");assert.match(x.d.getElementById("page").textContent,/225/);assert.match(x.d.getElementById("page").textContent,/Partial period/);
     assert.ok(x.d.querySelectorAll("table").length>=3);assert.ok(x.d.querySelector(".chart[aria-hidden=true]"));assert.ok(x.d.querySelector("th[scope=col]"));
+    const detail=[...x.d.querySelectorAll("details.report-disclosure")].find(d=>d.querySelector("summary")?.textContent==="Canonical evidence");assert.ok(detail);assert.equal(detail.open,false);assert.ok(detail.querySelectorAll("table").length>=2);assert.ok(detail.querySelectorAll("td").length>30);assert.match(x.d.getElementById("page").textContent,/Activity at a glance/);
   }finally{x.dom.window.close();}
 });
 test("task add, edit, complete and reopen through real domain and simulated readback",async()=>{
