@@ -1,5 +1,6 @@
 import {validateWorkspaceEnvelope,canonicalJSON} from "./workspace.js";
 import {dayNumber,weekday} from "./calendar.js";
+import {validateAiCollections} from "./ai-schema.js";
 
 const own=(o,k)=>Object.hasOwn(o,k);
 const fail=(message)=>{throw new Error(message);};
@@ -60,7 +61,7 @@ function legacyHistory(r,type){
   if(type==="analysis")check(r.status==="legacy-read-only"&&canonicalJSON(scope)===canonicalJSON(r.selectedCategories),"Invalid legacy analysis");
   else check(r.analysisId===null&&r.savedAt===null&&Array.isArray(r.actions)&&r.actions.length===0,"Invalid legacy plan");
 }
-/** Exhaustive for P03: structured AI histories/actions deliberately rejected until P04 defines and validates them. */
+/** Exhaustive workspace validator including validated P04 AI history and action links. */
 export function validateDomain(w){
   validateWorkspaceEnvelope(w);
   shape(w,["schemaVersion","revision","lastOperationId","migration","settings","collections"],"workspace");
@@ -83,7 +84,7 @@ export function validateDomain(w){
     optionalTimestamp(t.createdAt);optionalTimestamp(t.updatedAt);
     if(t.createdAt!==null)check(t.updatedAt!==null&&t.updatedAt>=t.createdAt,"Invalid task chronology");
     else check(m.legacyEtag!==null,"Unknown creation time only allowed after migration");
-    check(t.sourceActionId===null,"AI task links reserved for P04");
+    nullableString(t.sourceActionId,"source action ID",128);
   }
   const tasks=ids(c.tasks),last=new Map();
   // Append order is authoritative for equal timestamps; reject reversed time and impossible transitions.
@@ -128,10 +129,10 @@ export function validateDomain(w){
     const h=habits.get(r.habitId);check(h,"Orphan habit checkin");date(r.date);one(r.status,["completed","skipped"],"checkin status");
     check(r.date>=h.startDate&&(h.archivedAt===null||r.date<h.archivedAt)&&h.scheduledWeekdays.includes(weekday(r.date)),"Checkin outside active schedule");
   }
-  for(const a of c.analyses)legacyHistory(a,"analysis");
-  for(const p of c.plans)legacyHistory(p,"plan");
-  check(c.planActions.length===0,"Structured AI actions reserved for P04");
-  if(c.analyses.length||c.plans.length)check(m.legacyEtag!==null,"Legacy history requires migration");
+  for(const a of c.analyses)if(a.legacyReadOnly===true)legacyHistory(a,"analysis");
+  for(const p of c.plans)if(p.legacyReadOnly===true)legacyHistory(p,"plan");
+  if([...c.analyses,...c.plans].some(x=>x.legacyReadOnly===true))check(m.legacyEtag!==null,"Legacy history requires migration");
+  validateAiCollections(w);
   return true;
 }
 
@@ -196,10 +197,13 @@ export function prepareCommand(previous,command,{expectedRevision,operationId,no
       const t=find(c,"tasks",cmd.id);one(cmd.status,["open","done"],"task status");
       check(t.status!==cmd.status,"Task already in requested state");check(t.updatedAt===null||now>=t.updatedAt,"Task clock moved backwards");
       insert(c,"taskEvents",{id:cmd.eventId,taskId:t.id,kind:cmd.status==="done"?"completed":"reopened",occurredAt:now,localDate:today,timezone:w.settings.timezone});
-      t.status=cmd.status;t.updatedAt=now;break;
+      t.status=cmd.status;t.updatedAt=now;
+      if(t.sourceActionId!==null)find(c,"planActions",t.sourceActionId).status=cmd.status==="done"?"completed":"accepted";
+      break;
     }
     case "task.delete":{
       shape(cmd,["type","id","confirm","retainHistoricalCopies"],"task delete");deletionConsent(w,cmd);
+      check(find(c,"tasks",cmd.id).sourceActionId===null,"Detach linked plan explicitly before deleting task");
       erase(c,"tasks",cmd.id);c.taskEvents=c.taskEvents.filter(r=>r.taskId!==cmd.id);break;
     }
     case "learning.target":{
