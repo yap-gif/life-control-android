@@ -13,3 +13,6 @@ Baseline 9b4de493c47f26e790ff2a035a939e2be1ae91a1; Phase 05 CI 45369006768 succe
 ## P06-R1 evidence review (2026-11-24)
 - Browser run 45370261597 on e78f52d0aad863a76c636371805172904c33c454: success; 27/27 route checks, zero reported failures, zero unlabelled inputs, no horizontal overflow. Artifact 14908038831 SHA-256 4a99a861050d1da69a898bf608a28621b2a1477a79af01db218ee5a55e11b113; downloaded ZIP digest verified, CRC checked, 27 PNGs decoded and JSON examined.
 - Visual contact-sheet review and full 360px reports image found a non-blocking usability issue: default Reports 10,067px tall and narrow columns split amounts/dates. Correction: disclosure-based trends and canonical evidence, activity overview, local horizontal table scrolling. Recheck source and browser CI on the new commit; no claim of new pass before actual run.
+
+## P06-R1 final acceptance
+Reviewed application source 90557b9de7149ff4b852b0367f38330d13310670: source run 45370877996, 168/168; Chromium run 45370877903, 27/27, 3/3 disclosures, zero failures. Artifact 14908708440 verified SHA-256 20f959c94197283b5dbac3aef173cdca10d6e907b59702a440062589a98509fe; CRC, all PNGs and JSON checked. Default report heights 3301/3046/2866 px. P06 isolated engineering PASS; all actual APS/LLM/host/release gates remain BLOCKED. P07-A starts without deployment.

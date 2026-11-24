@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "0.2.0",
+  "stage": "P07-A",
+  "candidateKind": "isolated-preview-not-deployable",
+  "applicationSourceCommit": "90557b9de7149ff4b852b0367f38330d13310670",
+  "branch": "feature/life-control-v020-architecture-20261124",
+  "protectedApp": {
+    "id": 908,
+    "version": "0.1.2",
+    "versionId": 2720
+  },
+  "sourceQA": {
+    "runId": 45370877996,
+    "commit": "90557b9de7149ff4b852b0367f38330d13310670",
+    "passed": 168,
+    "failed": 0,
+    "performance": {
+      "transactions": 1500,
+      "learning": 250,
+      "bytes": 178516,
+      "elapsedMs": 117
+    }
+  },
+  "browserQA": {
+    "runId": 45370877903,
+    "commit": "90557b9de7149ff4b852b0367f38330d13310670",
+    "routeChecks": 27,
+    "failed": 0,
+    "disclosuresPassed": 3,
+    "artifactId": 14908708440,
+    "artifactBytes": 3050153,
+    "sha256": "20f959c94197283b5dbac3aef173cdca10d6e907b59702a440062589a98509fe",
+    "reportsDefaultHeightPx": {
+      "360": 3301,
+      "768": 3046,
+      "1040": 2866
+    },
+    "artifactIntegrity": "downloaded CRC SHA-256 and PNG decoding verified; JSON checked"
+  },
+  "frozenBaseline": {
+    "commit": "9b4de493c47f26e790ff2a035a939e2be1ae91a1",
+    "objectsCompared": 128,
+    "changed": 0,
+    "localBlobChecks": {
+      "app.json": "dd13b1feb101183430d3bc8188628e3a58a51675",
+      "manifest.json": "9cc9fc74ee83bdc6307a3d8736a6b15a3ef3c1d6",
+      "package.json": "6f728928020a196b2a2d20db178a237e59bfd751",
+      "PRIVACY.md": "556170727a7d031ff66bda66f9eb917f058bf84d",
+      "release-preflight.mjs": "949e767b7d9f70c90632f4d3e213e36e51daabe9",
+      "bundle/index.html": "6bcc8c89a9ce2a00ad6ae2eebfd492788767a592",
+      "bundle/app.js": "65bd790ad4f5920ead87624be31a0c724e1e2763",
+      "bundle/style.css": "433863a5601a18f188c1ddf5f1a3904190a21ea2",
+      "store-screenshots/SOURCE-VERSION.txt": "d917d3e26adc9854b4569871e20111c38de2606f"
+    }
+  },
+  "hardGates": [
+    {
+      "id": "APS-SCOPE",
+      "status": "BLOCKED",
+      "required": "Authenticated isolated test App ID/scope distinct from App 908 and explicit owner authorization; no live user data."
+    },
+    {
+      "id": "APS-CONTRACT",
+      "status": "BLOCKED",
+      "required": "Real SDK absent-key/error/etag/CAS semantics and stale-write rejection with readback; no guessed create-only sentinel."
+    },
+    {
+      "id": "APS-CAPACITY",
+      "status": "BLOCKED",
+      "required": "Measured supported payload and quota limits, 1000+ records and realistic mixed history; redesign if insufficient."
+    },
+    {
+      "id": "APS-EXCLUSIVE-MIGRATION",
+      "status": "BLOCKED",
+      "required": "Verified exclusive migration and legacy-divergence behavior across independent keys; synthetic fresh and upgraded scopes."
+    },
+    {
+      "id": "HOST-ADAPTER",
+      "status": "BLOCKED",
+      "required": "Actual Anna v2 entry and verified SDK storage/transport adapter, not preview-v2 or its Map/mock transport."
+    },
+    {
+      "id": "LLM-CONSENT",
+      "status": "BLOCKED",
+      "required": "Real one-call consent, exact payload, bounded credits, scope canaries, output validation and no auto retry."
+    },
+    {
+      "id": "CLOUD-AGENT",
+      "status": "BLOCKED",
+      "required": "Actual fresh/upgrade/reopen, complete workflows, persisted reports/plans, later events and no boot-time model calls."
+    },
+    {
+      "id": "ERASURE",
+      "status": "BLOCKED",
+      "required": "Actual own-key conditional deletion, per-key absence verification, partial failure recovery and no legacy resurrection."
+    },
+    {
+      "id": "LISTING-MEDIA",
+      "status": "BLOCKED",
+      "required": "Genuine screenshots/cover and revised privacy/Listing matching real candidate; stable public URLs and authenticated Listing readback."
+    },
+    {
+      "id": "OWNER-RELEASE",
+      "status": "BLOCKED",
+      "required": "Exact candidate commit/app/version and separate explicit owner approval; no push/cut/submit/release in this phase."
+    }
+  ],
+  "productionRelease": "BLOCKED"
+}
