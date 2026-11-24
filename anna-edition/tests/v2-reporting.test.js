@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {dayNumber,weekday,weekStart,monthEnd,reportPeriods} from "../bundle/v2/calendar.js";
-import {buildReport} from "../bundle/v2/reporting.js";
+import {buildReport,buildTrend} from "../bundle/v2/reporting.js";
 import {emptyWorkspace} from "../bundle/v2/workspace.js";
 const today="2026-11-24";
 const tx=(id,date,kind,amountMinor,category)=>({id,date,kind,amountMinor,category,note:null});
@@ -94,4 +94,16 @@ test("category disappearance is represented by recorded zero and absolute change
   const w=fixture();w.collections.transactions=[tx("x","2026-10-10","expense",500,"OldCategory")];
   const r=report(w);assert.equal(r.metrics.find(x=>x.id==="money.expenseCategory:oldcategory.current").value,0);
   assert.equal(r.changes.find(x=>x.metricId==="money.expenseCategory:oldcategory.current").delta,-500);
+});
+
+test("chart-ready trend uses the same totals, chronological ranges and partial coverage",()=>{
+  const w=fixture(),t=buildTrend(w,{kind:"week",count:4,today,selected:["money"]});
+  assert.deepEqual(t.map(p=>p.range.from),["2026-11-02","2026-11-09","2026-11-16","2026-11-23"]);
+  assert.deepEqual(t.map(p=>p.values.money.netMinor),[50000,35000,-12500,0]);
+  assert.deepEqual(t.map(p=>p.range.partial),[false,false,false,true]);
+  assert.ok(t.every(p=>!p.metrics.some(m=>m.id.includes(".budget:"))));
+  assert.ok(t.every(p=>!("budgets" in p.values)));
+  assert.equal(buildTrend(w,{kind:"month",count:2,today,selected:["money"]})[1].values.money.netMinor,72500);
+  assert.throws(()=>buildTrend(w,{kind:"week",count:25,today,selected:["money"]}));
+  assert.throws(()=>buildTrend(w,{kind:"week",count:2,today,selected:["goals"]}));
 });
