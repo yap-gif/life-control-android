@@ -12,8 +12,14 @@ export function canonicalJSON(v){
   if(v===null||typeof v==="boolean"||typeof v==="string")return JSON.stringify(v);
   if(typeof v==="number"){assert(Number.isFinite(v),"Non-finite JSON number");return JSON.stringify(v);}
   if(Array.isArray(v)){
-    const keys=Object.keys(v);assert(keys.length===v.length&&keys.every((k,i)=>k===String(i))&&Object.getOwnPropertySymbols(v).length===0,"Sparse or extended array");
-    return "["+v.map(canonicalJSON).join(",")+"]";
+    const keys=Object.keys(v);
+    assert(keys.length===v.length&&keys.every((k,i)=>k===String(i))&&Reflect.ownKeys(v).length===v.length+1,"Sparse or extended array");
+    const parts=keys.map(k=>{
+      const d=Object.getOwnPropertyDescriptor(v,k);
+      assert(d&&d.enumerable&&Object.hasOwn(d,"value"),"Non-JSON array property");
+      return canonicalJSON(d.value);
+    });
+    return "["+parts.join(",")+"]";
   }
   object(v,"JSON object");
   assert(Object.getPrototypeOf(v)===Object.prototype||Object.getPrototypeOf(v)===null,"Non-JSON object");

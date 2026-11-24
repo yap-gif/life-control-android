@@ -7,6 +7,7 @@ function deadline(p,ms){
   let timer;return Promise.race([Promise.resolve(p),new Promise((_,reject)=>{timer=setTimeout(()=>reject(error("TIMEOUT","Storage outcome unconfirmed")),ms);})]).finally(()=>clearTimeout(timer));
 }
 function exact(a,b){return canonicalJSON(a)===canonicalJSON(b);}
+function detachedJSON(value){return JSON.parse(canonicalJSON(value));}
 function validEtag(e){return typeof e==="string"&&e.trim().length>0;}
 const own=(r,k)=>Object.hasOwn(r,k);
 const field=(r,k)=>own(r,k)?r[k]:undefined;
@@ -44,7 +45,9 @@ export async function readKey(storage,key,timeoutMs=12000){
     return {exists:false,etag:null};
   }
   if(!own(r,"value")||r.value==null||!own(r,"etag")||!validEtag(r.etag))throw ambiguous();
-  return {exists:true,etag:r.etag,value:r.value};
+  // Capture independent JSON evidence; never retain an adapter-owned object.
+  let value;try{value=detachedJSON(r.value);}catch{throw ambiguous();}
+  return {exists:true,etag:r.etag,value};
 }
 function checkLegacy(w,legacy){
   if((legacy.exists?legacy.etag:null)!==w.migration.legacyEtag)throw error("LEGACY_DIVERGED","Legacy workspace changed; reconciliation required");
@@ -69,7 +72,7 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
     if(!verified||!Number.isSafeInteger(maxBytes)||maxBytes<1||typeof validateDomain!=="function")throw error("CAPABILITY_UNVERIFIED","Real storage capability and complete domain validation required");
   }
   function snapshot(w){
-    const value=JSON.parse(canonicalJSON(w));
+    const value=detachedJSON(w);
     validateWorkspaceEnvelope(value);
     const before=canonicalJSON(value);
     if(validateDomain(value)!==true||canonicalJSON(value)!==before)throw error("DOMAIN_INVALID","Complete synchronous non-mutating domain validation must explicitly pass");
@@ -108,7 +111,7 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
         const inspected=await inspectWorkspace(storage,{timezone:value.settings.timezone,migrationId:value.migration.id,timeoutMs});
         if(inspected.status!=="candidate-only"||!exact(inspected.workspace,value))throw error("CONFLICT","Migration candidate changed");
         mark();
-        await deadline(atomicCreate({key:WORKSPACE_KEY,value}),timeoutMs);
+        await deadline(atomicCreate({key:WORKSPACE_KEY,value:detachedJSON(value)}),timeoutMs);
         return confirm(value);
       });
     },
@@ -123,7 +126,7 @@ export function createWorkspaceRepository({storage,atomicCreate=null,capability=
         checkLegacy(value,await readKey(storage,LEGACY_KEY,timeoutMs));
         if(baseline.lastOperationId===operationId)throw error("DUPLICATE_OPERATION","Do not replay an already confirmed operation");
         mark();
-        await deadline(storage.set({key:WORKSPACE_KEY,value,if_match:etag}),timeoutMs);
+        await deadline(storage.set({key:WORKSPACE_KEY,value:detachedJSON(value),if_match:etag}),timeoutMs);
         return confirm(value);
       });
     }
