@@ -64,3 +64,7 @@ nav a:hover:not([aria-current=page]){background:var(--panel)}
 /* Phase 08-C2: applied report scope first, compact reversible view filters. */
 .report-coverage>.muted{margin-bottom:4px}.report-coverage>.muted:last-child{margin-bottom:0}.filter-summary{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin:0 0 10px;min-width:0}.filter-summary>.muted{margin:0}.filter-tags{display:flex;flex-wrap:wrap;gap:5px;width:100%;min-width:0}.filter-tags .tag{max-width:100%;padding:3px 8px;overflow-wrap:anywhere}.filter-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.filter-actions button{flex:1 1 auto}
 @media(max-width:420px){.filter-actions{width:100%}.filter-summary{align-items:flex-start}}
+
+/* Phase 08-D1: guided, explicitly scoped AI request flow. */
+.coach-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 16px}.coach-step{min-width:0;padding:9px;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:.85rem;overflow-wrap:anywhere}.coach-step[aria-current=step]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:650}.coach-prompts .actions{margin:5px 0 0}.coach-prompts button{font-size:.85rem}.question-count{text-align:right}.coach-scope-note{margin:0}.coach-request-summary{display:grid;gap:8px;margin:12px 0}.coach-request-summary .metric{padding:10px}.coach-request-summary .metric strong{font-size:1.2rem}
+@media(max-width:420px){.coach-step{font-size:.75rem;padding:6px}.coach-prompts .actions button{flex:1 1 44%}}

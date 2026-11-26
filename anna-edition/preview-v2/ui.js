@@ -325,23 +325,59 @@ export async function mountPreview(doc,win,store){
   }
   function insights(){
     const form=el("form","stack compact-config"),fields=el("div","fields");
-    field(f("question","Your question","textarea",coachState.question,{required:true,maxLength:1000,wide:true}),fields);
+    const question=field(f("question","Your question","textarea",coachState.question,{required:true,maxLength:1000,wide:true}),fields);
+    question.placeholder="What would you like to understand about your recorded activity?";
+    const count=small("");count.classList.add("question-count");count.id="coach-question-count";
+    question.setAttribute("aria-describedby",count.id);question.closest("label").append(count);
+    const prompts=append(el("div","coach-prompts"),small("Question starters · fill the question only; no data authorization"),
+      append(el("div","actions"),[
+        ["Review spending","What patterns appear in my recorded spending, and what could I review next?"],
+        ["Review learning","How does my recorded learning compare with my target, and what could I improve?"],
+        ["Review tasks","What do my recorded task events suggest about my next priorities?"],
+        ["Review goals","What does my recorded goal progress suggest I should review next?"]
+      ].map(([label,value])=>button(label,()=>{
+        if((question.value.trim()||receipt)&&!confirm("Replace the current question and discard its preview or unsaved result?"))return;
+        question.value=value;question.dispatchEvent(new win.Event("input",{bubbles:true}));question.focus();
+      },"",store.locked))));
+    question.closest("label").after(prompts);prompts.classList.add("wide");
     field(f("focus","Focus","select",coachState.focus,{choices:choices("custom","comprehensive","financial","learning","task","goal/habit")}),fields);
     const kind=field(f("kind","Date range","select",coachState.kind,{choices:choices("7days","30days","90days","week","month","custom")}),fields);
     const from=field(f("from","Custom start","date",coachState.from),fields),through=field(f("through","Custom end","date",coachState.through),fields);
     customDates(kind,from,through);
     field(f("prior","Prior plan (optional)","select",coachState.prior,{choices:[["","Do not include"],...c().plans.filter(p=>!p.legacyReadOnly).map(p=>[p.id,p.id])]}),fields);form.append(fields);
     const fs=el("fieldset","category-grid");fs.append(el("legend","","Explicitly authorize categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",coachState.selected.includes(k)),fs);form.append(fs);
+    const scopeNote=small("");scopeNote.classList.add("coach-scope-note");scopeNote.setAttribute("role","status");form.append(scopeNote);
     const sync=()=>{const v=values(form);Object.assign(coachState,{question:v.question,focus:v.focus,kind:v.kind,from:v.from,through:v.through,prior:v.prior,selected:REPORT_CATEGORIES.filter(k=>v[k])});};
-    form.addEventListener("input",()=>{sync();invalidate();markDirty(form);const old=page.querySelector("[data-consent-panel]");old?.remove();page.querySelector("[data-unsaved-analysis]")?.remove();notify("Request changed; a new preview and consent are required.");});
+    const step=append(el("div","coach-steps"),["1. Configure","2. Review & authorize","3. Review result"].map(label=>el("span","coach-step",label)));
+    step.setAttribute("aria-label","Analysis progress");
+    function updateGuide(){
+      count.textContent=question.value.length+" / 1000 characters";
+      const n=coachState.selected.length;scopeNote.textContent=n?n+" of "+REPORT_CATEGORIES.length+" categories selected for preview. Selection is not permission to run.":"No categories selected. Choose only the records needed for this question.";
+      const active=receipt?2:preview&&request?1:0;
+      [...step.children].forEach((node,i)=>{if(i===active)node.setAttribute("aria-current","step");else node.removeAttribute("aria-current");});
+    }
+    updateGuide();
+    const changed=()=>{sync();invalidate();markDirty(form);page.querySelector("[data-consent-panel]")?.remove();page.querySelector("[data-unsaved-analysis]")?.remove();updateGuide();notify("Request changed; a new preview and consent are required.");};
+    form.addEventListener("input",changed);form.addEventListener("change",changed);
     const b=el("button","primary","Preview exact AI request");b.type="submit";b.disabled=store.locked;form.append(b);
     form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;sync();invalidate();setBusy(true);try{request=buildCoachRequest(ws(),{requestId:store.id("request"),question:coachState.question,focus:coachState.focus,spec:specFor(coachState.kind,coachState.from,coachState.through),selected:coachState.selected,asOf:store.now(),previousPlanId:coachState.prior||null});preview=await controller.preview(request);dirty=false;dirtyForm=null;render();notify("Preview ready. No model called.");}catch(err){invalidate();notify(safeError(err),true);}finally{setBusy(false);}});
-    const out=[section("AI Personal Coach",small("Mock transport only. Nothing is sent outside this preview. In the real product, one authorized call may consume Anna credits."),form)];
+    const out=[section("AI Personal Coach",small("Mock transport only. Nothing is sent outside this preview. In the real product, one authorized call may consume Anna credits."),step,form)];
     if(preview&&request){
-      const box=section("Exact authorized payload",small("SHA-256: "+preview.digest),el("pre","payload",preview.payload),small(preview.creditNotice),small("Demo: no credits used. No automatic retries."));
+      const box=section("Exact authorized payload",
+        small("Review the exact request before authorizing a single simulated analysis."),
+        append(el("div","coach-request-summary"),
+          metrics([["Categories",request.authorizedCategories.length],["Canonical metrics",request.metrics.length],["Raw sample rows",request.evidence.length],["Payload bytes",new TextEncoder().encode(preview.payload).length]]),
+          small("Requested range: "+dates(request.period)+" · Workspace revision "+request.snapshotRevision),
+          small("Authorized categories: "+request.authorizedCategories.map(k=>categoryNames[k]).join(", ")),
+          small(request.optionalPreviousPlan?"Prior plan included: "+request.optionalPreviousPlan.id:"Prior plan not included"),
+          table(["Category","Available raw rows","Included","Omitted"],request.authorizedCategories.map(k=>[categoryNames[k],request.coverage.raw[k].available,request.coverage.raw[k].included,request.coverage.raw[k].omitted])),
+          small(request.coverage.note)),
+        small("SHA-256: "+preview.digest),el("pre","payload",preview.payload),small(preview.creditNotice),small("Demo: no credits used. No automatic retries."));
       box.dataset.consentPanel="true";const consent=el("div");const tick=field(f("consent","I authorize this one simulated analysis","checkbox",false),consent);box.append(consent);
       const run=button("Run simulated analysis",async()=>{if(!tick.checked)return;setBusy(true);const p=preview,r=request;notify("Running isolated simulated analysis…");try{controller.consent(p.digest,true);receipt=await controller.run({digest:p.digest,request:r,workspace:ws()});preview=null;request=null;notify("Validated simulated result · not saved yet.");dirty=true;dirtyForm=null;render();}catch(err){invalidate();render();notify(safeError(err),true);}finally{setBusy(false);}},"primary",true);
-      tick.addEventListener("change",()=>{run.disabled=!tick.checked||busy;});box.append(run);out.push(box);
+      tick.addEventListener("change",()=>{run.disabled=!tick.checked||busy;});
+      const cancel=button("Discard request preview",()=>{invalidate();render();notify("Preview discarded. No model called.");page.querySelector('[name="question"]')?.focus();});
+      box.append(append(el("div","actions"),run,cancel));out.push(box);
     }
     if(receipt){const unsaved=section("Unsaved analysis",analysisView(receipt,true));unsaved.dataset.unsavedAnalysis="true";out.push(unsaved);}
     const hist=section("Analysis history");

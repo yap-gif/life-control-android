@@ -1,0 +1,6 @@
+# LC-P08-D1 — Guided AI Coach request and consent interaction
+Date 2026-11-26 Asia/Kuching. Baseline bef5223c92ab406809e445fed400ceb5ca1841c5. C2 Windows: targeted 5/5, UI 28/28, reporting 13/13, full 249/249, 0 failures/skips/cancellations, frozen integrity PASS, release exit 2 and clean HEAD. Source 45829421094 and browser 45829421108 succeeded.
+ 
+Candidate: three-stage progress indication, character count, explicit question starters that do not select categories or change focus, inline selection count and review summary derived from the exact validated request (scope, period, revision, bytes, raw sample counts, prior plan). Original exact payload and SHA-256 remain visible. Explicit discard invalidates controller and restores question focus. Both input and change events invalidate preview; no changes to consent controller, model schema, transport or persistence. Existing unsaved-result handling on normal form edits remains; question replacement via starter asks confirmation. No actual model calls. Four UI tests expected 253 full, 32 UI; pending execution. Further result/plan UX, manual mobile and visual checks remain pending.
+ 
+Scope: preview UI/CSS, preview tests, note only. Anna mail deferred; zero authorized credits, no real APS, Anna AI, draft or release operations. App 908 / v0.1.2 / 2720 frozen, all ten production gates BLOCKED.

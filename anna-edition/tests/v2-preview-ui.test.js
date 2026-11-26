@@ -329,3 +329,57 @@ test("08C2-05 clearing one money list retains other list filters and invalid ran
     assert.equal(x.ui.workspace.revision,rev);
   }finally{x.dom.window.close();}
 });
+
+test("08D1-01 question starters never authorize categories or generate requests automatically",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;
+    const f=x.d.querySelector("#page form"),q=f.querySelector('[name="question"]');
+    assert.equal(x.d.querySelector('.coach-step[aria-current="step"]').textContent,"1. Configure");
+    x.click("Review spending");
+    assert.match(q.value,/recorded spending/);assert.equal(f.querySelectorAll(".category-grid input:checked").length,0);
+    assert.equal(f.querySelector('[name="focus"]').value,"custom");
+    assert.match(x.d.querySelector(".question-count").textContent,new RegExp(q.value.length+" / 1000"));
+    assert.equal(x.d.querySelector("[data-consent-panel]"),null);assert.equal(x.ui.workspace.revision,rev);
+    x.dom.window.confirm=()=>false;x.click("Review learning");assert.match(q.value,/recorded spending/);
+  }finally{x.dom.window.close();}
+});
+test("08D1-02 request review shows exact scoped evidence without authorization or save",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision,f=x.d.querySelector("#page form");
+    x.set(f,"question","Review money");x.set(f,"money",true);x.submit(f);
+    await x.wait(()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    const box=x.d.querySelector("[data-consent-panel]"),payload=box.querySelector("pre").textContent,req=JSON.parse(JSON.parse(payload).messages[1].content);
+    assert.deepEqual(req.authorizedCategories,["money"]);
+    assert.match(box.textContent,/Authorized categories: Money/);assert.match(box.textContent,/Prior plan not included/);
+    assert.match(box.textContent,new RegExp(String(new TextEncoder().encode(payload).length)));
+    assert.deepEqual([...box.querySelectorAll(".coach-request-summary tbody tr")].map(tr=>[...tr.querySelectorAll("td")].map(td=>td.textContent)),[["Money",String(req.coverage.raw.money.available),String(req.coverage.raw.money.included),String(req.coverage.raw.money.omitted)]]);
+    assert.equal(x.d.querySelector('.coach-step[aria-current="step"]').textContent,"2. Review & authorize");
+    assert.equal(box.querySelector('[name="consent"]').checked,false);
+    assert.equal([...box.querySelectorAll("button")].find(b=>b.textContent==="Run simulated analysis").disabled,true);
+    assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08D1-03 discarding preview revokes pending consent and requires fresh unchecked authorization",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;let f=x.d.querySelector("#page form");
+    x.set(f,"question","Review money");x.set(f,"money",true);x.submit(f);
+    const ready=()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false";
+    await x.wait(ready);const old=x.d.querySelector(".payload").textContent,tick=x.d.querySelector('[name="consent"]');
+    tick.checked=true;tick.dispatchEvent(new x.dom.window.Event("change",{bubbles:true}));x.click("Discard request preview");
+    assert.equal(x.d.querySelector("[data-consent-panel]"),null);assert.equal(x.d.querySelector('.coach-step[aria-current="step"]').textContent,"1. Configure");
+    f=x.d.querySelector("#page form");assert.equal(f.querySelector('[name="question"]').value,"Review money");assert.equal(x.d.activeElement,f.querySelector('[name="question"]'));
+    x.submit(f);await x.wait(ready);assert.notEqual(x.d.querySelector(".payload").textContent,old);
+    assert.equal(x.d.querySelector('[name="consent"]').checked,false);assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08D1-04 change-only input invalidates preview; running remains distinct from saving",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;let f=x.d.querySelector("#page form");x.set(f,"question","Review money");x.set(f,"money",true);x.submit(f);
+    const ready=()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false";
+    await x.wait(ready);f=x.d.querySelector("#page form");const focus=f.querySelector('[name="focus"]');focus.value="financial";focus.dispatchEvent(new x.dom.window.Event("change",{bubbles:true}));
+    assert.equal(x.d.querySelector("[data-consent-panel]"),null);assert.equal(x.d.querySelector('.coach-step[aria-current="step"]').textContent,"1. Configure");
+    x.submit(f);await x.wait(ready);const tick=x.d.querySelector('[name="consent"]');tick.checked=true;tick.dispatchEvent(new x.dom.window.Event("change",{bubbles:true}));x.click("Run simulated analysis");
+    await x.wait(()=>x.d.querySelector("[data-unsaved-analysis]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.d.querySelector('.coach-step[aria-current="step"]').textContent,"3. Review result");assert.equal(x.ui.workspace.revision,rev);assert.equal(x.ui.workspace.collections.analyses.length,0);
+  }finally{x.dom.window.close();}
+});
