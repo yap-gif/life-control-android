@@ -68,3 +68,7 @@ nav a:hover:not([aria-current=page]){background:var(--panel)}
 /* Phase 08-D1: guided, explicitly scoped AI request flow. */
 .coach-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 16px}.coach-step{min-width:0;padding:9px;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:.85rem;overflow-wrap:anywhere}.coach-step[aria-current=step]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:650}.coach-prompts .actions{margin:5px 0 0}.coach-prompts button{font-size:.85rem}.question-count{text-align:right}.coach-scope-note{margin:0}.coach-request-summary{display:grid;gap:8px;margin:12px 0}.coach-request-summary .metric{padding:10px}.coach-request-summary .metric strong{font-size:1.2rem}
 @media(max-width:420px){.coach-step{font-size:.75rem;padding:6px}.coach-prompts .actions button{flex:1 1 44%}}
+
+/* Phase 08-D2: distinguish evidence, interpretation, proposed actions and confirmed records. */
+.analysis-summary,.analysis-finding{display:grid;gap:8px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}.analysis-summary>.tag{justify-self:start}.analysis-summary>.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.analysis-finding h3,.analysis-summary h3{margin:0}.analysis-finding p,.analysis-summary p{line-height:1.55}.plan-selection fieldset{display:grid;gap:8px}.plan-selection-count{margin:0}.plan-selection>button{justify-self:start}
+@media(max-width:420px){.plan-selection>button{justify-self:stretch}}

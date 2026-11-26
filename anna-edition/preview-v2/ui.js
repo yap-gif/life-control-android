@@ -307,19 +307,38 @@ export async function mountPreview(doc,win,store){
     return stack(out);
   }
   function analysisView(a,unsaved=false){
-    const r=a.result,m=new Map(a.request.metrics.map(x=>[x.id,x])),out=[small("Simulated model interpretation · not verified advice."),el("p","",r.summary)];
-    for(const finding of r.findings)out.push(append(el("div","panel"),el("h3","","Finding · "+finding.confidence),el("p","",finding.interpretation),small(finding.limitation),table(["Canonical metric","Value","Range"],finding.metricIds.map(id=>[id,val(m.get(id)),dates(m.get(id).range)]))));
-    out.push(el("h3","","Follow-up"),el("p","",r.followUp.measurement),small(r.followUp.limitations.join(" · ")));
-    if(unsaved)out.push(button("Save simulated analysis",()=>commit({type:"analysis.save",receipt:a,confirm:true},true),"primary",store.locked));
+    const r=a.result,m=new Map(a.request.metrics.map(x=>[x.id,x]));
+    const evidenceTable=ids=>table(["Canonical metric","Value","Range"],ids.map(id=>[id,val(m.get(id)),dates(m.get(id).range)]));
+    const out=[append(el("div","analysis-summary"),el("span","tag",unsaved?"Unsaved · isolated memory":"Saved · isolated memory"),
+      small("Simulated model interpretation · not verified advice."),
+      el("h3","","Summary"),el("p","",r.summary),
+      small("Question: "+a.request.question),small("Evidence range: "+dates(a.request.period)+" · Source revision "+a.request.snapshotRevision),
+      small("Source categories: "+a.request.authorizedCategories.map(k=>categoryNames[k]).join(", ")),
+      metrics([["Findings",r.findings.length],["Suggested actions",r.actions.length]]))];
+    for(const [i,finding] of r.findings.entries())out.push(append(el("div","analysis-finding"),el("h3","","Finding "+(i+1)+" · "+finding.confidence+" confidence"),el("p","",finding.interpretation),small("Limitation: "+finding.limitation),evidenceTable(finding.metricIds)));
+    out.push(append(el("div","analysis-finding"),el("h3","","Follow-up"),el("p","",r.followUp.measurement),small(r.followUp.limitations.join(" · "))));
+    if(unsaved){
+      out.push(el("h3","","Suggested actions · preview only"),small("Targets are proposed, not measured achievements. Save the analysis before choosing a plan; no tasks are created here."));
+      if(!r.actions.length)out.push(empty("No suggested actions."));
+      for(const x of r.actions)out.push(append(el("div","analysis-finding"),el("strong","",x.title),small("Proposed target: "+val({...m.get(x.target.metricId),value:x.target.quantity})+" · Due "+x.dueDate),evidenceTable(x.reasonMetricIds)));
+      out.push(append(el("div","actions"),button("Save simulated analysis",()=>commit({type:"analysis.save",receipt:a,confirm:true},true),"primary",store.locked),
+        button("Discard unsaved analysis",()=>{if(!confirm("Discard this unsaved analysis? It cannot be recovered."))return;invalidate();clearEditor();render();notify("Unsaved analysis discarded. No records changed.");page.querySelector('[name="question"]')?.focus();},"danger")));
+    }
     else if(r.actions.length){
-      const form=el("form","stack");
+      const form=el("form","stack plan-selection");
+      const selection=small("");selection.classList.add("plan-selection-count");selection.setAttribute("role","status");
+      form.append(el("h3","","Choose actions for a plan"),small("Select and edit only the actions you want. Saving a plan creates proposals, not tasks."),selection);
       for(const x of r.actions){
         const used=c().planActions.some(y=>y.sourceActionId===x.id&&c().plans.some(p=>p.id===y.planId&&p.analysisId===a.id));
-        const box=el("fieldset");box.append(el("legend","",x.title),small("Proposed target: "+val({...m.get(x.target.metricId),value:x.target.quantity})));
+        const box=el("fieldset");box.append(el("legend","",x.title),small("Proposed target: "+val({...m.get(x.target.metricId),value:x.target.quantity})),evidenceTable(x.reasonMetricIds));
+        if(used)box.append(small("Already included in a saved plan."));
         field(f("pick:"+x.id,"Include in plan","checkbox",false,{disabled:used}),box);field(f("title:"+x.id,"Action title","text",x.title,{required:true,maxLength:120,disabled:used}),box);field(f("due:"+x.id,"Due date","date",x.dueDate,{required:true,disabled:used}),box);form.append(box);
       }
-      form.addEventListener("input",()=>{markDirty(form);});const b=el("button","primary","Save selected plan");b.type="submit";b.disabled=store.locked;form.append(b);
-      form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;try{const v=values(form),actions=r.actions.filter(x=>v["pick:"+x.id]).map(x=>({id:store.id("action"),sourceActionId:x.id,title:v["title:"+x.id],dueDate:v["due:"+x.id]}));if(!actions.length)throw new Error("Select at least one action");if(confirm("Save selected plan? No tasks will be created yet."))await commit({type:"plan.save",id:store.id("plan"),analysisId:a.id,actions,confirm:true},true);}catch(err){notify(safeError(err),true);}});out.push(form);
+      const b=el("button","primary","Save selected plan");b.type="submit";form.append(b);
+      const updateSelection=()=>{const picks=[...form.querySelectorAll('input[type="checkbox"]')].filter(n=>!n.disabled),n=picks.filter(p=>p.checked).length;selection.textContent=n+" of "+picks.length+" available actions selected";b.disabled=store.locked||!!receipt||n===0;};
+      const changed=()=>{if(receipt||busy)return;markDirty(form);updateSelection();};
+      form.addEventListener("input",changed);form.addEventListener("change",changed);updateSelection();
+      form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||receipt||!guardOtherDraft(form))return;try{const v=values(form),actions=r.actions.filter(x=>v["pick:"+x.id]&&[...form.querySelectorAll('input[type="checkbox"]')].some(n=>n.name==="pick:"+x.id&&!n.disabled)).map(x=>({id:store.id("action"),sourceActionId:x.id,title:v["title:"+x.id],dueDate:v["due:"+x.id]}));if(!actions.length)throw new Error("Select at least one action");if(confirm("Save selected plan? No tasks will be created yet."))await commit({type:"plan.save",id:store.id("plan"),analysisId:a.id,actions,confirm:true},true);}catch(err){notify(safeError(err),true);}});out.push(form);
     }
     return stack(out);
   }
@@ -357,10 +376,10 @@ export async function mountPreview(doc,win,store){
       [...step.children].forEach((node,i)=>{if(i===active)node.setAttribute("aria-current","step");else node.removeAttribute("aria-current");});
     }
     updateGuide();
-    const changed=()=>{sync();invalidate();markDirty(form);page.querySelector("[data-consent-panel]")?.remove();page.querySelector("[data-unsaved-analysis]")?.remove();updateGuide();notify("Request changed; a new preview and consent are required.");};
+    const changed=()=>{if(receipt||busy)return;sync();invalidate();markDirty(form);page.querySelector("[data-consent-panel]")?.remove();updateGuide();notify("Request changed; a new preview and consent are required.");};
     form.addEventListener("input",changed);form.addEventListener("change",changed);
     const b=el("button","primary","Preview exact AI request");b.type="submit";b.disabled=store.locked;form.append(b);
-    form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;sync();invalidate();setBusy(true);try{request=buildCoachRequest(ws(),{requestId:store.id("request"),question:coachState.question,focus:coachState.focus,spec:specFor(coachState.kind,coachState.from,coachState.through),selected:coachState.selected,asOf:store.now(),previousPlanId:coachState.prior||null});preview=await controller.preview(request);dirty=false;dirtyForm=null;render();notify("Preview ready. No model called.");}catch(err){invalidate();notify(safeError(err),true);}finally{setBusy(false);}});
+    form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||receipt||!guardOtherDraft(form))return;sync();invalidate();setBusy(true);try{request=buildCoachRequest(ws(),{requestId:store.id("request"),question:coachState.question,focus:coachState.focus,spec:specFor(coachState.kind,coachState.from,coachState.through),selected:coachState.selected,asOf:store.now(),previousPlanId:coachState.prior||null});preview=await controller.preview(request);dirty=false;dirtyForm=null;render();notify("Preview ready. No model called.");}catch(err){invalidate();notify(safeError(err),true);}finally{setBusy(false);}});
     const out=[section("AI Personal Coach",small("Mock transport only. Nothing is sent outside this preview. In the real product, one authorized call may consume Anna credits."),step,form)];
     if(preview&&request){
       const box=section("Exact authorized payload",
@@ -379,7 +398,12 @@ export async function mountPreview(doc,win,store){
       const cancel=button("Discard request preview",()=>{invalidate();render();notify("Preview discarded. No model called.");page.querySelector('[name="question"]')?.focus();});
       box.append(append(el("div","actions"),run,cancel));out.push(box);
     }
-    if(receipt){const unsaved=section("Unsaved analysis",analysisView(receipt,true));unsaved.dataset.unsavedAnalysis="true";out.push(unsaved);}
+    if(receipt){
+      form.prepend(el("p","notice","Save or discard the unsaved analysis before editing the request or changing saved records."));
+      form.querySelectorAll("button,input,select,textarea").forEach(n=>n.disabled=true);
+      const unsaved=section("Unsaved analysis",analysisView(receipt,true));unsaved.dataset.unsavedAnalysis="true";
+      out.unshift(unsaved);
+    }
     const hist=section("Analysis history");
     for(const a of c().analyses){const state=historyState(ws(),a.id),details=el("details");details.append(el("summary","",a.legacyReadOnly?"Legacy analysis · read-only":a.request.question+" · "+(state.stale?"Historical snapshot":"Current snapshot")),a.legacyReadOnly?el("p","",a.legacyText):analysisView(a));
       details.append(button("Delete analysis",async()=>{if(abandon()&&confirm("Delete this analysis? Linked plans must be deleted first. Historical copies may remain."))await commit({type:"analysis.delete",id:a.id,confirm:true,retainHistoricalCopies:true},true);},"danger",store.locked));hist.append(details);}
@@ -387,17 +411,22 @@ export async function mountPreview(doc,win,store){
     const plans=section("Saved plans");
     for(const p of c().plans){const box=section(p.legacyReadOnly?"Legacy plan · read-only":p.id,small("Source categories: "+p.sourceCategories.join(", ")));
       if(p.legacyReadOnly)box.append(el("p","",p.legacyText));
-      for(const a of c().planActions.filter(x=>x.planId===p.id)){
+      const actions=c().planActions.filter(x=>x.planId===p.id);
+      if(!p.legacyReadOnly)box.append(metrics([["Proposed",actions.filter(a=>a.status==="proposed").length],["Accepted · open",actions.filter(a=>a.status==="accepted").length],["Completed",actions.filter(a=>a.status==="completed").length],["Dismissed",actions.filter(a=>a.status==="dismissed").length]]));
+      for(const a of actions){
         const controls=[];
         if(a.status==="proposed"){
           controls.push(button("Accept as task",async()=>{if(abandon()&&confirm("Create one linked task for this selected action?"))await commit({type:"action.accept",id:a.id,taskId:store.id("task"),priority:"normal",confirm:true},true);},"primary",store.locked),button("Dismiss",async()=>{if(abandon()&&confirm("Dismiss this proposed action?"))await commit({type:"action.dismiss",id:a.id,confirm:true},true);},"",store.locked));
           box.append(formBox("Edit proposed action",[f("title","Title","text",a.title,{required:true,maxLength:120}),f("dueDate","Due date","date",a.dueDate,{required:true})],v=>commit({type:"action.edit",id:a.id,title:v.title,dueDate:v.dueDate},true),{track:true}));
         }
-        box.append(listEntry(a.title,a.status+" · "+a.dueDate,controls));
+        const linked=a.taskId===null?null:c().tasks.find(t=>t.id===a.taskId);
+        box.append(listEntry(a.title,a.status+" · "+a.dueDate,controls,linked?append(el("div"),small("Linked task: "+linked.title),link("tasks","View tasks →")):null));
       }
       box.append(button("Delete plan",async()=>{if(abandon()&&confirm("Delete plan and all linked tasks/events? Historical copies may remain."))await commit({type:"plan.delete",id:p.id,confirm:true,retainHistoricalCopies:true,deleteLinkedTasks:true},true);},"danger",store.locked));plans.append(box);
     }
-    if(!c().plans.length)plans.append(empty("No saved plan."));out.push(plans);return stack(out);
+    if(!c().plans.length)plans.append(empty("No saved plan."));
+    if(receipt)for(const region of [hist,plans])region.querySelectorAll("button,input,select,textarea").forEach(n=>n.disabled=true);
+    out.push(plans);return stack(out);
   }
   function privacy(){
     return stack(section("Privacy & data",small("No network model or real storage adapter is present. Records and model receipts remain in memory; page reload resets the demo. Analysis and plan deletion are available in AI Insights."),link("insights","Manage simulated analysis history →"),small("Full production erasure is intentionally unavailable; preserved legacy data and platform-side copies cannot be guaranteed removed.")),section("Storage status",metrics([["Revision",ws().revision],["Mock capacity",Math.round(DEMO_LIMIT/1024)+" KiB"],["Used",store.bytes+" B"],["Real APS","BLOCKED"]]),small(store.source),small("Mock capacity is an arbitrary test ceiling, not measured Anna storage capacity."),small("Real create-if-absent, exclusive migration, readback, capacity and full erasure remain blocked.")),section("Developer diagnostics",small("Synthetic fault injection only. Reconcile is not real cross-session recovery."),

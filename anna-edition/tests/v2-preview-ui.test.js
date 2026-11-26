@@ -400,3 +400,78 @@ test("08D1R1-01 question label stays exact while its separate description update
     assert.equal(x.d.querySelector('[name="consent"]').checked,false);
   }finally{x.dom.window.close();}
 });
+
+async function runD2Analysis(x){
+  const f=x.d.querySelector("form.compact-config");x.set(f,"question","Review money");x.set(f,"money",true);x.submit(f);
+  await x.wait(()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+  const tick=x.d.querySelector('[name="consent"]');tick.checked=true;tick.dispatchEvent(new x.dom.window.Event("change",{bubbles:true}));x.click("Run simulated analysis");
+  await x.wait(()=>x.d.querySelector("[data-unsaved-analysis]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+}
+test("08D2-01 unsaved result is first, evidence-linked and read-only until explicit save or discard",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;await runD2Analysis(x);
+    const box=x.d.querySelector("[data-unsaved-analysis]"),f=x.d.querySelector("form.compact-config");
+    assert.equal(x.d.querySelector("#page > .stack").firstElementChild,box);
+    assert.match(box.textContent,/Source categories: Money/);assert.match(box.textContent,/Finding 1 · limited confidence/);
+    assert.match(box.textContent,/Suggested actions · preview only/);assert.match(box.textContent,/Review the selected records/);
+    assert.equal(box.querySelectorAll("table").length,2);assert.equal(box.querySelectorAll("input").length,0);
+    assert.ok([...f.querySelectorAll("button,input,select,textarea")].every(n=>n.disabled));
+    x.set(f,"question","Attempted change");x.submit(f);
+    assert.equal(x.d.querySelector("[data-unsaved-analysis]"),box);assert.match(box.textContent,/Question: Review money/);
+    assert.equal(x.ui.workspace.revision,rev);assert.equal(x.ui.workspace.collections.analyses.length,0);
+  }finally{x.dom.window.close();}
+});
+test("08D2-02 discard and navigation require confirmation; discard does not save or reuse consent",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;await runD2Analysis(x);const box=x.d.querySelector("[data-unsaved-analysis]");
+    x.dom.window.confirm=()=>false;x.click("Discard unsaved analysis");
+    assert.equal(x.d.querySelector("[data-unsaved-analysis]"),box);
+    x.dom.window.location.hash="money";await new Promise(r=>setTimeout(r,20));assert.equal(x.ui.route,"insights");
+    assert.equal(x.d.querySelector("[data-unsaved-analysis]"),box);
+    x.dom.window.confirm=()=>true;x.click("Discard unsaved analysis");
+    const f=x.d.querySelector("form.compact-config");assert.equal(x.d.querySelector("[data-unsaved-analysis]"),null);assert.equal(f.querySelector('[name="question"]').value,"Review money");assert.equal(x.d.activeElement,f.querySelector('[name="question"]'));
+    x.submit(f);await x.wait(()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.d.querySelector('[name="consent"]').checked,false);assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08D2-03 plan selection remains opt-in and exact linked task status updates after separate import",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision,tasks=x.ui.workspace.collections.tasks.length;await runD2Analysis(x);x.click("Save simulated analysis");
+    await x.wait(()=>x.ui.workspace.revision===rev+1&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    let f=x.d.querySelector(".plan-selection");assert.match(f.textContent,/0 of 1 available actions selected/);
+    assert.equal(f.querySelector('button[type="submit"]').disabled,true);
+    x.set(f,"pick:demo-action",true);assert.match(f.textContent,/1 of 1 available actions selected/);
+    x.dom.window.confirm=()=>false;x.submit(f);assert.equal(x.ui.workspace.revision,rev+1);
+    x.dom.window.confirm=()=>true;x.submit(f);await x.wait(()=>x.ui.workspace.revision===rev+2&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.ui.workspace.collections.tasks.length,tasks);assert.equal(x.d.querySelector('[name="pick:demo-action"]').disabled,true);assert.match(x.d.querySelector(".plan-selection").textContent,/Already included/);
+    x.click("Accept as task");await x.wait(()=>x.ui.workspace.revision===rev+3&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.ui.workspace.collections.tasks.length,tasks+1);assert.match(x.d.getElementById("page").textContent,/Linked task: Review the selected records/);
+    await x.navigate("tasks");const row=[...x.d.querySelectorAll(".entry")].find(r=>r.textContent.includes("AI-linked"));x.click("Complete",row);
+    await x.wait(()=>x.ui.workspace.revision===rev+4&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    await x.navigate("insights");assert.equal(x.ui.workspace.collections.planActions[0].status,"completed");
+    const metric=[...x.d.querySelectorAll(".metric")].find(n=>n.querySelector("span").textContent==="Completed");
+    assert.equal(metric.querySelector("strong").textContent,"1");
+  }finally{x.dom.window.close();}
+});
+test("08D2-04 pending result disables existing history and plan mutation controls",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;await runD2Analysis(x);x.click("Save simulated analysis");
+    await x.wait(()=>x.ui.workspace.revision===rev+1&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    let f=x.d.querySelector(".plan-selection");x.set(f,"pick:demo-action",true);x.submit(f);
+    await x.wait(()=>x.ui.workspace.revision===rev+2&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    await runD2Analysis(x);for(const label of ["Delete analysis","Delete plan","Accept as task","Dismiss","Save selected plan"]){
+      const b=[...x.d.querySelectorAll("button")].find(n=>n.textContent===label);assert.ok(b);assert.equal(b.disabled,true);
+    }
+    assert.equal(x.ui.workspace.revision,rev+2);assert.equal(x.ui.workspace.collections.plans.length,1);
+    x.click("Discard unsaved analysis");assert.equal([...x.d.querySelectorAll("button")].find(n=>n.textContent==="Accept as task").disabled,false);
+  }finally{x.dom.window.close();}
+});
+test("08D2-05 unconfirmed result save keeps receipt visible and prevents blind retry",async()=>{
+  const x=await setup("insights");try{
+    const rev=x.ui.workspace.revision;await runD2Analysis(x);x.store.simulateUnconfirmedWrite();x.click("Save simulated analysis");
+    await x.wait(()=>x.store.locked&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.ui.workspace.revision,rev);assert.equal(x.ui.workspace.collections.analyses.length,0);
+    const box=x.d.querySelector("[data-unsaved-analysis]");assert.ok(box);assert.match(x.d.getElementById("status").textContent,/Write not confirmed/);
+    assert.equal([...box.querySelectorAll("button")].find(n=>n.textContent==="Save simulated analysis").disabled,true);
+  }finally{x.dom.window.close();}
+});
