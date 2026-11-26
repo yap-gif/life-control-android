@@ -45,7 +45,13 @@ try{
       await row.getByRole("button",{name:"Complete",exact:true}).click();
       await row.getByRole("button",{name:"Reopen",exact:true}).waitFor();
       await page.locator('nav a[data-route="insights"]').click();
+      const question=page.getByRole("textbox",{name:"Your question",exact:true});
+      assert.equal(await question.count(),1);
+      assert.equal(await question.getAttribute("aria-describedby"),"coach-question-count");
+      assert.equal(await page.locator("#coach-question-count").textContent(),"0 / 1000 characters");
       await page.getByLabel("Your question",{exact:true}).fill("Browser QA question");
+      assert.equal(await question.count(),1);
+      assert.equal(await page.locator("#coach-question-count").textContent(),"19 / 1000 characters");
       await page.getByLabel("Money",{exact:true}).check();
       await page.getByRole("button",{name:"Preview exact AI request"}).click();
       await page.getByText("Exact authorized payload",{exact:true}).waitFor();

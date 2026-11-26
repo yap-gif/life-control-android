@@ -383,3 +383,20 @@ test("08D1-04 change-only input invalidates preview; running remains distinct fr
     assert.equal(x.d.querySelector('.coach-step[aria-current="step"]').textContent,"3. Review result");assert.equal(x.ui.workspace.revision,rev);assert.equal(x.ui.workspace.collections.analyses.length,0);
   }finally{x.dom.window.close();}
 });
+
+test("08D1R1-01 question label stays exact while its separate description updates",async()=>{
+  const x=await setup("insights");try{
+    const form=x.d.querySelector("#page form"),q=form.querySelector('[name="question"]'),counter=x.d.getElementById("coach-question-count");
+    assert.equal(q.labels.length,1);assert.equal(q.labels[0].textContent,"Your question");
+    assert.equal(q.getAttribute("aria-describedby"),counter.id);
+    assert.equal(counter.closest("label"),null);assert.equal(counter.textContent,"0 / 1000 characters");
+    x.set(form,"question","Review money");
+    assert.equal(q.labels[0].textContent,"Your question");assert.equal(counter.textContent,"12 / 1000 characters");
+    x.set(form,"money",true);x.submit(form);
+    await x.wait(()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    const rebuilt=x.d.querySelector('[name="question"]');
+    assert.equal(rebuilt.labels[0].textContent,"Your question");
+    assert.equal(x.d.getElementById(rebuilt.getAttribute("aria-describedby")).textContent,"12 / 1000 characters");
+    assert.equal(x.d.querySelector('[name="consent"]').checked,false);
+  }finally{x.dom.window.close();}
+});

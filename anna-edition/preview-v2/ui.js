@@ -327,8 +327,8 @@ export async function mountPreview(doc,win,store){
     const form=el("form","stack compact-config"),fields=el("div","fields");
     const question=field(f("question","Your question","textarea",coachState.question,{required:true,maxLength:1000,wide:true}),fields);
     question.placeholder="What would you like to understand about your recorded activity?";
-    const count=small("");count.classList.add("question-count");count.id="coach-question-count";
-    question.setAttribute("aria-describedby",count.id);question.closest("label").append(count);
+    const count=small("");count.classList.add("question-count","wide");count.id="coach-question-count";
+    question.setAttribute("aria-describedby",count.id);question.closest("label").after(count);
     const prompts=append(el("div","coach-prompts"),small("Question starters · fill the question only; no data authorization"),
       append(el("div","actions"),[
         ["Review spending","What patterns appear in my recorded spending, and what could I review next?"],
@@ -339,7 +339,7 @@ export async function mountPreview(doc,win,store){
         if((question.value.trim()||receipt)&&!confirm("Replace the current question and discard its preview or unsaved result?"))return;
         question.value=value;question.dispatchEvent(new win.Event("input",{bubbles:true}));question.focus();
       },"",store.locked))));
-    question.closest("label").after(prompts);prompts.classList.add("wide");
+    count.after(prompts);prompts.classList.add("wide");
     field(f("focus","Focus","select",coachState.focus,{choices:choices("custom","comprehensive","financial","learning","task","goal/habit")}),fields);
     const kind=field(f("kind","Date range","select",coachState.kind,{choices:choices("7days","30days","90days","week","month","custom")}),fields);
     const from=field(f("from","Custom start","date",coachState.from),fields),through=field(f("through","Custom end","date",coachState.through),fields);
