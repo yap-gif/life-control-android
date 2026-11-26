@@ -90,7 +90,7 @@ export async function mountPreview(doc,win,store){
     return section(title,form);
   }
   function openEditor(kind,row=null,parent=null){if(!abandon())return;clearEditor();editor={kind,row,parent};render();page.querySelector("form[data-form] input,form[data-form] select")?.focus();}
-  function metrics(items){return append(el("div","metrics"),items.map(([label,value])=>append(el("div","metric"),el("span","",label),el("strong","",value))));}
+  function metrics(items){return append(el("div","metrics"),items.map(([label,value,tone=""])=>append(el("div","metric"+(tone?" metric-"+tone:"")),el("span","",label),el("strong","",value))));}
   function table(headers,rows){
     const t=el("table"),head=el("thead"),body=el("tbody"),tr=el("tr");
     for(const h of headers){const th=el("th","",h);th.scope="col";tr.append(th);}head.append(tr);
@@ -99,9 +99,55 @@ export async function mountPreview(doc,win,store){
   }
   function chart(rows,formatter=String){
     const max=Math.max(1,...rows.map(r=>Math.abs(r[1]))),root=el("div","chart");root.setAttribute("aria-hidden","true");
-    for(const [label,n] of rows){const fill=el("div","fill"+(n<0?" negative":""));fill.style.width=Math.max(0,Math.abs(n)/max*100)+"%";
+    for(const [label,n,tone] of rows){const fill=el("div","fill"+(n<0?" negative":tone?" "+tone:""));fill.style.width=Math.max(0,Math.abs(n)/max*100)+"%";
       root.append(append(el("div","bar-line"),el("span","",label),append(el("div","track"),fill),el("span","",formatter(n))));}
     return root;
+  }
+  const netTone=n=>n<0?"negative":n>0?"positive":"";
+  function cashflow(m){
+    const netLabel=m.netMinor<0?"Deficit":m.netMinor>0?"Surplus":"Balanced";
+    return append(el("div","cashflow-summary"),
+      append(el("div","cashflow-net"),small("Recorded net cashflow"),el("strong",netTone(m.netMinor),fmt(m.netMinor)),el("span","tag",netLabel)),
+      chart([["Income",m.incomeMinor,"income"],["Expenses",m.expenseMinor,"expense"]],fmt),
+      table(["Recorded metric","Value"],[["Income",fmt(m.incomeMinor)],["Expenses",fmt(m.expenseMinor)],["Net",fmt(m.netMinor)],["Net / income",m.netIncomeRatio===null?"N/A":m.netIncomeRatio.toFixed(1)+"%"]]),
+      small("Recorded income minus expenses; not an account balance. Net / income is unavailable when income is zero."));
+  }
+  function expenseBreakdown(m){
+    return m.expenseCategories.length?append(el("div","expense-breakdown"),
+      ...m.expenseCategories.map(g=>{
+        const bar=el("progress","progress-meter expense-meter");bar.max=100;bar.value=Math.max(0,Math.min(100,g.sharePercent));
+        const description=fmt(g.total)+" · "+g.sharePercent.toFixed(1)+"% of recorded expenses";
+        bar.setAttribute("aria-label",g.label+" expense share");bar.setAttribute("aria-valuetext",description);
+        return append(el("div","progress-block"),append(el("div","row"),el("strong","",g.label),small(description)),bar);
+      })):empty("No recorded expenses.");
+  }
+  function budgetSummary(budgets){
+    if(!budgets.length)return empty("No monthly budgets in this evidence range.");
+    return append(el("div","budget-summary"),budgets.map(b=>{
+      const state=b.remainingMinor<0?"Over budget":b.remainingMinor===0?"Limit reached":"Within budget";
+      const ratio=b.limitMinor>0?b.spentMinor/b.limitMinor*100:null;
+      const item=append(el("div","budget-item"),append(el("div","row"),el("strong","",b.category+" · "+b.month),el("span","tag "+(b.remainingMinor<0?"negative":""),state)),
+        progress("Budget used",ratio,fmt(b.spentMinor)+" / "+fmt(b.limitMinor)+(ratio===null?" · Zero limit": " · "+ratio.toFixed(1)+"%")),
+        el("p",b.remainingMinor<0?"negative":"muted",b.remainingMinor<0?fmt(-b.remainingMinor)+" over limit":fmt(b.remainingMinor)+" remaining"),
+        small("Evidence: "+dates(b)+(b.partial?" · Partial month":"")));
+      if(b.remainingMinor<0)item.classList.add("over-budget");
+      return item;
+    }));
+  }
+  function financialTrend(data){
+    const rows=data.map(p=>({label:p.range.from+(p.range.partial?" *":""),m:p.values.money,range:p.range}));
+    const max=Math.max(1,...rows.flatMap(({m})=>[m.incomeMinor,m.expenseMinor]));
+    const visual=el("div","flow-trend");visual.setAttribute("aria-hidden","true");
+    for(const {label,m} of rows){
+      const bars=el("div","flow-bars");
+      for(const [name,value,tone] of [["Income",m.incomeMinor,"income"],["Expense",m.expenseMinor,"expense"]]){
+        const fill=el("div","fill "+tone);fill.style.width=value/max*100+"%";
+        bars.append(append(el("div","flow-bar"),el("span","",name),append(el("div","track"),fill),el("span","",fmt(value))));
+      }
+      visual.append(append(el("div","trend-period"),el("strong","",label),bars,el("span","trend-net "+netTone(m.netMinor),"Net "+fmt(m.netMinor))));
+    }
+    return append(el("div","stack"),small("Six calendar periods ending at the demo date; independent of custom report filters. * Partial period. Zero means no recorded activity, not verified financial inactivity."),visual,
+      table(["Period","Income","Expenses","Net"],rows.map(({label,m})=>[label,fmt(m.incomeMinor),fmt(m.expenseMinor),fmt(m.netMinor)])));
   }
   function listEntry(title,meta,buttons=[],extra=null){
     return append(el("div","entry"),append(el("div"),el("strong","",title),el("p","meta",meta),extra),append(el("div","actions"),buttons));
@@ -172,9 +218,9 @@ export async function mountPreview(doc,win,store){
   }
   function overview(){
     const w=ws(),week=buildReport(w,{kind:"week"},DEMO_DAY,REPORT_CATEGORIES),month=buildReport(w,{kind:"month"},DEMO_DAY,["money"]),tasks=w.collections.tasks.filter(t=>t.status==="open"),due=tasks.filter(t=>t.dueDate&&t.dueDate<=DEMO_DAY);
-    return stack(metrics([["Open tasks",tasks.length],["Due today / overdue",due.length],["This week · learning",week.current.learning.minutes+" min"],["This month · net",fmt(month.current.money.netMinor)]]),
+    return stack(metrics([["Open tasks",tasks.length],["Due today / overdue",due.length],["This week · learning",week.current.learning.minutes+" min"],["This month · net",fmt(month.current.money.netMinor),netTone(month.current.money.netMinor)]]),
       append(el("div","grid overview-grid"),section("Today's priorities",due.length?append(el("div"),due.map(t=>listEntry(t.title,t.priority+" · "+t.dueDate))):empty("No recorded tasks due."),link("tasks","Manage tasks →"),progress("Weekly learning",week.current.learning.weeklyTargetPercent,week.current.learning.minutes+" / "+(week.current.learning.weeklyTargetMinutes??"No target")+" min"),link("learning","View learning →")),
-      section("Monthly cashflow",chart([["Income",month.current.money.incomeMinor],["Expenses",month.current.money.expenseMinor]],fmt),table(["Recorded metric","Value"],[["Income",fmt(month.current.money.incomeMinor)],["Expenses",fmt(month.current.money.expenseMinor)],["Net",fmt(month.current.money.netMinor)]]),link("reports","Open reports →"))),
+      section("Monthly cashflow",cashflow(month.current.money),link("reports","Open reports →"))),
       section("Quick navigation",append(el("div","quick-nav"),[["tasks","Manage tasks"],["money","Record money"],["learning","Log learning"],["journal","Write reflection"]].map(([id,label])=>link(id,label+" →"))),small("Record activity, inspect deterministic reports, then explicitly authorize a simulated analysis."),link("insights","Open AI Insights →")));
   }
   function reports(){
@@ -187,9 +233,8 @@ export async function mountPreview(doc,win,store){
     const submit=el("button","primary","Apply report filters");submit.type="submit";form.append(submit);
     form.addEventListener("submit",e=>{e.preventDefault();const v=values(form),s={kind:v.kind,from:v.from,through:v.through,trend:v.trend,selected:REPORT_CATEGORIES.filter(k=>v[k])};try{buildReport(ws(),specFor(s.kind,s.from,s.through),DEMO_DAY,s.selected);Object.assign(reportState,s);render();notify("Report recalculated locally.");}catch(err){notify(safeError(err),true);}});
     const r=buildReport(ws(),specFor(reportState.kind,reportState.from,reportState.through),DEMO_DAY,reportState.selected),out=[section("Report controls",form),section("Evidence coverage",small(dates(r.periods.current)+(r.periods.current.partial?" · Partial period":"")),small("Comparison: "+dates(r.periods.previous)+" · "+r.periods.comparison),small(r.coverageNote))];
-    if(r.current.money){const m=r.current.money;out.push(metrics([["Income",fmt(m.incomeMinor)],["Expense",fmt(m.expenseMinor)],["Net cashflow",fmt(m.netMinor)],["Net / income",m.netIncomeRatio===null?"N/A":m.netIncomeRatio.toFixed(1)+"%"]]));
-      out.push(section("Expense breakdown",m.expenseCategories.length?chart(m.expenseCategories.map(x=>[x.label,x.total]),fmt):empty("No recorded expenses."),table(["Category","Amount","Share"],m.expenseCategories.map(x=>[x.label,fmt(x.total),x.sharePercent.toFixed(1)+"%"])),
-        el("h3","","Monthly budgets"),small("Budget actuals may cover earlier days in the same month; see each evidence range."),table(["Category","Coverage","Limit","Spent","Remaining"],r.current.budgets.map(b=>[b.category,dates(b),fmt(b.limitMinor),fmt(b.spentMinor),fmt(b.remainingMinor)]))));}
+    if(r.current.money){const m=r.current.money;out.push(metrics([["Income",fmt(m.incomeMinor),"positive"],["Expense",fmt(m.expenseMinor),"expense"],["Net cashflow",fmt(m.netMinor),netTone(m.netMinor)],["Net / income",m.netIncomeRatio===null?"N/A":m.netIncomeRatio.toFixed(1)+"%"]]));
+      out.push(append(el("div","grid finance-grid"),section("Cashflow",cashflow(m)),section("Expense breakdown",expenseBreakdown(m),table(["Category","Amount","Share"],m.expenseCategories.map(x=>[x.label,fmt(x.total),x.sharePercent.toFixed(1)+"%"])))),section("Monthly budgets",small("Budget actuals may cover earlier days in the same month; see each evidence range."),budgetSummary(r.current.budgets),table(["Category","Coverage","Limit","Spent","Remaining"],r.current.budgets.map(b=>[b.category,dates(b),fmt(b.limitMinor),fmt(b.spentMinor),fmt(b.remainingMinor)]))));}
     if(r.current.learning)out.push(section("Learning topics",chart(r.current.learning.topics.map(x=>[x.label,x.total]),n=>n+" min"),table(["Topic","Minutes","Sessions"],r.current.learning.topics.map(x=>[x.label,x.total,x.count]))));
     const summaryRows=[];
     if(r.current.learning)summaryRows.push(["Learning",r.current.learning.minutes+" minutes · "+r.current.learning.sessions+" sessions"]);
@@ -204,7 +249,7 @@ export async function mountPreview(doc,win,store){
       const data=buildTrend(ws(),{kind:reportState.trend,count:6,today:DEMO_DAY,selected:trends});
       for(const k of trends){const metricKey={money:"money.net.current",learning:"learning.minutes.current",tasks:"tasks.completionEvents.current",journal:"journal.days.current"}[k];if(!metricKey)continue;
         const rows=data.map(p=>[p.range.from+(p.range.partial?" *":""),p.metrics.find(m=>m.id===metricKey)?.value??0]);
-        out.push(disclosure(categoryNames[k]+" trend · "+reportState.trend,chart(rows,k==="money"?fmt:String),table(["Period start (*partial)","Recorded value"],rows.map(([d,n])=>[d,k==="money"?fmt(n):n]))));}
+        out.push(k==="money"?disclosure("Money trend · "+reportState.trend,financialTrend(data)):disclosure(categoryNames[k]+" trend · "+reportState.trend,chart(rows),table(["Period start (*partial)","Recorded value"],rows)));}
       if(trends.includes("habits"))out.push(disclosure("Habit trend",table(["Period","Completed scheduled days","Eligible days"],data.map(p=>[p.range.from+(p.range.partial?" *":""),p.values.habits.reduce((n,h)=>n+h.completed,0),p.values.habits.reduce((n,h)=>n+h.eligible,0)]))));
     }
     const map=new Map(r.metrics.map(m=>[m.id,m]));out.push(disclosure("Canonical evidence",small("Expand for the complete selected metrics and comparison data. Wide tables scroll inside their own container."),table(["Metric","Value","Evidence range","Samples"],r.metrics.map(m=>[m.id,val(m),dates(m.range),m.sampleCount??"—"])),el("h3","","Period changes"),table(["Metric","Recorded change","Percent"],r.changes.map(x=>[x.metricId,val({...map.get(x.metricId),value:x.delta}),x.percentChange===null?"N/A":x.percentChange.toFixed(1)+"%"]))));
@@ -212,9 +257,11 @@ export async function mountPreview(doc,win,store){
   }
   function tasks(){return stack(actionPanel("Task management","Actual completion and reopen events are recorded separately from due dates.",addButton("tasks","Add task")),editorView(),
     filterList("tasks","Tasks",t=>listEntry(t.title,[t.priority,t.status,t.dueDate??"No due date",t.sourceActionId?"AI-linked":""].filter(Boolean).join(" · "),[editButton("tasks",t),commandButton(t.status==="open"?"Complete":"Reopen",{type:"task.transition",id:t.id,eventId:store.id("event"),status:t.status==="open"?"done":"open"}),delButton("tasks",t)]),{statusChoices:["open","done"],priority:true}));}
-  function money(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["money"]).current;return stack(metrics([["Monthly income",fmt(r.money.incomeMinor)],["Monthly expense",fmt(r.money.expenseMinor)],["Net cashflow",fmt(r.money.netMinor)],["Transactions",r.money.entryCount]]),
+  function money(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["money"]).current;return stack(metrics([["Monthly income",fmt(r.money.incomeMinor),"positive"],["Monthly expense",fmt(r.money.expenseMinor),"expense"],["Net cashflow",fmt(r.money.netMinor),netTone(r.money.netMinor)],["Transactions",r.money.entryCount]]),
     actionPanel("Money management","Record income, expenses and category budgets.",addButton("transactions","Add transaction"),addButton("budgets","Add budget")),editorView(),
-    filterList("transactions","Transactions",t=>listEntry(t.category+" · "+fmt(t.amountMinor),t.kind+" · "+t.date,[editButton("transactions",t),delButton("transactions",t)],t.note?el("p","",t.note):null),{statusChoices:["income","expense"],category:true}),
+    append(el("div","grid finance-grid"),section("Monthly cashflow",cashflow(r.money)),section("Expense allocation",expenseBreakdown(r.money),small("Share of recorded expenses in the demo month."))),
+    section("Budget overview",budgetSummary(r.budgets)),
+    filterList("transactions","Transactions",t=>listEntry(t.category+" · "+(t.kind==="income"?"+":"−")+fmt(t.amountMinor),t.kind+" · "+t.date,[editButton("transactions",t),delButton("transactions",t)],t.note?el("p","",t.note):null),{statusChoices:["income","expense"],category:true}),
     filterList("budgets","Budgets",b=>{const x=r.budgets.find(x=>x.month===b.month&&x.categoryKey===b.category.trim().normalize("NFC").toLowerCase());return listEntry(b.category+" · "+fmt(b.limitMinor),b.month+(x?" · Remaining "+fmt(x.remainingMinor):""),[editButton("budgets",b),delButton("budgets",b)]);},{category:true}));}
   function learning(){const r=buildReport(ws(),{kind:"week"},DEMO_DAY,["learning"]).current.learning;return stack(metrics([["Weekly minutes",r.minutes],["Sessions",r.sessions],["Weekly target",r.weeklyTargetMinutes??"Not set"],["Target progress",r.weeklyTargetPercent===null?"N/A":r.weeklyTargetPercent.toFixed(1)+"%"]]),actionPanel("Learning records","Track actual time spent learning.",addButton("learning","Log session")),editorView(),section("Weekly progress",progress("Learning target",r.weeklyTargetPercent,r.minutes+" / "+(r.weeklyTargetMinutes??"No target")+" min")),formBox("Weekly target",[f("minutes","Target minutes (blank clears)","number",ws().settings.learningWeeklyTargetMinutes??"",{min:1,max:10080,step:1})],v=>commit({type:"learning.target",minutes:v.minutes===""?null:Number(v.minutes)}),{track:true}),filterList("learning","Sessions",l=>listEntry(l.topic+" · "+l.minutes+" min",l.date,[editButton("learning",l),delButton("learning",l)],l.note?el("p","",l.note):null),{category:true}));}
   function journal(){return stack(actionPanel("Daily journal","Private by default. Journal content is included in a simulated AI request only when explicitly selected.",addButton("journal","Add reflection")),editorView(),filterList("journal","Reflections",j=>listEntry(j.date,j.tags.join(" · ")||"No tags",[editButton("journal",j),delButton("journal",j)],el("p","",j.reflection))));}

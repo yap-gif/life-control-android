@@ -44,3 +44,14 @@ nav a:hover:not([aria-current=page]){background:var(--panel)}
 .entry p:not(.meta){max-width:78ch;line-height:1.65}
 @media(max-width:768px){.quick-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.action-panel{align-items:stretch}.action-copy{flex-basis:100%}.compact-config>button{justify-self:stretch}.category-grid{padding:6px;gap:6px}.category-grid .tick{padding:4px 5px;gap:5px}}
+
+/* Phase 08-B2: finance visualization from canonical report values. */
+:root{--expense:#f2bd8a;--income:#86e0c5}
+.positive,.metric-positive strong{color:var(--income)}.negative,.metric-negative strong{color:var(--danger)}.metric-expense strong{color:var(--expense)}
+.metric-positive{border-top-color:var(--income)}.metric-negative{border-top-color:var(--danger)}.metric-expense{border-top-color:var(--expense)}
+.fill.income{background:var(--income)}.fill.expense{background:var(--expense)}
+.finance-grid{align-items:start}.cashflow-summary{display:grid;gap:8px}.cashflow-net{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 12px}.cashflow-net>small,.cashflow-net>.muted{flex-basis:100%}.cashflow-net>strong{font-size:1.65rem;line-height:1.2;font-variant-numeric:tabular-nums}.cashflow-net .tag{margin-left:auto}
+.expense-meter{accent-color:var(--expense)}.expense-meter::-webkit-progress-value{background:var(--expense)}.expense-meter::-moz-progress-bar{background:var(--expense)}
+.budget-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:10px;margin:8px 0}.budget-item{padding:12px;border:1px solid var(--line);border-radius:10px;min-width:0}.budget-item.over-budget{border-color:var(--danger)}.over-budget .progress-meter{accent-color:var(--danger)}.over-budget .progress-meter::-webkit-progress-value{background:var(--danger)}.over-budget .progress-meter::-moz-progress-bar{background:var(--danger)}
+.flow-trend{display:grid;gap:12px}.trend-period{display:grid;grid-template-columns:minmax(96px,1fr) minmax(0,3fr) minmax(100px,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.85rem}.flow-bars{display:grid;gap:5px}.flow-bar{display:grid;grid-template-columns:55px minmax(0,1fr) auto;align-items:center;gap:6px}.trend-net{font-variant-numeric:tabular-nums;text-align:right}
+@media(max-width:1040px){.trend-period{grid-template-columns:1fr}.trend-net{text-align:left}}

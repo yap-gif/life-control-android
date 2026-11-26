@@ -149,3 +149,44 @@ test("08B1-04 learning and goals progress use canonical metrics and privacy sepa
     assert.ok([...diagnostics.querySelectorAll("button")].some(b=>b.textContent==="Simulate unconfirmed write"));
   }finally{x.dom.window.close();}
 });
+
+test("08B2-01 cashflow uses exact money values, distinct visual directions and balance disclaimer",async()=>{
+  const x=await setup("money");try{
+    const panel=x.d.querySelector(".cashflow-summary");assert.match(panel.textContent,/725/);assert.match(panel.textContent,/72.5%/);
+    assert.match(panel.textContent,/not an account balance/);assert.ok(panel.querySelector(".fill.income"));assert.ok(panel.querySelector(".fill.expense"));
+    const bars=[...x.d.querySelectorAll(".expense-meter")];assert.equal(bars.length,2);
+    assert.ok(Math.abs(bars.reduce((n,b)=>n+b.value,0)-100)<0.00001);
+    assert.match(x.d.querySelector(".budget-item").textContent,/Over budget/);
+    assert.match(x.d.querySelector(".budget-item").textContent,/25.00 over limit/);
+    assert.equal(x.d.querySelector(".budget-item progress").value,100);
+  }finally{x.dom.window.close();}
+});
+test("08B2-02 report financial trend preserves six exact period values and selection scope",async()=>{
+  const x=await setup("reports");try{
+    const trend=x.d.querySelector(".flow-trend");assert.equal(trend.querySelectorAll(".trend-period").length,6);
+    assert.match(trend.textContent,/2026-11-23 \*/);assert.ok(trend.querySelector(".fill.income"));assert.ok(trend.querySelector(".fill.expense"));
+    const f=x.d.querySelector("#page form");x.set(f,"money",false);x.submit(f);
+    assert.equal(x.d.querySelector(".cashflow-summary"),null);assert.equal(x.d.querySelector(".flow-trend"),null);assert.equal(x.d.querySelector(".budget-summary"),null);
+  }finally{x.dom.window.close();}
+});
+test("08B2-03 recorded negative net and zero income are not misrepresented as positive balance",async()=>{
+  const x=await setup("money");try{
+    for(const t of [...x.ui.workspace.collections.transactions].filter(t=>t.kind==="income")){
+      await x.store.apply({type:"record.delete",collection:"transactions",id:t.id,confirm:true,retainHistoricalCopies:true});
+    }
+    await x.navigate("overview");await x.navigate("money");
+    const cf=x.d.querySelector(".cashflow-summary");assert.match(cf.textContent,/Deficit/);assert.match(cf.textContent,/N\/A/);assert.ok(cf.querySelector(".cashflow-net strong.negative"));
+    assert.ok(x.d.querySelector(".metric-negative"));assert.equal(cf.querySelector(".fill.income").style.width,"0%");
+  }finally{x.dom.window.close();}
+});
+test("08B2-04 budget visual updates from confirmed transaction and zero limit has no invalid ratio",async()=>{
+  const x=await setup("money");try{
+    await x.store.apply({type:"record.add",collection:"budgets",id:x.store.id("budget"),data:{month:"2026-11",category:"Other",limitMinor:0}});
+    await x.navigate("overview");await x.navigate("money");
+    const zero=[...x.d.querySelectorAll(".budget-item")].find(n=>n.textContent.includes("Other"));
+    assert.match(zero.textContent,/Zero limit/);assert.match(zero.textContent,/Limit reached/);assert.equal(zero.querySelector("progress"),null);
+    x.click("Add transaction");const form=x.form("Add transactions");x.set(form,"amount","5");x.set(form,"category","Food");const rev=x.ui.workspace.revision;x.submit(form);
+    await x.wait(()=>x.ui.workspace.revision===rev+1&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.match(x.d.querySelector(".budget-item").textContent,/30.00 over limit/);
+  }finally{x.dom.window.close();}
+});

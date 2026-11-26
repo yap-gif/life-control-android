@@ -1,0 +1,6 @@
+# LC-P08-B2 — Financial visualization refinement
+Date 2026-11-26 Asia/Kuching. Baseline 54e118684d0d5b811d97cb535760300cda9208b7; B1 owner Windows 14/14 UI and 235/235 full, frozen integrity PASS, release exit 2; source 45798602326/browser 45798602280 success. B1 engineering acceptance only; manual visual comparison pending.
+
+Candidate adds signed net cashflow and distinct income/expense chart tones, expense share meters, monthly budget usage with explicit over-limit and zero-limit states, six-period income/expense/net comparisons with numerical tables. All values derive from existing buildReport/buildTrend and integer sen; no financial calculation or persisted data model changed. Net is not account balance; no income means ratio unavailable; zero activity is recorded zero only. Trend anchored to fixed demo date and independent of custom report filters, partial period labelled. All budgets preserve evidence range, no prorating. Existing CRUD and category authorization unchanged. Four UI regressions, expected suite 239 pending actual execution; browser and owner visual acceptance pending.
+
+Only preview-v2 UI/CSS, preview tests and this note. No real APS, model, credits, production app operation or release; 10 production gates BLOCKED; App 908 / v0.1.2 / 2720 frozen.
