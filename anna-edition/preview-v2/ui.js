@@ -153,21 +153,37 @@ export async function mountPreview(doc,win,store){
   function listEntry(title,meta,buttons=[],extra=null){
     return append(el("div","entry"),append(el("div"),el("strong","",title),el("p","meta",meta),extra),append(el("div","actions"),buttons));
   }
+  function defaultFilters(){return {page:1,query:"",filter:"",category:"",priority:"",from:"",through:""};}
   function filterList(kind,title,describe,{statusChoices=null,category=false,priority=false,parentId=null,query=true}={}){
-    const key=kind+":"+String(parentId??""),s=filterState.get(key)??{page:1,query:"",filter:"",category:"",priority:"",from:"",through:""};filterState.set(key,s);
+    const key=kind+":"+String(parentId??""),s=filterState.get(key)??defaultFilters();filterState.set(key,s);
     const opts={page:s.page,pageSize:10,query:s.query,from:s.from||null,through:s.through||null,filter:s.filter||null,category:s.category||null,priority:s.priority||null,parentId};
     let result=selectPage(ws(),kind,opts);if(s.page>Math.max(1,result.pageCount)){s.page=Math.max(1,result.pageCount);result=selectPage(ws(),kind,{...opts,page:s.page});}
-    const form=el("form","toolbar");if(query)field(f("query","Search","search",s.query,{maxLength:200}),form);
+    const form=el("form","toolbar");form.dataset.filterKey=key;
+    if(query)field(f("query","Search","search",s.query,{maxLength:200}),form);
     if(statusChoices)field(f("filter","Status / type","select",s.filter,{choices:[["","All"],...choices(...statusChoices)]}),form);
     if(category)field(f("category","Category / topic","text",s.category),form);
     if(priority)field(f("priority","Priority","select",s.priority,{choices:[["","All"],...choices("low","normal","high")]}),form);
     field(f("from","From","date",s.from),form);field(f("through","Through","date",s.through),form);
-    const submit=el("button","","Apply filters");submit.type="submit";form.append(submit);
-    form.addEventListener("submit",e=>{e.preventDefault();if(busy||!abandon())return;try{const v=values(form),next={...s,...v,page:1};selectPage(ws(),kind,{...opts,page:1,query:next.query,from:next.from||null,through:next.through||null,filter:next.filter||null,category:next.category||null,priority:next.priority||null});Object.assign(s,next);clearEditor();render();}catch(err){notify(safeError(err),true);}});
+    const submit=el("button","","Apply filters");submit.type="submit";
+    const restoreFilterFocus=selector=>[...page.querySelectorAll("form[data-filter-key]")].find(n=>n.dataset.filterKey===key)?.querySelector(selector)?.focus();
+    const clear=button("Clear filters",()=>{
+      if(!abandon())return;
+      Object.assign(s,defaultFilters());clearEditor();render();restoreFilterFocus('[data-clear-filters]');
+    });clear.dataset.clearFilters="";
+    form.append(append(el("div","filter-actions"),submit,clear));
+    form.addEventListener("submit",e=>{e.preventDefault();if(busy||!abandon())return;try{
+      const v=values(form),next={...s,...v,page:1};
+      selectPage(ws(),kind,{...opts,page:1,query:next.query,from:next.from||null,through:next.through||null,filter:next.filter||null,category:next.category||null,priority:next.priority||null});
+      Object.assign(s,next);clearEditor();render();restoreFilterFocus('button[type="submit"]');
+    }catch(err){notify(safeError(err),true);}});
+    const applied=[["Search",s.query],["Status / type",s.filter],["Category / topic",s.category],["Priority",s.priority],["From",s.from],["Through",s.through]].filter(([,v])=>v!=="");
+    const total=applied.length?selectPage(ws(),kind,{page:1,pageSize:1,parentId}).total:result.total;
+    const scope=append(el("div","filter-summary"),el("strong","",result.total+" of "+total+" records"),small(applied.length?"Applied filters":"All records in this list"));
+    if(applied.length)scope.append(append(el("div","filter-tags"),applied.map(([label,value])=>el("span","tag",label+": "+value))));
     const list=el("div");for(const row of result.rows)list.append(describe(row));
     const pager=append(el("div","row"),small(result.total+" records · page "+s.page+" / "+Math.max(1,result.pageCount)),append(el("div","actions"),
       button("Previous",()=>{if(abandon()){clearEditor();s.page--;render();}},"",s.page<=1),button("Next",()=>{if(abandon()){clearEditor();s.page++;render();}},"",s.page>=result.pageCount)));
-    return section(title,form,result.rows.length?list:empty("No matching records."),pager);
+    return section(title,scope,form,result.rows.length?list:empty(applied.length?"No matching records. Clear filters to see all records in this list.":"No matching records."),pager);
   }
   const editButton=(kind,row,parent=null)=>button("Edit",()=>openEditor(kind,row,parent),"",store.locked);
   const delButton=(kind,row)=>button("Delete",async()=>{
@@ -242,9 +258,13 @@ export async function mountPreview(doc,win,store){
     customDates(kind,from,through);form.append(controls);
     const fs=el("fieldset","category-grid");fs.append(el("legend","","Report categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",reportState.selected.includes(k)),fs);form.append(fs);
     const submit=el("button","primary","Apply report filters");submit.type="submit";form.append(submit);
-    form.addEventListener("submit",e=>{e.preventDefault();const v=values(form),s={kind:v.kind,from:v.from,through:v.through,trend:v.trend,selected:REPORT_CATEGORIES.filter(k=>v[k])};try{buildReport(ws(),specFor(s.kind,s.from,s.through),DEMO_DAY,s.selected);Object.assign(reportState,s);render();notify("Report recalculated locally.");}catch(err){notify(safeError(err),true);}});
-    const r=buildReport(ws(),specFor(reportState.kind,reportState.from,reportState.through),DEMO_DAY,reportState.selected),out=[section("Report controls",form),section("Evidence coverage",small(dates(r.periods.current)+(r.periods.current.partial?" · Partial period":"")),small("Comparison: "+dates(r.periods.previous)+" · "+r.periods.comparison),small(r.coverageNote))];
-    if(r.current.money){const m=r.current.money;out.push(metrics([["Income",fmt(m.incomeMinor),"positive"],["Expense",fmt(m.expenseMinor),"expense"],["Net cashflow",fmt(m.netMinor),netTone(m.netMinor)],["Net / income",m.netIncomeRatio===null?"N/A":m.netIncomeRatio.toFixed(1)+"%"]]));
+    form.addEventListener("submit",e=>{e.preventDefault();if(busy)return;const v=values(form),s={kind:v.kind,from:v.from,through:v.through,trend:v.trend,selected:REPORT_CATEGORIES.filter(k=>v[k])};try{buildReport(ws(),specFor(s.kind,s.from,s.through),DEMO_DAY,s.selected);Object.assign(reportState,s);render();notify("Report recalculated locally.");}catch(err){notify(safeError(err),true);}});
+    const r=buildReport(ws(),specFor(reportState.kind,reportState.from,reportState.through),DEMO_DAY,reportState.selected),out=[];
+    const coverage=section("Evidence coverage",small(dates(r.periods.current)+(r.periods.current.partial?" · Partial period":"")),small("Comparison: "+dates(r.periods.previous)+" · "+r.periods.comparison),small(r.coverageNote));
+    coverage.classList.add("report-coverage");
+    coverage.append(small("Applied categories: "+reportState.selected.map(k=>categoryNames[k]).join(", ")));
+    const summary=[coverage];
+    if(r.current.money){const m=r.current.money;summary.push(metrics([["Income",fmt(m.incomeMinor),"positive"],["Expense",fmt(m.expenseMinor),"expense"],["Net cashflow",fmt(m.netMinor),netTone(m.netMinor)],["Net / income",m.netIncomeRatio===null?"N/A":m.netIncomeRatio.toFixed(1)+"%"]]));
       out.push(append(el("div","grid finance-grid"),section("Cashflow",cashflow(m)),section("Expense breakdown",expenseBreakdown(m),table(["Category","Amount","Share"],m.expenseCategories.map(x=>[x.label,fmt(x.total),x.sharePercent.toFixed(1)+"%"])))),section("Monthly budgets",small("Budget actuals may cover earlier days in the same month; see each evidence range."),budgetSummary(r.current.budgets),table(["Category","Coverage","Limit","Spent","Remaining"],r.current.budgets.map(b=>[b.category,dates(b),fmt(b.limitMinor),fmt(b.spentMinor),fmt(b.remainingMinor)]))));}
     if(r.current.learning)out.push(section("Learning topics",chart(r.current.learning.topics.map(x=>[x.label,x.total]),n=>n+" min"),table(["Topic","Minutes","Sessions"],r.current.learning.topics.map(x=>[x.label,x.total,x.count]))));
     const summaryRows=[];
@@ -253,7 +273,7 @@ export async function mountPreview(doc,win,store){
     if(r.current.journal)summaryRows.push(["Journal",r.current.journal.days+" recorded days"]);
     if(r.current.habits)summaryRows.push(["Habits",r.current.habits.reduce((n,h)=>n+h.completed,0)+" / "+r.current.habits.reduce((n,h)=>n+h.eligible,0)+" eligible days completed"]);
     if(r.currentGoalSnapshot)summaryRows.push(["Goals · current snapshot",r.currentGoalSnapshot.length+" recorded goals"]);
-    if(summaryRows.length)out.push(section("Activity at a glance",small("Task due status and goal progress are current snapshots, not reconstructed history."),table(["Category","Recorded activity"],summaryRows)));
+    if(summaryRows.length)summary.push(section("Activity at a glance",small("Task due status and goal progress are current snapshots, not reconstructed history."),table(["Category","Recorded activity"],summaryRows)));
     const disclosure=(title,...children)=>{const d=el("details","panel report-disclosure");d.append(el("summary","",title),...children);return d;};
     const trends=reportState.selected.filter(k=>k!=="goals");
     if(trends.length){
@@ -264,7 +284,7 @@ export async function mountPreview(doc,win,store){
       if(trends.includes("habits"))out.push(disclosure("Habit trend",table(["Period","Completed scheduled days","Eligible days"],data.map(p=>[p.range.from+(p.range.partial?" *":""),p.values.habits.reduce((n,h)=>n+h.completed,0),p.values.habits.reduce((n,h)=>n+h.eligible,0)]))));
     }
     const map=new Map(r.metrics.map(m=>[m.id,m]));out.push(disclosure("Canonical evidence",small("Expand for the complete selected metrics and comparison data. Wide tables scroll inside their own container."),table(["Metric","Value","Evidence range","Samples"],r.metrics.map(m=>[m.id,val(m),dates(m.range),m.sampleCount??"—"])),el("h3","","Period changes"),table(["Metric","Recorded change","Percent"],r.changes.map(x=>[x.metricId,val({...map.get(x.metricId),value:x.delta}),x.percentChange===null?"N/A":x.percentChange.toFixed(1)+"%"]))));
-    return stack(out);
+    return stack(summary,section("Report controls",form),out);
   }
   function tasks(){return stack(actionPanel("Task management","Actual completion and reopen events are recorded separately from due dates.",addButton("tasks","Add task")),editorView(),
     filterList("tasks","Tasks",t=>listEntry(t.title,[t.priority,t.status,t.dueDate??"No due date",t.sourceActionId?"AI-linked":""].filter(Boolean).join(" · "),[editButton("tasks",t),commandButton(t.status==="open"?"Complete":"Reopen",{type:"task.transition",id:t.id,eventId:store.id("event"),status:t.status==="open"?"done":"open"}),delButton("tasks",t)]),{statusChoices:["open","done"],priority:true}));}

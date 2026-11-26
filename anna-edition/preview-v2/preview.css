@@ -60,3 +60,7 @@ nav a:hover:not([aria-current=page]){background:var(--panel)}
 .quick-records h2{margin-bottom:4px}.quick-record-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.quick-record-grid button{min-height:44px;overflow-wrap:anywhere}.quick-records>.muted{margin-bottom:10px}
 @media(max-width:1040px){.quick-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.quick-record-grid button{padding:8px;font-size:.86rem}}
+
+/* Phase 08-C2: applied report scope first, compact reversible view filters. */
+.report-coverage>.muted{margin-bottom:4px}.report-coverage>.muted:last-child{margin-bottom:0}.filter-summary{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin:0 0 10px;min-width:0}.filter-summary>.muted{margin:0}.filter-tags{display:flex;flex-wrap:wrap;gap:5px;width:100%;min-width:0}.filter-tags .tag{max-width:100%;padding:3px 8px;overflow-wrap:anywhere}.filter-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.filter-actions button{flex:1 1 auto}
+@media(max-width:420px){.filter-actions{width:100%}.filter-summary{align-items:flex-start}}

@@ -260,3 +260,72 @@ test("08C1-05 unconfirmed quick write locks all direct record actions",async()=>
     assert.equal(x.ui.workspace.collections.tasks.some(t=>t.title==="Unconfirmed quick"),false);
   }finally{x.dom.window.close();}
 });
+
+test("08C2-01 applied report evidence and key metrics precede controls and update only on apply",async()=>{
+  const x=await setup("reports");try{
+    const rev=x.ui.workspace.revision;
+    const coverage=x.d.querySelector(".report-coverage"),form=x.d.querySelector("#page form");
+    assert.ok(coverage.compareDocumentPosition(form)&x.dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.ok(x.d.querySelector("#page .metrics").compareDocumentPosition(form)&x.dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.match(coverage.textContent,/Applied categories: Money/);
+    x.set(form,"money",false);assert.match(coverage.textContent,/Applied categories: Money/);
+    x.submit(form);assert.doesNotMatch(x.d.querySelector(".report-coverage").textContent,/Applied categories: Money/);
+    assert.equal(x.d.querySelector(".cashflow-summary"),null);
+    assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08C2-02 rejected custom report leaves last applied evidence and data intact",async()=>{
+  const x=await setup("reports");try{
+    const rev=x.ui.workspace.revision,coverage=x.d.querySelector(".report-coverage"),before=coverage.textContent,form=x.d.querySelector("#page form");
+    x.set(form,"kind","custom");x.set(form,"from","2026-11-24");x.set(form,"through","2026-11-01");x.submit(form);
+    assert.equal(x.d.querySelector(".report-coverage").textContent,before);
+    assert.match(x.d.getElementById("status").textContent,/Operation rejected/);
+    assert.equal(x.ui.workspace.revision,rev);
+    x.set(form,"from","2026-11-01");x.set(form,"through","2026-11-24");x.submit(form);
+    assert.match(x.d.getElementById("status").textContent,/Report recalculated locally/);
+    assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08C2-03 record filters show applied scope, zero matches and clear without mutating",async()=>{
+  const x=await setup("money");try{
+    const rev=x.ui.workspace.revision,records=structuredClone(x.ui.workspace.collections.transactions);
+    const getForm=()=>[...x.d.querySelectorAll("form[data-filter-key]")].find(f=>f.dataset.filterKey==="transactions:");
+    const getSummary=()=>getForm().parentElement.querySelector(".filter-summary");
+    let f=getForm();assert.match(getSummary().textContent,/5 of 5 records/);
+    x.set(f,"category","No such category");assert.match(getSummary().textContent,/5 of 5 records/);
+    x.submit(f);f=getForm();assert.match(getSummary().textContent,/0 of 5 records/);assert.match(getSummary().textContent,/No such category/);
+    assert.match(f.parentElement.textContent,/Clear filters to see all records/);
+    assert.equal(x.d.activeElement,f.querySelector('button[type="submit"]'));
+    x.click("Clear filters",f);f=getForm();assert.equal(f.querySelector('[name="category"]').value,"");
+    assert.match(getSummary().textContent,/5 of 5 records/);assert.equal(getSummary().querySelector(".filter-tags"),null);
+    assert.equal(x.d.activeElement,f.querySelector("[data-clear-filters]"));
+    assert.deepEqual(x.ui.workspace.collections.transactions,records);assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08C2-04 clear filters cannot discard dirty editor without confirmation",async()=>{
+  const x=await setup("tasks");try{
+    const rev=x.ui.workspace.revision;let f=x.d.querySelector("form.toolbar");x.set(f,"query","Review");x.submit(f);
+    x.click("Add task");const draft=x.form("Add tasks");x.set(draft,"title","Keep draft");
+    f=x.d.querySelector("form.toolbar");x.dom.window.confirm=()=>false;x.click("Clear filters",f);
+    assert.equal(x.form("Add tasks"),draft);assert.equal(draft.querySelector('[name="title"]').value,"Keep draft");
+    assert.equal(f.querySelector('[name="query"]').value,"Review");
+    x.dom.window.confirm=()=>true;x.click("Clear filters",f);
+    assert.equal(x.d.querySelector('form[data-form="Add tasks"]'),null);
+    assert.equal(x.d.querySelector('form.toolbar [name="query"]').value,"");assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08C2-05 clearing one money list retains other list filters and invalid ranges preserve applied evidence",async()=>{
+  const x=await setup("money");try{
+    const rev=x.ui.workspace.revision;
+    const form=kind=>[...x.d.querySelectorAll("form[data-filter-key]")].find(f=>f.dataset.filterKey===kind+":");
+    let f=form("transactions");x.set(f,"category","Food");x.submit(f);
+    f=form("budgets");x.set(f,"category","Food");x.submit(f);
+    f=form("transactions");const before=f.parentElement.querySelector(".filter-summary").textContent;
+    x.set(f,"from","2026-11-24");x.set(f,"through","2026-11-01");x.submit(f);
+    assert.match(x.d.getElementById("status").textContent,/Operation rejected/);
+    assert.equal(f.parentElement.querySelector(".filter-summary").textContent,before);
+    x.click("Clear filters",f);assert.equal(form("budgets").querySelector('[name="category"]').value,"Food");
+    assert.equal(form("transactions").querySelector('[name="category"]').value,"");
+    assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
