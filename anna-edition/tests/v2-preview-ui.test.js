@@ -190,3 +190,66 @@ test("08B2-04 budget visual updates from confirmed transaction and zero limit ha
     assert.match(x.d.querySelector(".budget-item").textContent,/30.00 over limit/);
   }finally{x.dom.window.close();}
 });
+
+test("08C1-01 overview directly records a task and restores focus after confirmed save",async()=>{
+  const x=await setup();try{
+    const rev=x.ui.workspace.revision;
+    const buttons=[...x.d.querySelectorAll(".quick-record-grid button")];
+    assert.deepEqual(buttons.map(b=>b.dataset.quickKind),["tasks","transactions","learning","journal"]);
+    x.click("Add task");const f=x.form("Add tasks");
+    assert.equal(x.ui.route,"overview");assert.equal(x.ui.workspace.revision,rev);
+    assert.equal(x.d.activeElement,f.querySelector('[name="title"]'));
+    x.set(f,"title","Quick task");x.set(f,"dueDate",DEMO_DAY);x.submit(f);
+    await x.wait(()=>x.ui.workspace.revision===rev+1&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.ui.route,"overview");assert.match(x.d.querySelector(".overview-grid").textContent,/Quick task/);
+    assert.equal(x.d.querySelector('form[data-form="Add tasks"]'),null);
+    assert.equal(x.d.activeElement.dataset.quickKind,"tasks");
+  }finally{x.dom.window.close();}
+});
+test("08C1-02 quick transaction updates overview exactly and Money puts budget and records before charts",async()=>{
+  const x=await setup();try{
+    const rev=x.ui.workspace.revision;x.click("Add transaction");const f=x.form("Add transactions");
+    assert.equal(x.ui.route,"overview");assert.equal(x.ui.workspace.revision,rev);
+    x.set(f,"amount","1.23");x.set(f,"category","Food");x.submit(f);
+    await x.wait(()=>x.ui.workspace.revision===rev+1&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.match(x.d.querySelector(".cashflow-net").textContent,/723.77/);
+    await x.navigate("money");
+    const titles=[...x.d.querySelectorAll("#page h2")].map(h=>h.textContent);
+    assert.ok(titles.indexOf("Budget overview")<titles.indexOf("Monthly cashflow"));
+    assert.ok(titles.indexOf("Transactions")<titles.indexOf("Monthly cashflow"));
+    assert.match(x.d.querySelector(".budget-item").textContent,/26.23 over limit/);
+  }finally{x.dom.window.close();}
+});
+test("08C1-03 quick learning updates progress and today's reflection edits rather than duplicates",async()=>{
+  const x=await setup();try{
+    let rev=x.ui.workspace.revision;x.click("Log session");let f=x.form("Add learning");x.set(f,"topic","Quick study");x.set(f,"minutes","30");x.submit(f);
+    rev++;await x.wait(()=>x.ui.workspace.revision===rev&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.d.querySelector(".overview-grid progress").value,55);
+    const before=x.ui.workspace.collections.journal.length,today=x.ui.workspace.collections.journal.find(j=>j.date===DEMO_DAY);
+    assert.ok(today);x.click("Edit today\'s reflection");f=x.form("Edit journal");
+    assert.equal(f.querySelector("textarea").value,today.reflection);x.set(f,"reflection","Edited fictional reflection");x.submit(f);
+    rev++;await x.wait(()=>x.ui.workspace.revision===rev&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.ui.workspace.collections.journal.length,before);assert.equal(x.ui.workspace.collections.journal.find(j=>j.id===today.id).reflection,"Edited fictional reflection");
+    assert.equal(x.ui.route,"overview");assert.equal(x.d.activeElement.dataset.quickKind,"journal");
+  }finally{x.dom.window.close();}
+});
+
+test("08C1-04 quick editor guards dirty drafts and cancellation restores focus",async()=>{
+  const x=await setup();try{
+    const rev=x.ui.workspace.revision;x.click("Add task");const f=x.form("Add tasks");x.set(f,"title","Keep this draft");
+    x.dom.window.confirm=()=>false;x.click("Add transaction");assert.equal(x.form("Add tasks"),f);
+    x.click("Cancel",f);assert.equal(x.form("Add tasks"),f);
+    x.dom.window.location.hash="money";await new Promise(r=>setTimeout(r,20));assert.equal(x.ui.route,"overview");assert.equal(f.querySelector('[name="title"]').value,"Keep this draft");
+    x.dom.window.confirm=()=>true;x.click("Cancel",f);assert.equal(x.d.querySelector("form[data-form]"),null);assert.equal(x.d.activeElement.dataset.quickKind,"tasks");assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08C1-05 unconfirmed quick write locks all direct record actions",async()=>{
+  const x=await setup("privacy");try{
+    const rev=x.ui.workspace.revision;x.click("Simulate unconfirmed write");await x.navigate("overview");
+    x.click("Add task");const f=x.form("Add tasks");x.set(f,"title","Unconfirmed quick");x.submit(f);
+    await x.wait(()=>x.store.locked&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    assert.equal(x.ui.workspace.revision,rev);assert.match(x.d.getElementById("status").textContent,/not confirmed/);
+    assert.ok([...x.d.querySelectorAll(".quick-record-grid button")].every(b=>b.disabled));
+    assert.equal(x.ui.workspace.collections.tasks.some(t=>t.title==="Unconfirmed quick"),false);
+  }finally{x.dom.window.close();}
+});

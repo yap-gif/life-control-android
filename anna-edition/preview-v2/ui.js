@@ -42,10 +42,11 @@ export async function mountPreview(doc,win,store){
   function setBusy(value){busy=value;page.setAttribute("aria-busy",String(value));page.querySelectorAll("button,input,select,textarea").forEach(n=>{if(value){if(n.dataset.wasDisabled===undefined)n.dataset.wasDisabled=String(n.disabled);n.disabled=true;}else if(n.dataset.wasDisabled!==undefined){n.disabled=n.dataset.wasDisabled==="true";delete n.dataset.wasDisabled;}});}
   async function commit(command,ai=false){
     if(busy||store.locked)throw new Error("Workspace locked or busy");
+    const quickKind=route==="overview"?editor?.kind:null;let confirmed=false;
     setBusy(true);notify("Confirming simulated write…");
-    try{await store.apply(command,ai);invalidate();clearEditor();notify("Confirmed in isolated memory · revision "+ws().revision);render();}
+    try{await store.apply(command,ai);invalidate();clearEditor();notify("Confirmed in isolated memory · revision "+ws().revision);render();confirmed=true;}
     catch(e){notify(safeError(e),true);if(store.locked)render();}
-    finally{setBusy(false);}
+    finally{setBusy(false);if(confirmed&&quickKind)focusQuick(quickKind);}
   }
   function field(def,form){
     const label=el("label",def.wide?"wide":"");label.append(el("span","",def.label));
@@ -214,11 +215,21 @@ export async function mountPreview(doc,win,store){
     }else return null;
     return formBox((isEdit?"Edit ":"Add ")+pretty(kind),defs,async v=>{
       const value=make(v),cmd=["transactions","budgets","learning","journal","goals"].includes(kind)?{type:isEdit?"record.edit":"record.add",collection:kind,id:old.id??store.id(kind),data:value}:value;await commit(cmd);
-    },{track:true,cancel:()=>{if(abandon()){clearEditor();render();}}});
+    },{track:true,cancel:()=>{if(abandon()){clearEditor();render();if(route==="overview")focusQuick(kind);}}});
+  }
+  function focusQuick(kind){[...page.querySelectorAll("[data-quick-kind]")].find(b=>b.dataset.quickKind===kind)?.focus();}
+  function quickRecords(){
+    const today=c().journal.find(j=>j.date===DEMO_DAY);
+    const actions=[["tasks","Add task",null],["transactions","Add transaction",null],["learning","Log session",null],["journal",today?"Edit today's reflection":"Add reflection",today??null]];
+    return append(el("section","panel quick-records"),el("h2","","Quick record"),small("Record directly here. Changes are confirmed only in isolated memory."),
+      append(el("div","quick-record-grid"),actions.map(([kind,label,row])=>{
+        const b=button(label,()=>openEditor(kind,row),"primary",store.locked);b.dataset.quickKind=kind;return b;
+      })));
   }
   function overview(){
     const w=ws(),week=buildReport(w,{kind:"week"},DEMO_DAY,REPORT_CATEGORIES),month=buildReport(w,{kind:"month"},DEMO_DAY,["money"]),tasks=w.collections.tasks.filter(t=>t.status==="open"),due=tasks.filter(t=>t.dueDate&&t.dueDate<=DEMO_DAY);
     return stack(metrics([["Open tasks",tasks.length],["Due today / overdue",due.length],["This week · learning",week.current.learning.minutes+" min"],["This month · net",fmt(month.current.money.netMinor),netTone(month.current.money.netMinor)]]),
+      quickRecords(),editorView(),
       append(el("div","grid overview-grid"),section("Today's priorities",due.length?append(el("div"),due.map(t=>listEntry(t.title,t.priority+" · "+t.dueDate))):empty("No recorded tasks due."),link("tasks","Manage tasks →"),progress("Weekly learning",week.current.learning.weeklyTargetPercent,week.current.learning.minutes+" / "+(week.current.learning.weeklyTargetMinutes??"No target")+" min"),link("learning","View learning →")),
       section("Monthly cashflow",cashflow(month.current.money),link("reports","Open reports →"))),
       section("Quick navigation",append(el("div","quick-nav"),[["tasks","Manage tasks"],["money","Record money"],["learning","Log learning"],["journal","Write reflection"]].map(([id,label])=>link(id,label+" →"))),small("Record activity, inspect deterministic reports, then explicitly authorize a simulated analysis."),link("insights","Open AI Insights →")));
@@ -259,9 +270,9 @@ export async function mountPreview(doc,win,store){
     filterList("tasks","Tasks",t=>listEntry(t.title,[t.priority,t.status,t.dueDate??"No due date",t.sourceActionId?"AI-linked":""].filter(Boolean).join(" · "),[editButton("tasks",t),commandButton(t.status==="open"?"Complete":"Reopen",{type:"task.transition",id:t.id,eventId:store.id("event"),status:t.status==="open"?"done":"open"}),delButton("tasks",t)]),{statusChoices:["open","done"],priority:true}));}
   function money(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["money"]).current;return stack(metrics([["Monthly income",fmt(r.money.incomeMinor),"positive"],["Monthly expense",fmt(r.money.expenseMinor),"expense"],["Net cashflow",fmt(r.money.netMinor),netTone(r.money.netMinor)],["Transactions",r.money.entryCount]]),
     actionPanel("Money management","Record income, expenses and category budgets.",addButton("transactions","Add transaction"),addButton("budgets","Add budget")),editorView(),
-    append(el("div","grid finance-grid"),section("Monthly cashflow",cashflow(r.money)),section("Expense allocation",expenseBreakdown(r.money),small("Share of recorded expenses in the demo month."))),
     section("Budget overview",budgetSummary(r.budgets)),
     filterList("transactions","Transactions",t=>listEntry(t.category+" · "+(t.kind==="income"?"+":"−")+fmt(t.amountMinor),t.kind+" · "+t.date,[editButton("transactions",t),delButton("transactions",t)],t.note?el("p","",t.note):null),{statusChoices:["income","expense"],category:true}),
+    append(el("div","grid finance-grid"),section("Monthly cashflow",cashflow(r.money)),section("Expense allocation",expenseBreakdown(r.money),small("Share of recorded expenses in the demo month."))),
     filterList("budgets","Budgets",b=>{const x=r.budgets.find(x=>x.month===b.month&&x.categoryKey===b.category.trim().normalize("NFC").toLowerCase());return listEntry(b.category+" · "+fmt(b.limitMinor),b.month+(x?" · Remaining "+fmt(x.remainingMinor):""),[editButton("budgets",b),delButton("budgets",b)]);},{category:true}));}
   function learning(){const r=buildReport(ws(),{kind:"week"},DEMO_DAY,["learning"]).current.learning;return stack(metrics([["Weekly minutes",r.minutes],["Sessions",r.sessions],["Weekly target",r.weeklyTargetMinutes??"Not set"],["Target progress",r.weeklyTargetPercent===null?"N/A":r.weeklyTargetPercent.toFixed(1)+"%"]]),actionPanel("Learning records","Track actual time spent learning.",addButton("learning","Log session")),editorView(),section("Weekly progress",progress("Learning target",r.weeklyTargetPercent,r.minutes+" / "+(r.weeklyTargetMinutes??"No target")+" min")),formBox("Weekly target",[f("minutes","Target minutes (blank clears)","number",ws().settings.learningWeeklyTargetMinutes??"",{min:1,max:10080,step:1})],v=>commit({type:"learning.target",minutes:v.minutes===""?null:Number(v.minutes)}),{track:true}),filterList("learning","Sessions",l=>listEntry(l.topic+" · "+l.minutes+" min",l.date,[editButton("learning",l),delButton("learning",l)],l.note?el("p","",l.note):null),{category:true}));}
   function journal(){return stack(actionPanel("Daily journal","Private by default. Journal content is included in a simulated AI request only when explicitly selected.",addButton("journal","Add reflection")),editorView(),filterList("journal","Reflections",j=>listEntry(j.date,j.tags.join(" · ")||"No tags",[editButton("journal",j),delButton("journal",j)],el("p","",j.reflection))));}
