@@ -57,8 +57,26 @@ export async function mountPreview(doc,win,store){
     if(def.required)n.required=true;if(def.maxLength)n.maxLength=def.maxLength;
     for(const k of ["min","max","step"])if(def[k]!==undefined)n.setAttribute(k,def[k]);
     if(def.disabled)n.disabled=true;
-    if(def.type==="checkbox")label.classList.add("tick");
-    label.append(n);form.append(label);return n;
+    if(def.type==="checkbox"){label.classList.add("tick");label.prepend(n);}else label.append(n);form.append(label);return n;
+  }
+  // Preserve the custom values while hiding irrelevant controls. The request
+  // still passes through the original date/spec and explicit-consent validation.
+  function customDates(kind,from,through){
+    const update=()=>{for(const n of [from,through])n.closest("label").hidden=kind.value!=="custom";};
+    kind.addEventListener("input",update);kind.addEventListener("change",update);update();
+  }
+  function progress(label,percent,description){
+    const root=el("div","progress-block");
+    root.append(append(el("div","row"),el("strong","",label),small(description)));
+    if(Number.isFinite(percent)){
+      const bar=el("progress","progress-meter");bar.max=100;bar.value=Math.max(0,Math.min(100,percent));
+      bar.setAttribute("aria-label",label);bar.setAttribute("aria-valuetext",description);
+      root.append(bar);
+    }
+    return root;
+  }
+  function actionPanel(title,description,...buttons){
+    return append(el("section","panel action-panel"),append(el("div","action-copy"),el("h2","",title),description?small(description):null),append(el("div","actions"),buttons));
   }
   function values(form){return Object.fromEntries([...form.querySelectorAll("[name]")].map(n=>[n.name,n.type==="checkbox"?n.checked:n.value]));}
   function formBox(title,defs,onSubmit,{track=false,submit="Save",cancel=null}={}){
@@ -155,16 +173,17 @@ export async function mountPreview(doc,win,store){
   function overview(){
     const w=ws(),week=buildReport(w,{kind:"week"},DEMO_DAY,REPORT_CATEGORIES),month=buildReport(w,{kind:"month"},DEMO_DAY,["money"]),tasks=w.collections.tasks.filter(t=>t.status==="open"),due=tasks.filter(t=>t.dueDate&&t.dueDate<=DEMO_DAY);
     return stack(metrics([["Open tasks",tasks.length],["Due today / overdue",due.length],["This week · learning",week.current.learning.minutes+" min"],["This month · net",fmt(month.current.money.netMinor)]]),
-      append(el("div","grid"),section("Today's priorities",due.length?append(el("div"),due.map(t=>listEntry(t.title,t.priority+" · "+t.dueDate))):empty("No recorded tasks due."),link("tasks","Manage tasks →")),
+      append(el("div","grid overview-grid"),section("Today's priorities",due.length?append(el("div"),due.map(t=>listEntry(t.title,t.priority+" · "+t.dueDate))):empty("No recorded tasks due."),link("tasks","Manage tasks →"),progress("Weekly learning",week.current.learning.weeklyTargetPercent,week.current.learning.minutes+" / "+(week.current.learning.weeklyTargetMinutes??"No target")+" min"),link("learning","View learning →")),
       section("Monthly cashflow",chart([["Income",month.current.money.incomeMinor],["Expenses",month.current.money.expenseMinor]],fmt),table(["Recorded metric","Value"],[["Income",fmt(month.current.money.incomeMinor)],["Expenses",fmt(month.current.money.expenseMinor)],["Net",fmt(month.current.money.netMinor)]]),link("reports","Open reports →"))),
-      section("Your next step",small("Record activity, inspect deterministic reports, then explicitly authorize a simulated analysis."),link("insights","Open AI Insights →")));
+      section("Quick navigation",append(el("div","quick-nav"),[["tasks","Manage tasks"],["money","Record money"],["learning","Log learning"],["journal","Write reflection"]].map(([id,label])=>link(id,label+" →"))),small("Record activity, inspect deterministic reports, then explicitly authorize a simulated analysis."),link("insights","Open AI Insights →")));
   }
   function reports(){
-    const form=el("form","stack"),controls=el("div","fields");
-    field(f("kind","Period","select",reportState.kind,{choices:choices("week","month","custom")}),controls);
-    field(f("from","Custom start","date",reportState.from),controls);field(f("through","Custom end","date",reportState.through),controls);
-    field(f("trend","Trend periods","select",reportState.trend,{choices:choices("week","month")}),controls);form.append(controls);
-    const fs=el("fieldset");fs.append(el("legend","","Report categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",reportState.selected.includes(k)),fs);form.append(fs);
+    const form=el("form","stack compact-config"),controls=el("div","fields");
+    const kind=field(f("kind","Period","select",reportState.kind,{choices:choices("week","month","custom")}),controls);
+    field(f("trend","Trend periods","select",reportState.trend,{choices:choices("week","month")}),controls);
+    const from=field(f("from","Custom start","date",reportState.from),controls),through=field(f("through","Custom end","date",reportState.through),controls);
+    customDates(kind,from,through);form.append(controls);
+    const fs=el("fieldset","category-grid");fs.append(el("legend","","Report categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",reportState.selected.includes(k)),fs);form.append(fs);
     const submit=el("button","primary","Apply report filters");submit.type="submit";form.append(submit);
     form.addEventListener("submit",e=>{e.preventDefault();const v=values(form),s={kind:v.kind,from:v.from,through:v.through,trend:v.trend,selected:REPORT_CATEGORIES.filter(k=>v[k])};try{buildReport(ws(),specFor(s.kind,s.from,s.through),DEMO_DAY,s.selected);Object.assign(reportState,s);render();notify("Report recalculated locally.");}catch(err){notify(safeError(err),true);}});
     const r=buildReport(ws(),specFor(reportState.kind,reportState.from,reportState.through),DEMO_DAY,reportState.selected),out=[section("Report controls",form),section("Evidence coverage",small(dates(r.periods.current)+(r.periods.current.partial?" · Partial period":"")),small("Comparison: "+dates(r.periods.previous)+" · "+r.periods.comparison),small(r.coverageNote))];
@@ -191,20 +210,20 @@ export async function mountPreview(doc,win,store){
     const map=new Map(r.metrics.map(m=>[m.id,m]));out.push(disclosure("Canonical evidence",small("Expand for the complete selected metrics and comparison data. Wide tables scroll inside their own container."),table(["Metric","Value","Evidence range","Samples"],r.metrics.map(m=>[m.id,val(m),dates(m.range),m.sampleCount??"—"])),el("h3","","Period changes"),table(["Metric","Recorded change","Percent"],r.changes.map(x=>[x.metricId,val({...map.get(x.metricId),value:x.delta}),x.percentChange===null?"N/A":x.percentChange.toFixed(1)+"%"]))));
     return stack(out);
   }
-  function tasks(){return stack(section("Task management",small("Actual completion and reopen events are recorded separately from due dates."),addButton("tasks","Add task")),editorView(),
+  function tasks(){return stack(actionPanel("Task management","Actual completion and reopen events are recorded separately from due dates.",addButton("tasks","Add task")),editorView(),
     filterList("tasks","Tasks",t=>listEntry(t.title,[t.priority,t.status,t.dueDate??"No due date",t.sourceActionId?"AI-linked":""].filter(Boolean).join(" · "),[editButton("tasks",t),commandButton(t.status==="open"?"Complete":"Reopen",{type:"task.transition",id:t.id,eventId:store.id("event"),status:t.status==="open"?"done":"open"}),delButton("tasks",t)]),{statusChoices:["open","done"],priority:true}));}
   function money(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["money"]).current;return stack(metrics([["Monthly income",fmt(r.money.incomeMinor)],["Monthly expense",fmt(r.money.expenseMinor)],["Net cashflow",fmt(r.money.netMinor)],["Transactions",r.money.entryCount]]),
-    section("Money management",append(el("div","actions"),addButton("transactions","Add transaction"),addButton("budgets","Add budget"))),editorView(),
+    actionPanel("Money management","Record income, expenses and category budgets.",addButton("transactions","Add transaction"),addButton("budgets","Add budget")),editorView(),
     filterList("transactions","Transactions",t=>listEntry(t.category+" · "+fmt(t.amountMinor),t.kind+" · "+t.date,[editButton("transactions",t),delButton("transactions",t)],t.note?el("p","",t.note):null),{statusChoices:["income","expense"],category:true}),
     filterList("budgets","Budgets",b=>{const x=r.budgets.find(x=>x.month===b.month&&x.categoryKey===b.category.trim().normalize("NFC").toLowerCase());return listEntry(b.category+" · "+fmt(b.limitMinor),b.month+(x?" · Remaining "+fmt(x.remainingMinor):""),[editButton("budgets",b),delButton("budgets",b)]);},{category:true}));}
-  function learning(){const r=buildReport(ws(),{kind:"week"},DEMO_DAY,["learning"]).current.learning;return stack(metrics([["Weekly minutes",r.minutes],["Sessions",r.sessions],["Weekly target",r.weeklyTargetMinutes??"Not set"],["Target progress",r.weeklyTargetPercent===null?"N/A":r.weeklyTargetPercent.toFixed(1)+"%"]]),section("Learning records",addButton("learning","Log session")),editorView(),formBox("Weekly target",[f("minutes","Target minutes (blank clears)","number",ws().settings.learningWeeklyTargetMinutes??"",{min:1,max:10080,step:1})],v=>commit({type:"learning.target",minutes:v.minutes===""?null:Number(v.minutes)}),{track:true}),filterList("learning","Sessions",l=>listEntry(l.topic+" · "+l.minutes+" min",l.date,[editButton("learning",l),delButton("learning",l)],l.note?el("p","",l.note):null),{category:true}));}
-  function journal(){return stack(section("Daily journal",small("Private by default. Journal content is included in a simulated AI request only when explicitly selected."),addButton("journal","Add reflection")),editorView(),filterList("journal","Reflections",j=>listEntry(j.date,j.tags.join(" · ")||"No tags",[editButton("journal",j),delButton("journal",j)],el("p","",j.reflection))));}
-  function goals(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["goals","habits"]),out=[section("Goals & habits",small("Progress is manually recorded; it is not inferred from cashflow."),append(el("div","actions"),addButton("goals","Add goal"),addButton("habits","Add habit"))),editorView()];
+  function learning(){const r=buildReport(ws(),{kind:"week"},DEMO_DAY,["learning"]).current.learning;return stack(metrics([["Weekly minutes",r.minutes],["Sessions",r.sessions],["Weekly target",r.weeklyTargetMinutes??"Not set"],["Target progress",r.weeklyTargetPercent===null?"N/A":r.weeklyTargetPercent.toFixed(1)+"%"]]),actionPanel("Learning records","Track actual time spent learning.",addButton("learning","Log session")),editorView(),section("Weekly progress",progress("Learning target",r.weeklyTargetPercent,r.minutes+" / "+(r.weeklyTargetMinutes??"No target")+" min")),formBox("Weekly target",[f("minutes","Target minutes (blank clears)","number",ws().settings.learningWeeklyTargetMinutes??"",{min:1,max:10080,step:1})],v=>commit({type:"learning.target",minutes:v.minutes===""?null:Number(v.minutes)}),{track:true}),filterList("learning","Sessions",l=>listEntry(l.topic+" · "+l.minutes+" min",l.date,[editButton("learning",l),delButton("learning",l)],l.note?el("p","",l.note):null),{category:true}));}
+  function journal(){return stack(actionPanel("Daily journal","Private by default. Journal content is included in a simulated AI request only when explicitly selected.",addButton("journal","Add reflection")),editorView(),filterList("journal","Reflections",j=>listEntry(j.date,j.tags.join(" · ")||"No tags",[editButton("journal",j),delButton("journal",j)],el("p","",j.reflection))));}
+  function goals(){const r=buildReport(ws(),{kind:"month"},DEMO_DAY,["goals","habits"]),out=[actionPanel("Goals & habits","Progress is manually recorded; it is not inferred from cashflow.",addButton("goals","Add goal"),addButton("habits","Add habit")),editorView()];
     out.push(filterList("goals","Goals",g=>{const x=r.currentGoalSnapshot.find(a=>a.id===g.id),format=g.kind==="savings"?fmt:n=>n+" "+g.unit;
-      const details=append(el("div","stack"),small(format(g.progress)+" / "+format(g.target)+" · "+(x.percent===null?"N/A":x.percent.toFixed(1)+"%")),g.kind==="savings"?small("Planned monthly "+fmt(g.plannedMonthlyMinor)+" · Estimated months "+(x.months??"Unknown")):null,addButton("milestones","Add milestone",g.id));
+      const details=append(el("div","stack"),progress("Goal progress",x.percent,format(g.progress)+" / "+format(g.target)+" · "+(x.percent===null?"N/A":x.percent.toFixed(1)+"%")),g.kind==="savings"?small("Planned monthly "+fmt(g.plannedMonthlyMinor)+" · Estimated months "+(x.months??"Unknown")):null,append(el("div","actions"),addButton("milestones","Add milestone",g.id)));
       details.append(filterList("milestones","Milestones",m=>listEntry(m.title,(m.done?"Completed":"Open")+" · "+(m.targetDate??"No target date"),[editButton("milestones",m,g.id),commandButton(m.done?"Reopen":"Complete",{type:"milestone.transition",id:m.id,done:!m.done}),delButton("milestones",m)]),{parentId:g.id}));
       return listEntry(g.title,g.kind,[editButton("goals",g),delButton("goals",g)],details);},{statusChoices:["savings","general"]}));
-    out.push(filterList("habits","Habits",h=>{const x=r.current.habits.find(a=>a.id===h.id),details=append(el("div","stack"),small("Scheduled weekdays: "+h.scheduledWeekdays.join(", ")+" · Start "+h.startDate),small(x.completed+" / "+x.eligible+" eligible days · Streak "+x.streakWithinPeriod),addButton("habitCheckins","Record check-in",h.id));
+    out.push(filterList("habits","Habits",h=>{const x=r.current.habits.find(a=>a.id===h.id),details=append(el("div","stack"),small("Scheduled weekdays: "+h.scheduledWeekdays.join(", ")+" · Start "+h.startDate),small(x.completed+" / "+x.eligible+" eligible days · Streak "+x.streakWithinPeriod),append(el("div","actions"),addButton("habitCheckins","Record check-in",h.id)));
       details.append(filterList("habitCheckins","Check-ins",a=>listEntry(a.date,a.status,[editButton("habitCheckins",a,h.id),delButton("habitCheckins",a)]),{parentId:h.id,query:false}));
       return listEntry(h.title,h.archivedAt?"Archived from "+h.archivedAt:"Active",[editButton("habits",h),commandButton("Archive tomorrow",{type:"habit.archive",id:h.id,effectiveDate:shiftDay(DEMO_DAY,1)},"Archive from tomorrow? Past check-ins stay intact."),delButton("habits",h)],details);}));
     return stack(out);
@@ -227,13 +246,14 @@ export async function mountPreview(doc,win,store){
     return stack(out);
   }
   function insights(){
-    const form=el("form","stack"),fields=el("div","fields");
+    const form=el("form","stack compact-config"),fields=el("div","fields");
     field(f("question","Your question","textarea",coachState.question,{required:true,maxLength:1000,wide:true}),fields);
     field(f("focus","Focus","select",coachState.focus,{choices:choices("custom","comprehensive","financial","learning","task","goal/habit")}),fields);
-    field(f("kind","Date range","select",coachState.kind,{choices:choices("7days","30days","90days","week","month","custom")}),fields);
-    field(f("from","Custom start","date",coachState.from),fields);field(f("through","Custom end","date",coachState.through),fields);
+    const kind=field(f("kind","Date range","select",coachState.kind,{choices:choices("7days","30days","90days","week","month","custom")}),fields);
+    const from=field(f("from","Custom start","date",coachState.from),fields),through=field(f("through","Custom end","date",coachState.through),fields);
+    customDates(kind,from,through);
     field(f("prior","Prior plan (optional)","select",coachState.prior,{choices:[["","Do not include"],...c().plans.filter(p=>!p.legacyReadOnly).map(p=>[p.id,p.id])]}),fields);form.append(fields);
-    const fs=el("fieldset");fs.append(el("legend","","Explicitly authorize categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",coachState.selected.includes(k)),fs);form.append(fs);
+    const fs=el("fieldset","category-grid");fs.append(el("legend","","Explicitly authorize categories"));for(const k of REPORT_CATEGORIES)field(f(k,categoryNames[k],"checkbox",coachState.selected.includes(k)),fs);form.append(fs);
     const sync=()=>{const v=values(form);Object.assign(coachState,{question:v.question,focus:v.focus,kind:v.kind,from:v.from,through:v.through,prior:v.prior,selected:REPORT_CATEGORIES.filter(k=>v[k])});};
     form.addEventListener("input",()=>{sync();invalidate();markDirty(form);const old=page.querySelector("[data-consent-panel]");old?.remove();page.querySelector("[data-unsaved-analysis]")?.remove();notify("Request changed; a new preview and consent are required.");});
     const b=el("button","primary","Preview exact AI request");b.type="submit";b.disabled=store.locked;form.append(b);
@@ -266,9 +286,8 @@ export async function mountPreview(doc,win,store){
     if(!c().plans.length)plans.append(empty("No saved plan."));out.push(plans);return stack(out);
   }
   function privacy(){
-    return stack(section("Storage status",metrics([["Revision",ws().revision],["Mock capacity",Math.round(DEMO_LIMIT/1024)+" KiB"],["Used",store.bytes+" B"],["Real APS","BLOCKED"]]),small(store.source),small("Mock capacity is an arbitrary test ceiling, not measured Anna storage capacity."),small("Real create-if-absent, exclusive migration, readback, capacity and full erasure remain blocked."),
-      append(el("div","actions"),button("Simulate unconfirmed write",()=>{store.simulateUnconfirmedWrite();notify("Next simulated mutation will fail readback; no real storage.");},"",store.locked),button("Reconcile simulated workspace",async()=>{setBusy(true);try{await store.reconcile();invalidate();clearEditor();render();notify("Reconciled from isolated memory. No retry performed.");}finally{setBusy(false);}},"",!store.locked))),
-      section("Privacy & data",small("No network model or real storage adapter is present. Records and model receipts remain in memory; page reload resets the demo. Analysis and plan deletion are available in AI Insights."),link("insights","Manage simulated analysis history →"),small("Full production erasure is intentionally unavailable; preserved legacy data and platform-side copies cannot be guaranteed removed.")));
+    return stack(section("Privacy & data",small("No network model or real storage adapter is present. Records and model receipts remain in memory; page reload resets the demo. Analysis and plan deletion are available in AI Insights."),link("insights","Manage simulated analysis history →"),small("Full production erasure is intentionally unavailable; preserved legacy data and platform-side copies cannot be guaranteed removed.")),section("Storage status",metrics([["Revision",ws().revision],["Mock capacity",Math.round(DEMO_LIMIT/1024)+" KiB"],["Used",store.bytes+" B"],["Real APS","BLOCKED"]]),small(store.source),small("Mock capacity is an arbitrary test ceiling, not measured Anna storage capacity."),small("Real create-if-absent, exclusive migration, readback, capacity and full erasure remain blocked.")),section("Developer diagnostics",small("Synthetic fault injection only. Reconcile is not real cross-session recovery."),
+      append(el("div","actions"),button("Simulate unconfirmed write",()=>{store.simulateUnconfirmedWrite();notify("Next simulated mutation will fail readback; no real storage.");},"",store.locked),button("Reconcile simulated workspace",async()=>{setBusy(true);try{await store.reconcile();invalidate();clearEditor();render();notify("Reconciled from isolated memory. No retry performed.");}finally{setBusy(false);}},"",!store.locked))));
   }
   const views={overview,reports,insights,tasks,money,learning,journal,goals,privacy};
   function render(){

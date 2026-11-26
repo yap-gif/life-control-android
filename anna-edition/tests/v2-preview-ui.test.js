@@ -105,3 +105,47 @@ test("unconfirmed mock write locks UI, no false save, reconcile without retry",a
     await x.navigate("privacy");x.click("Reconcile simulated workspace");await x.wait(()=>!x.store.locked&&x.d.getElementById("page").getAttribute("aria-busy")==="false");assert.equal(x.ui.workspace.revision,start);assert.equal(x.ui.workspace.collections.tasks.some(t=>t.title==="Unconfirmed"),false);
   }finally{x.dom.window.close();}
 });
+
+test("08B1-01 overview has exact learning progress and four route links without mutating",async()=>{
+  const x=await setup();try{
+    const bar=x.d.querySelector("progress");assert.equal(bar.value,45);assert.equal(bar.max,100);
+    assert.match(bar.getAttribute("aria-valuetext"),/135 \/ 300 min/);
+    const rev=x.ui.workspace.revision;
+    assert.deepEqual([...x.d.querySelectorAll(".quick-nav a")].map(a=>a.getAttribute("href")),["#tasks","#money","#learning","#journal"]);
+    x.d.querySelector('.quick-nav a[href="#learning"]').click();await x.wait(()=>x.ui.route==="learning");
+    assert.equal(x.ui.workspace.revision,rev);
+  }finally{x.dom.window.close();}
+});
+test("08B1-02 report custom date controls only visible for custom and retain values",async()=>{
+  const x=await setup("reports");try{
+    const form=x.d.querySelector("#page form"),from=form.querySelector('[name="from"]'),through=form.querySelector('[name="through"]');
+    assert.ok(from.closest("label").hidden&&through.closest("label").hidden);
+    assert.equal(form.querySelectorAll(".category-grid input:checked").length,6);
+    x.set(form,"kind","custom");assert.equal(from.closest("label").hidden,false);
+    x.set(form,"from","2026-11-03");x.set(form,"through","2026-11-20");
+    x.set(form,"kind","week");assert.ok(from.closest("label").hidden);
+    x.set(form,"kind","custom");assert.equal(from.value,"2026-11-03");assert.equal(through.value,"2026-11-20");
+    x.submit(form);assert.match(x.d.getElementById("page").textContent,/2026-11-03 – 2026-11-20/);
+  }finally{x.dom.window.close();}
+});
+test("08B1-03 coach categories remain opt-in and custom range changes invalidate payload",async()=>{
+  const x=await setup("insights");try{
+    let f=x.d.querySelector("#page form");assert.equal(f.querySelectorAll(".category-grid input:checked").length,0);
+    assert.ok(f.querySelector('[name="from"]').closest("label").hidden);
+    x.set(f,"question","Review money");x.set(f,"money",true);x.submit(f);
+    await x.wait(()=>x.d.querySelector("[data-consent-panel]")&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
+    f=x.d.querySelector("#page form");x.set(f,"kind","custom");
+    assert.equal(f.querySelector('[name="from"]').closest("label").hidden,false);
+    assert.equal(x.d.querySelector("[data-consent-panel]"),null);assert.equal(f.querySelector('[name="money"]').checked,true);
+  }finally{x.dom.window.close();}
+});
+test("08B1-04 learning and goals progress use canonical metrics and privacy separates diagnostics",async()=>{
+  const x=await setup("learning");try{
+    assert.equal(x.d.querySelector("progress").value,45);
+    await x.navigate("goals");assert.equal(x.d.querySelector("progress").value,25);
+    await x.navigate("privacy");assert.equal(x.d.querySelector("#page h2").textContent,"Privacy & data");
+    const diagnostics=[...x.d.querySelectorAll("section")].find(s=>s.querySelector("h2")?.textContent==="Developer diagnostics");
+    assert.ok(diagnostics);assert.match(diagnostics.textContent,/not real cross-session recovery/);
+    assert.ok([...diagnostics.querySelectorAll("button")].some(b=>b.textContent==="Simulate unconfirmed write"));
+  }finally{x.dom.window.close();}
+});
