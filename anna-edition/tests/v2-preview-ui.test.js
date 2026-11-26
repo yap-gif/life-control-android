@@ -224,7 +224,14 @@ test("08C1-03 quick learning updates progress and today's reflection edits rathe
   const x=await setup();try{
     let rev=x.ui.workspace.revision;x.click("Log session");let f=x.form("Add learning");x.set(f,"topic","Quick study");x.set(f,"minutes","30");x.submit(f);
     rev++;await x.wait(()=>x.ui.workspace.revision===rev&&x.d.getElementById("page").getAttribute("aria-busy")==="false");
-    assert.equal(x.d.querySelector(".overview-grid progress").value,55);
+    const report=buildReport(x.ui.workspace,{kind:"week"},DEMO_DAY,["learning"]).current.learning;
+    assert.equal(report.minutes,165);
+    assert.equal(report.weeklyTargetMinutes,300);
+    const meter=x.d.querySelector(".overview-grid progress");
+    assert.equal(meter.max,100);
+    assert.equal(meter.getAttribute("aria-valuetext"),"165 / 300 min");
+    // IEEE 754: (165 / 300) * 100 is 55.00000000000001.
+    assert.ok(Math.abs(meter.value-55)<1e-10,"Expected learning progress of 55%");
     const before=x.ui.workspace.collections.journal.length,today=x.ui.workspace.collections.journal.find(j=>j.date===DEMO_DAY);
     assert.ok(today);x.click("Edit today\'s reflection");f=x.form("Edit journal");
     assert.equal(f.querySelector("textarea").value,today.reflection);x.set(f,"reflection","Edited fictional reflection");x.submit(f);
