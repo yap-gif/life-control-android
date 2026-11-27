@@ -48,6 +48,27 @@ export function createAnnaReadAdapter(runtime,{expectedVersionId="2720"}={}){
        (runtime.app.slug!==undefined&&runtime.app.slug!=="life-control-anna")||
        typeof runtime.storage?.get!=="function")fail("IDENTITY_UNVERIFIED");
   }
+  return createReadSurface(runtime,verifyIdentity);
+}
+
+/** SDK v0.28.0 has app and windowUuid but no appId/versionId mirrors.
+ * Explicit diagnostic-only mode: app identity and session continuity,
+ * NOT version attestation or proof of server-side scope. Never used to
+ * authorize initialization, migration, writes or a production boot. */
+export function createAnnaHostDiagnosticAdapter(runtime){
+  const windowUuid=runtime?.windowUuid;
+  function verifyIdentity(){
+    if(typeof windowUuid!=="string"||!windowUuid.trim()||
+       runtime?.windowUuid!==windowUuid||
+       runtime.app?.id!==908||runtime.app.slug!=="life-control-anna"||
+       runtime.capabilities?.host_api_version!=="0.1.0"||
+       runtime.appId!==undefined||runtime.versionId!==undefined||
+       typeof runtime.storage?.get!=="function")fail("IDENTITY_UNVERIFIED");
+  }
+  return createReadSurface(runtime,verifyIdentity);
+}
+
+function createReadSurface(runtime,verifyIdentity){
   verifyIdentity();
   let busy=false,locked=false;
   return Object.freeze({
@@ -56,9 +77,9 @@ export function createAnnaReadAdapter(runtime,{expectedVersionId="2720"}={}){
          ![LEGACY_KEY,WORKSPACE_KEY].includes(args.key))fail("KEY_NOT_ALLOWED");
       if(locked)fail("READ_LOCKED");
       if(busy)fail("READ_BUSY");
-      verifyIdentity();
       busy=true;
       try{
+        verifyIdentity();
         let response;
         try{response=await runtime.storage.get({key:args.key});}
         catch{fail("SDK_READ_FAILED");}
