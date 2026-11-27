@@ -1,0 +1,1182 @@
+{
+  "schema": "life-control-anna-preview-candidate-v1",
+  "candidate": "v0.2.0-isolated-preview",
+  "sourceCommit": "a9dfe61cb3eabdf040a8e0232aa7af4669dec65b",
+  "sourceTree": "fbfc0fe67fd76b4f6c28d58cd22042bbfedb26a1",
+  "branch": "feature/life-control-v020-architecture-20261124",
+  "gitBlobCount": 188,
+  "entries": [
+    {
+      "path": ".env.example",
+      "mode": "100644",
+      "gitBlobSha1": "1234e8c91b3c8af5fc7c57b4a953c127fda514e5",
+      "sizeBytes": 249
+    },
+    {
+      "path": ".github/workflows/anna-edition-tests.yml",
+      "mode": "100644",
+      "gitBlobSha1": "372a76a3b1d963a5c2d93c5ce88e467196372229",
+      "sizeBytes": 3083
+    },
+    {
+      "path": ".github/workflows/anna-v2-browser-qa.yml",
+      "mode": "100644",
+      "gitBlobSha1": "bef5a2c5a742c5e4673d320c3baacd0ce3e6328e",
+      "sizeBytes": 1455
+    },
+    {
+      "path": ".gitignore",
+      "mode": "100644",
+      "gitBlobSha1": "2cbead96443141841569282794b6230b99022fba",
+      "sizeBytes": 253
+    },
+    {
+      "path": "anna-edition/.gitignore",
+      "mode": "100644",
+      "gitBlobSha1": "1d48477775d97eba79b826a024705702aad3ea2d",
+      "sizeBytes": 382
+    },
+    {
+      "path": "anna-edition/app.json",
+      "mode": "100644",
+      "gitBlobSha1": "dd13b1feb101183430d3bc8188628e3a58a51675",
+      "sizeBytes": 3136
+    },
+    {
+      "path": "anna-edition/bundle/app.js",
+      "mode": "100644",
+      "gitBlobSha1": "65bd790ad4f5920ead87624be31a0c724e1e2763",
+      "sizeBytes": 27279
+    },
+    {
+      "path": "anna-edition/bundle/index.html",
+      "mode": "100644",
+      "gitBlobSha1": "6bcc8c89a9ce2a00ad6ae2eebfd492788767a592",
+      "sizeBytes": 11265
+    },
+    {
+      "path": "anna-edition/bundle/logic.js",
+      "mode": "100644",
+      "gitBlobSha1": "cd69945ac8e20d9a88d0a01bae92f1ca3d9c4663",
+      "sizeBytes": 6556
+    },
+    {
+      "path": "anna-edition/bundle/patterns.js",
+      "mode": "100644",
+      "gitBlobSha1": "6b0aec925db204981294b5cf2e1bd3d97a580d40",
+      "sizeBytes": 8375
+    },
+    {
+      "path": "anna-edition/bundle/review-contract.js",
+      "mode": "100644",
+      "gitBlobSha1": "c848949b28d07c2795e39b704d075005c46c3c14",
+      "sizeBytes": 4650
+    },
+    {
+      "path": "anna-edition/bundle/review-format.js",
+      "mode": "100644",
+      "gitBlobSha1": "0f23eef6c6ed514b91b314551b7c339e37fc2276",
+      "sizeBytes": 4568
+    },
+    {
+      "path": "anna-edition/bundle/storage-flow.js",
+      "mode": "100644",
+      "gitBlobSha1": "5469d795a544d67df126fa6154b63168c0f806fc",
+      "sizeBytes": 548
+    },
+    {
+      "path": "anna-edition/bundle/style.css",
+      "mode": "100644",
+      "gitBlobSha1": "433863a5601a18f188c1ddf5f1a3904190a21ea2",
+      "sizeBytes": 8397
+    },
+    {
+      "path": "anna-edition/bundle/ui-feedback.js",
+      "mode": "100644",
+      "gitBlobSha1": "248d8bf962e818ee31a76a0c7476f22983933d86",
+      "sizeBytes": 3551
+    },
+    {
+      "path": "anna-edition/bundle/v2/ai-actions.js",
+      "mode": "100644",
+      "gitBlobSha1": "34b365b4691c667e46fa6c1579c115ba1e8a8ee7",
+      "sizeBytes": 6079
+    },
+    {
+      "path": "anna-edition/bundle/v2/ai-coach.js",
+      "mode": "100644",
+      "gitBlobSha1": "ec1ecaf97be2767a5eef2807690c63775c88fbea",
+      "sizeBytes": 9814
+    },
+    {
+      "path": "anna-edition/bundle/v2/ai-schema.js",
+      "mode": "100644",
+      "gitBlobSha1": "cff14d4d6f105e5ee58025b7a04636d7c88b0112",
+      "sizeBytes": 11522
+    },
+    {
+      "path": "anna-edition/bundle/v2/calendar.js",
+      "mode": "100644",
+      "gitBlobSha1": "885901b05d2816961396644939b22c8d9601ca1e",
+      "sizeBytes": 2584
+    },
+    {
+      "path": "anna-edition/bundle/v2/domain.js",
+      "mode": "100644",
+      "gitBlobSha1": "f2e78c436deca04ace148cfc2522a2208bc97a66",
+      "sizeBytes": 17732
+    },
+    {
+      "path": "anna-edition/bundle/v2/reporting.js",
+      "mode": "100644",
+      "gitBlobSha1": "4f67262d1bdd7aaba382d7b2c7e7e92cf535d820",
+      "sizeBytes": 12233
+    },
+    {
+      "path": "anna-edition/bundle/v2/repository.js",
+      "mode": "100644",
+      "gitBlobSha1": "c0b68508ba77cf2bbe7f92efd0cd9afb8abe9bd4",
+      "sizeBytes": 8380
+    },
+    {
+      "path": "anna-edition/bundle/v2/selectors.js",
+      "mode": "100644",
+      "gitBlobSha1": "97c8db47c8690c933742fe79575ef4b17f6443e8",
+      "sizeBytes": 3481
+    },
+    {
+      "path": "anna-edition/bundle/v2/workspace.js",
+      "mode": "100644",
+      "gitBlobSha1": "dff013d7aa42f0e4840dc0d85626b99b11a8a968",
+      "sizeBytes": 7642
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/01-PRODUCT-ARCHITECTURE.md",
+      "mode": "100644",
+      "gitBlobSha1": "187e7d01dee44f12f604e9b9d23c1078c48a48a7",
+      "sizeBytes": 7818
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/02-DATA-STORAGE.md",
+      "mode": "100644",
+      "gitBlobSha1": "18f44c9fe0beabfbc3ea052cdd88ae0cfcf245e4",
+      "sizeBytes": 8311
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/03-REPORTING-AI.md",
+      "mode": "100644",
+      "gitBlobSha1": "8d92ddfc9cacc9258750df21023b68ebf0405ea7",
+      "sizeBytes": 8552
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/04-ACCEPTANCE.md",
+      "mode": "100644",
+      "gitBlobSha1": "0d441f301676a2aade939d6c30c3aedfee96ba74",
+      "sizeBytes": 6883
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/05-PHASE02-IMPLEMENTATION.md",
+      "mode": "100644",
+      "gitBlobSha1": "ef47238b317fc87c3d3a29bd59a045a2fce6926f",
+      "sizeBytes": 5974
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/06-PHASE03-IMPLEMENTATION.md",
+      "mode": "100644",
+      "gitBlobSha1": "59fbe82d00a4e726f6431bd06ca32eb6d002854f",
+      "sizeBytes": 2206
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/07-PHASE04-IMPLEMENTATION.md",
+      "mode": "100644",
+      "gitBlobSha1": "edfcf08b337cbedffcfcbdd2e5614a389f2b7e51",
+      "sizeBytes": 3091
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/08-PHASE05-IMPLEMENTATION.md",
+      "mode": "100644",
+      "gitBlobSha1": "13947c524926cfb3be08037bee3a65a9c5662667",
+      "sizeBytes": 2640
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/09-PHASE06-QA.md",
+      "mode": "100644",
+      "gitBlobSha1": "58cafa15f70aff5ac4e20f20c3747dbd4e64bd58",
+      "sizeBytes": 2763
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/10-RELEASE-READINESS.md",
+      "mode": "100644",
+      "gitBlobSha1": "3ad85fc080cc9f0713bec71761c4ed3be4a51587",
+      "sizeBytes": 5149
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/11-ISOLATED-PLATFORM-TEST-PROTOCOL.md",
+      "mode": "100644",
+      "gitBlobSha1": "e51af6bc567804b6b6b46153773cf40241880588",
+      "sizeBytes": 3653
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/12-PRIVACY-v0.2.0-DRAFT.md",
+      "mode": "100644",
+      "gitBlobSha1": "7d96d60ffde46e81746c811efcfa92808c58a9fa",
+      "sizeBytes": 2766
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/13-LISTING-v0.2.0-DRAFT.md",
+      "mode": "100644",
+      "gitBlobSha1": "ed4b537ff7958b26c322dc781998c7fe30685e9f",
+      "sizeBytes": 2016
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/14-PHASE07B-LOCAL-SDK-EVIDENCE.md",
+      "mode": "100644",
+      "gitBlobSha1": "7e310457eea8269c61110a7cf6a08812decb1a59",
+      "sizeBytes": 4344
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/15-PHASE07B-L01-FAIL-CLOSED.md",
+      "mode": "100644",
+      "gitBlobSha1": "63fb8a3cdb234a3c733628dd649a3179647edb65",
+      "sizeBytes": 2655
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/16-PHASE07B-L02-DETACHED-EVIDENCE.md",
+      "mode": "100644",
+      "gitBlobSha1": "2ed7438a2275fda7d4f4bb3b841d58662cdc0d2f",
+      "sizeBytes": 1925
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/17-PHASE07B-L03-CAS-CONCURRENCY.md",
+      "mode": "100644",
+      "gitBlobSha1": "76474fdc183b0fb53ec8b4546739fdc5185cf75d",
+      "sizeBytes": 2116
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/18-PHASE07B-L04-SHARDING.md",
+      "mode": "100644",
+      "gitBlobSha1": "aa4d5f58adcf51267a796e24523872fe27ea3ff4",
+      "sizeBytes": 2728
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/19-PHASE07B-L05-RECOVERY.md",
+      "mode": "100644",
+      "gitBlobSha1": "5ad18c759b8a37623d58967d1dcb5ce4ccf63bb1",
+      "sizeBytes": 2585
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/20-PHASE07B-L06-INTEGRATION-AUDIT.md",
+      "mode": "100644",
+      "gitBlobSha1": "39a752906f52dcaa54720f2667a83767d084b978",
+      "sizeBytes": 6650
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/21-PHASE08-B1-PRODUCT-REFINEMENT.md",
+      "mode": "100644",
+      "gitBlobSha1": "6721a22bcd03bf3a894f1f994227fb84689cda4c",
+      "sizeBytes": 1814
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/22-PHASE08-B2-FINANCIAL-VISUALIZATION.md",
+      "mode": "100644",
+      "gitBlobSha1": "a9979ae3713f55197c87ec63d6b62eb2009b8b07",
+      "sizeBytes": 1288
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/23-PHASE08-C1-QUICK-RECORD.md",
+      "mode": "100644",
+      "gitBlobSha1": "eb110976d15e035bc1d45fb229aa9fee2f3fadb3",
+      "sizeBytes": 1654
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/24-PHASE08-C1-R1-PRECISION.md",
+      "mode": "100644",
+      "gitBlobSha1": "1d6f78769128017dbe8c953cef43e66864450c76",
+      "sizeBytes": 1140
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/25-PHASE08-C2-REPORT-FILTERS.md",
+      "mode": "100644",
+      "gitBlobSha1": "8ef3e7496a7b40c140f047ff1c936d897c7ab824",
+      "sizeBytes": 1390
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/26-PHASE08-D1-COACH-INTERACTION.md",
+      "mode": "100644",
+      "gitBlobSha1": "a4efb46f59c8eea65046e8a4dca05e3cdaac1a0e",
+      "sizeBytes": 1362
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/27-PHASE08-D1-R1-ACCESSIBLE-LABEL.md",
+      "mode": "100644",
+      "gitBlobSha1": "b356e764d7bc1d06d63d5eb59e297b1428c7f9ef",
+      "sizeBytes": 1415
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/28-PHASE08-D1-R2-BROWSER-SYNC.md",
+      "mode": "100644",
+      "gitBlobSha1": "22a2b68af42b8d9cafaf0b9c14e0428d431f4308",
+      "sizeBytes": 1697
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/29-PHASE08-D2-ANALYSIS-PLAN.md",
+      "mode": "100644",
+      "gitBlobSha1": "6c873ae55b087652e031b3edc06e5c488e6bce44",
+      "sizeBytes": 1514
+    },
+    {
+      "path": "anna-edition/docs/v0.2.0/release-readiness-v2.json",
+      "mode": "100644",
+      "gitBlobSha1": "70750a1b88e6fc5a9302d0588c6b0a6bc529792a",
+      "sizeBytes": 4020
+    },
+    {
+      "path": "anna-edition/manifest.json",
+      "mode": "100644",
+      "gitBlobSha1": "9cc9fc74ee83bdc6307a3d8736a6b15a3ef3c1d6",
+      "sizeBytes": 1020
+    },
+    {
+      "path": "anna-edition/MARKETPLACE-RELEASE-PREP.md",
+      "mode": "100644",
+      "gitBlobSha1": "acbc76bce0c32e5bd69c71ae8383fa3cea8ffcf9",
+      "sizeBytes": 10457
+    },
+    {
+      "path": "anna-edition/package.json",
+      "mode": "100644",
+      "gitBlobSha1": "6f728928020a196b2a2d20db178a237e59bfd751",
+      "sizeBytes": 398
+    },
+    {
+      "path": "anna-edition/preview-v2/boot.js",
+      "mode": "100644",
+      "gitBlobSha1": "811bb2f5aa1d352f6735a5a880757ee96ff56231",
+      "sizeBytes": 322
+    },
+    {
+      "path": "anna-edition/preview-v2/demo-store.js",
+      "mode": "100644",
+      "gitBlobSha1": "67520e4d79f6bde84523f265d535ba2d8d4d015d",
+      "sizeBytes": 5014
+    },
+    {
+      "path": "anna-edition/preview-v2/index.html",
+      "mode": "100644",
+      "gitBlobSha1": "858506167ba19f1b10558ca5adee2fce858cab2e",
+      "sizeBytes": 1484
+    },
+    {
+      "path": "anna-edition/preview-v2/preview.css",
+      "mode": "100644",
+      "gitBlobSha1": "1bea6f921100c7c4da2add2133903b32d92160d6",
+      "sizeBytes": 14814
+    },
+    {
+      "path": "anna-edition/preview-v2/ui.js",
+      "mode": "100644",
+      "gitBlobSha1": "f93194746eebf3946f59b8d26d38220c1e3e2760",
+      "sizeBytes": 53593
+    },
+    {
+      "path": "anna-edition/PRIVACY.md",
+      "mode": "100644",
+      "gitBlobSha1": "556170727a7d031ff66bda66f9eb917f058bf84d",
+      "sizeBytes": 4036
+    },
+    {
+      "path": "anna-edition/QA-ACCEPTANCE.md",
+      "mode": "100644",
+      "gitBlobSha1": "4c9aa13927db43a9b4ff7ad3e659a81b42fdf6c6",
+      "sizeBytes": 24825
+    },
+    {
+      "path": "anna-edition/qa/browser-qa.mjs",
+      "mode": "100644",
+      "gitBlobSha1": "a5732b9bbea0e7ac16bfc7815ff50e5cfb817fbf",
+      "sizeBytes": 7886
+    },
+    {
+      "path": "anna-edition/qa/sharding/recovery-lab.mjs",
+      "mode": "100644",
+      "gitBlobSha1": "67f4ac9b40b262a8fa339037e6ce2a2addd1e294",
+      "sizeBytes": 8064
+    },
+    {
+      "path": "anna-edition/qa/sharding/shard-plan.mjs",
+      "mode": "100644",
+      "gitBlobSha1": "1985cd25455d1e80464ab8d3644ef84a8a19af81",
+      "sizeBytes": 5120
+    },
+    {
+      "path": "anna-edition/qa/v2-release-status.mjs",
+      "mode": "100644",
+      "gitBlobSha1": "5e75b1c35d60a36fc6b2a4f5a0bfa0a5416b3b6f",
+      "sizeBytes": 4672
+    },
+    {
+      "path": "anna-edition/README.md",
+      "mode": "100644",
+      "gitBlobSha1": "683e42520717dd91ce96d105aad4b04cd0bfe6fc",
+      "sizeBytes": 13356
+    },
+    {
+      "path": "anna-edition/RELEASE-CANDIDATE-0.1.0.md",
+      "mode": "100644",
+      "gitBlobSha1": "ce70d07cf76f9ab753cb281a4b81486264fce9fd",
+      "sizeBytes": 10413
+    },
+    {
+      "path": "anna-edition/release-preflight.mjs",
+      "mode": "100644",
+      "gitBlobSha1": "949e767b7d9f70c90632f4d3e213e36e51daabe9",
+      "sizeBytes": 5838
+    },
+    {
+      "path": "anna-edition/REVIEW-REJECTION-20261117.md",
+      "mode": "100644",
+      "gitBlobSha1": "5f4d2ce1aed3e3f8e34760184fb24bad2973679d",
+      "sizeBytes": 44527
+    },
+    {
+      "path": "anna-edition/REVIEW-REJECTION-20261120.md",
+      "mode": "100644",
+      "gitBlobSha1": "9c87dd1ae3e1d7a49532de1d6004a3d319149baa",
+      "sizeBytes": 37886
+    },
+    {
+      "path": "anna-edition/STORE-LISTING-DRAFT.md",
+      "mode": "100644",
+      "gitBlobSha1": "1a30599a4037d0920ef549bc1b9f49c4a621bccf",
+      "sizeBytes": 7824
+    },
+    {
+      "path": "anna-edition/store-screenshots/01-ai-dashboard-and-trend.webp",
+      "mode": "100644",
+      "gitBlobSha1": "348ce774d1f025a0d41fe2070fa294ed0d85b64e",
+      "sizeBytes": 47288
+    },
+    {
+      "path": "anna-edition/store-screenshots/02-ai-analysis-and-plan.webp",
+      "mode": "100644",
+      "gitBlobSha1": "1b881d3c00566b112783a6a3c2badd563de271be",
+      "sizeBytes": 86034
+    },
+    {
+      "path": "anna-edition/store-screenshots/03-productivity-modules.webp",
+      "mode": "100644",
+      "gitBlobSha1": "e9d46cd8812a7e464d42de2d2b2e7c57b8e3a07e",
+      "sizeBytes": 37014
+    },
+    {
+      "path": "anna-edition/store-screenshots/04-learning-and-privacy.webp",
+      "mode": "100644",
+      "gitBlobSha1": "9007466cd3058d365eb7e82e9f7121f1a763863c",
+      "sizeBytes": 36326
+    },
+    {
+      "path": "anna-edition/store-screenshots/05-saved-plan-follow-up.webp",
+      "mode": "100644",
+      "gitBlobSha1": "1606997c9d977224edba67ea6638e4ac803308d3",
+      "sizeBytes": 84148
+    },
+    {
+      "path": "anna-edition/store-screenshots/README.md",
+      "mode": "100644",
+      "gitBlobSha1": "4d1daab31f6038c072993bdc48d3a2a0604e7572",
+      "sizeBytes": 3369
+    },
+    {
+      "path": "anna-edition/store-screenshots/SOURCE-VERSION.txt",
+      "mode": "100644",
+      "gitBlobSha1": "d917d3e26adc9854b4569871e20111c38de2606f",
+      "sizeBytes": 6
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/01-v012-overview.webp",
+      "mode": "100644",
+      "gitBlobSha1": "b318fda835847921a4243da96c59fb587ec82f82",
+      "sizeBytes": 63104
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/02-v012-ai-insights.webp",
+      "mode": "100644",
+      "gitBlobSha1": "90ee9317f5eee81b811f9746cd90e184b8050163",
+      "sizeBytes": 70426
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/03-v012-tasks.webp",
+      "mode": "100644",
+      "gitBlobSha1": "23305f1be15b5ad5b131d428b982fede141fd610",
+      "sizeBytes": 56532
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/04-v012-learning.webp",
+      "mode": "100644",
+      "gitBlobSha1": "cf03b15a0adffaa3d3692515310364d4de1b32fe",
+      "sizeBytes": 50554
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/05-v012-ai-plan-storage.webp",
+      "mode": "100644",
+      "gitBlobSha1": "8a7864c26f22c7f4aa45e2977565b27356353c15",
+      "sizeBytes": 116066
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/06-v012-ai-restored.webp",
+      "mode": "100644",
+      "gitBlobSha1": "815c287648616e001200a53bc582c63898b9489e",
+      "sizeBytes": 60066
+    },
+    {
+      "path": "anna-edition/store-screenshots/v0.1.2/README.md",
+      "mode": "100644",
+      "gitBlobSha1": "30e2f6731f65150605f707434466817aabce67fa",
+      "sizeBytes": 786
+    },
+    {
+      "path": "anna-edition/tests/accessibility.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "bd880ed0b0100d7b2ea851010a1041007f274e51",
+      "sizeBytes": 2435
+    },
+    {
+      "path": "anna-edition/tests/anna-host.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "b10db20fb712d0bb19949c58f6e18b305a1a0ddd",
+      "sizeBytes": 3234
+    },
+    {
+      "path": "anna-edition/tests/logic.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "467ee8c45b44ed881d06b0f7ca3056a34a8ac80c",
+      "sizeBytes": 2959
+    },
+    {
+      "path": "anna-edition/tests/patterns.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "1260f4e9a191cac089978ab43308f92193115952",
+      "sizeBytes": 6098
+    },
+    {
+      "path": "anna-edition/tests/release-preflight.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "52b58040a9896d80dd2bb1430ef21afb9e38ccc1",
+      "sizeBytes": 5487
+    },
+    {
+      "path": "anna-edition/tests/review-quality.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "40deda82c7b2e68bba4608ae32dacd0e3c2c4bba",
+      "sizeBytes": 5676
+    },
+    {
+      "path": "anna-edition/tests/second-review-browser.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "ada0d6d0c5a31c913c7ae63ea3ea6a704abd4540",
+      "sizeBytes": 15030
+    },
+    {
+      "path": "anna-edition/tests/second-review-regressions.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "f67425c2cb322f8cab16b227d4553649cdf8ac4a",
+      "sizeBytes": 4735
+    },
+    {
+      "path": "anna-edition/tests/storage-flow.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "4d5075012fe17a846999522c978484dee1cdc28d",
+      "sizeBytes": 2028
+    },
+    {
+      "path": "anna-edition/tests/ui-feedback.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "00cebfecd515ee2954999d290e73ca7e60081f9c",
+      "sizeBytes": 2805
+    },
+    {
+      "path": "anna-edition/tests/v2-ai-coach.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "194f90bacb08882f3dc68873f769ec51f0c5b3c1",
+      "sizeBytes": 14909
+    },
+    {
+      "path": "anna-edition/tests/v2-domain.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "5c2225e98c585740813a09b678e97f0ace224645",
+      "sizeBytes": 12517
+    },
+    {
+      "path": "anna-edition/tests/v2-engineering-qa.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "bab6b329c945d8aa9ea7b0daccf82a7682309733",
+      "sizeBytes": 6857
+    },
+    {
+      "path": "anna-edition/tests/v2-preview-ui.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "57683fa91c14b2db2b7c69f4b8b1082907942250",
+      "sizeBytes": 42352
+    },
+    {
+      "path": "anna-edition/tests/v2-release-status.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "43896dec89d24d2ce0707040c1e2b64468d3fe8a",
+      "sizeBytes": 3048
+    },
+    {
+      "path": "anna-edition/tests/v2-reporting.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "ede419b6e36bacabafe3c9bec5f2910c8684d10e",
+      "sizeBytes": 9569
+    },
+    {
+      "path": "anna-edition/tests/v2-shard-recovery.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "edee8fa1013a9dd67e65cc30a76323ffa154e6f1",
+      "sizeBytes": 7740
+    },
+    {
+      "path": "anna-edition/tests/v2-sharding.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "9fe4d2e9cfc88e3b4a207f9a77f443678f3df823",
+      "sizeBytes": 5977
+    },
+    {
+      "path": "anna-edition/tests/v2-storage-concurrency.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "cb56851b602bc3bc8de5fbb9df5fd5b19a3fcc5f",
+      "sizeBytes": 8741
+    },
+    {
+      "path": "anna-edition/tests/v2-storage-contract.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "8b077bf87cbfbee3fb32d585c11e000262ae6c85",
+      "sizeBytes": 6843
+    },
+    {
+      "path": "anna-edition/tests/v2-storage-isolation.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "dbb57213e84afcd08485764bbc719f6cf74efc4a",
+      "sizeBytes": 6108
+    },
+    {
+      "path": "anna-edition/tests/v2-workspace.test.js",
+      "mode": "100644",
+      "gitBlobSha1": "992bafd693947c9e078dc6ed469713d2be38c2e3",
+      "sizeBytes": 10228
+    },
+    {
+      "path": "anna-edition/VISUAL-ASSETS-CLAIMS-AUDIT.md",
+      "mode": "100644",
+      "gitBlobSha1": "19e8c9aab01495324c2dc2d6d24c71625f1200f5",
+      "sizeBytes": 3797
+    },
+    {
+      "path": "app/.gitignore",
+      "mode": "100644",
+      "gitBlobSha1": "796b96d1c402326528b4ba3c12ee9d92d0e212e9",
+      "sizeBytes": 7
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "mode": "100644",
+      "gitBlobSha1": "8a7a61f1f0ad4acc9d5379eb723e111c27916f7d",
+      "sizeBytes": 4646
+    },
+    {
+      "path": "app/proguard-rules.pro",
+      "mode": "100644",
+      "gitBlobSha1": "f1b424510da51fd82143bc74a0a801ae5a1e2fcd",
+      "sizeBytes": 751
+    },
+    {
+      "path": "app/src/androidTest/java/com/example/ExampleInstrumentedTest.kt",
+      "mode": "100644",
+      "gitBlobSha1": "6436111cf681c41f689956a86ac082d74d6ed744",
+      "sizeBytes": 630
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "mode": "100644",
+      "gitBlobSha1": "4bf36fbfa0dcc965f806bca5124e382b298ca622",
+      "sizeBytes": 2017
+    },
+    {
+      "path": "app/src/main/java/com/example/data/ai/PortfolioReviewService.kt",
+      "mode": "100644",
+      "gitBlobSha1": "6e6ba8ce6ce14e7a9d60b3461667776b82cd756d",
+      "sizeBytes": 51273
+    },
+    {
+      "path": "app/src/main/java/com/example/data/local/JournalEntity.kt",
+      "mode": "100644",
+      "gitBlobSha1": "f5603457523408abccb7bb4b8c24131dfa93869e",
+      "sizeBytes": 435
+    },
+    {
+      "path": "app/src/main/java/com/example/data/local/LearningEntity.kt",
+      "mode": "100644",
+      "gitBlobSha1": "509f22dd346389f401cfb7fa4e5066a3b934691f",
+      "sizeBytes": 830
+    },
+    {
+      "path": "app/src/main/java/com/example/data/local/ProjectForgeDao.kt",
+      "mode": "100644",
+      "gitBlobSha1": "55060ad76682a59b6df265ed43a2161326776ca6",
+      "sizeBytes": 3026
+    },
+    {
+      "path": "app/src/main/java/com/example/data/local/ProjectForgeDatabase.kt",
+      "mode": "100644",
+      "gitBlobSha1": "b731c28c7352ba59d5a231823906c5beef7bcd05",
+      "sizeBytes": 6160
+    },
+    {
+      "path": "app/src/main/java/com/example/data/local/TaskEntity.kt",
+      "mode": "100644",
+      "gitBlobSha1": "1cac23b801e3a0b4347ff3e8ba2da905182d5120",
+      "sizeBytes": 428
+    },
+    {
+      "path": "app/src/main/java/com/example/data/local/TransactionEntity.kt",
+      "mode": "100644",
+      "gitBlobSha1": "272f6691f4508e36ef6365207ba2aa3be24a5927",
+      "sizeBytes": 465
+    },
+    {
+      "path": "app/src/main/java/com/example/data/receiver/BootReceiver.kt",
+      "mode": "100644",
+      "gitBlobSha1": "0bfce261f41562c9f9a48de24cf75b4097da67ad",
+      "sizeBytes": 372
+    },
+    {
+      "path": "app/src/main/java/com/example/data/receiver/ReminderManager.kt",
+      "mode": "100644",
+      "gitBlobSha1": "754cec3b6375e891f8f193959bc48ab2228bf535",
+      "sizeBytes": 4969
+    },
+    {
+      "path": "app/src/main/java/com/example/data/receiver/ReminderReceiver.kt",
+      "mode": "100644",
+      "gitBlobSha1": "b315c7f113bfa4f6283afc394c2d65272fcabbb8",
+      "sizeBytes": 2169
+    },
+    {
+      "path": "app/src/main/java/com/example/data/repository/BackupData.kt",
+      "mode": "100644",
+      "gitBlobSha1": "06ae6230b2349343da59c686141628b63bc3c042",
+      "sizeBytes": 516
+    },
+    {
+      "path": "app/src/main/java/com/example/data/repository/BackupEncryption.kt",
+      "mode": "100644",
+      "gitBlobSha1": "ee501049a523b8312981695a11587b2b9eb3293a",
+      "sizeBytes": 11305
+    },
+    {
+      "path": "app/src/main/java/com/example/data/repository/ProjectForgeRepository.kt",
+      "mode": "100644",
+      "gitBlobSha1": "61eca6583bd1d1ee0a31532e326ac152fdb39440",
+      "sizeBytes": 15120
+    },
+    {
+      "path": "app/src/main/java/com/example/MainActivity.kt",
+      "mode": "100644",
+      "gitBlobSha1": "0c701ff5c1492338c315058efbc39bfadadb29d1",
+      "sizeBytes": 11755
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/MainViewModel.kt",
+      "mode": "100644",
+      "gitBlobSha1": "ee8d50b2254edc05b6db83e4a668eadc7efee660",
+      "sizeBytes": 41039
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/AnalyticsHubScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "dc023b88ce1274a2877702392a5a30ea193ec37d",
+      "sizeBytes": 81122
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/HomeScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "f55bc44a5e7f78d8c0ce065ea42d656346dac9c3",
+      "sizeBytes": 37865
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/JournalScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "b2064961ad7bfd4223df57dadcdea3e54081b921",
+      "sizeBytes": 38322
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/LearningScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "7587e2cb88b8e0a0701dff5b67d000482e1aa723",
+      "sizeBytes": 22338
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/MoneyScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "e68a8d4436b2855b2202abe40b9d851fcff701fd",
+      "sizeBytes": 39239
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/MonthlyReviewScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "d2d6f261b652b212b084526c88176be397462c58",
+      "sizeBytes": 37671
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/OnboardingScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "9feb75f947acc3025f6d1792662d94bf7f87bab5",
+      "sizeBytes": 13802
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/ScreenshotModeIndicator.kt",
+      "mode": "100644",
+      "gitBlobSha1": "742f482eb8123c416552bab763845c8d7334a6d6",
+      "sizeBytes": 3142
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/SettingsScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "3e9dc2bb6559036af0e38b3054b2333090bcc822",
+      "sizeBytes": 174573
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/TasksScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "06890c32df01ce610fd366b0a4c879f34b1f2cf3",
+      "sizeBytes": 32042
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/UserGuideScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "47f68e44fde40784f73fdb6a483eb3ec886a1e15",
+      "sizeBytes": 32341
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/screens/WeeklyReviewScreen.kt",
+      "mode": "100644",
+      "gitBlobSha1": "ceaab2574951ad0819d87180a2fb8896c21e8200",
+      "sizeBytes": 32701
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Color.kt",
+      "mode": "100644",
+      "gitBlobSha1": "c76d55ffb8e898f62a609f4287837ed01f5790ce",
+      "sizeBytes": 707
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Theme.kt",
+      "mode": "100644",
+      "gitBlobSha1": "2dba4e9cd67a94a5fdac9b2c88bdfc0e564c3e68",
+      "sizeBytes": 2494
+    },
+    {
+      "path": "app/src/main/java/com/example/ui/theme/Type.kt",
+      "mode": "100644",
+      "gitBlobSha1": "b631a6b87dae577ced375230c89b8c0a7b903931",
+      "sizeBytes": 994
+    },
+    {
+      "path": "app/src/main/res/drawable/app_logo_icon_1783000811727.jpg",
+      "mode": "100644",
+      "gitBlobSha1": "fea403234f110c190ed885d5c52a5930e7b4bbd9",
+      "sizeBytes": 472058
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_background.xml",
+      "mode": "100644",
+      "gitBlobSha1": "5a07dffcad8e8442b7ed72e94c5ebecac4fb4465",
+      "sizeBytes": 330
+    },
+    {
+      "path": "app/src/main/res/drawable/ic_launcher_foreground.xml",
+      "mode": "100644",
+      "gitBlobSha1": "30548a2e19f94b4f8ce671348c1ce13d500eb39c",
+      "sizeBytes": 295
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "mode": "100644",
+      "gitBlobSha1": "b3e26b4c60c27edeec7775191674317dd7a9f652",
+      "sizeBytes": 344
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "mode": "100644",
+      "gitBlobSha1": "b3e26b4c60c27edeec7775191674317dd7a9f652",
+      "sizeBytes": 344
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.webp",
+      "mode": "100644",
+      "gitBlobSha1": "390f9b5210e17df1ebe032011406d7bbe2ee84af",
+      "sizeBytes": 4305
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher.webp",
+      "mode": "100644",
+      "gitBlobSha1": "22a71398233a79426c21a628a54a21a66beaa9ff",
+      "sizeBytes": 2096
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.webp",
+      "mode": "100644",
+      "gitBlobSha1": "313d7c3353ae972251a80c5def194e24b84aeacf",
+      "sizeBytes": 2634
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher.webp",
+      "mode": "100644",
+      "gitBlobSha1": "97cbbb18f32fe50b17adf1b6f4c72172e889bba4",
+      "sizeBytes": 1485
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp",
+      "mode": "100644",
+      "gitBlobSha1": "449a79398d7b0a108e280073dfc923b01273ce75",
+      "sizeBytes": 5934
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+      "mode": "100644",
+      "gitBlobSha1": "3ae3972c53c5a3212ed1b55a01f75134ac112ecc",
+      "sizeBytes": 2854
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp",
+      "mode": "100644",
+      "gitBlobSha1": "cefa5e48d8ab668147ceaa2ad2b43102594c50c8",
+      "sizeBytes": 8887
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+      "mode": "100644",
+      "gitBlobSha1": "1081450611a57e7b87fc832d3f8d5c2239d37663",
+      "sizeBytes": 4360
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp",
+      "mode": "100644",
+      "gitBlobSha1": "4046ce167cca0334c3d35bd630c361968b82dc9f",
+      "sizeBytes": 11709
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+      "mode": "100644",
+      "gitBlobSha1": "a3519352abb2ea5e5961e73ad278bf09b1cdf02e",
+      "sizeBytes": 5743
+    },
+    {
+      "path": "app/src/main/res/values-ms/strings.xml",
+      "mode": "100644",
+      "gitBlobSha1": "f32ff19ff3bddb152de7d0f506d6fdad770341a5",
+      "sizeBytes": 4034
+    },
+    {
+      "path": "app/src/main/res/values-zh/strings.xml",
+      "mode": "100644",
+      "gitBlobSha1": "5c3e96ad1e81c9148623921c475ae2df731d3f64",
+      "sizeBytes": 3799
+    },
+    {
+      "path": "app/src/main/res/values/colors.xml",
+      "mode": "100644",
+      "gitBlobSha1": "ca1931bca99e3b8a4c753ae1a1c41428e5622484",
+      "sizeBytes": 379
+    },
+    {
+      "path": "app/src/main/res/values/strings.xml",
+      "mode": "100644",
+      "gitBlobSha1": "7a30728daeb88de81e686dfb194228a68544f91d",
+      "sizeBytes": 3946
+    },
+    {
+      "path": "app/src/main/res/values/themes.xml",
+      "mode": "100644",
+      "gitBlobSha1": "839cd4876f53e1e53fcc6ee891394bf3915ef573",
+      "sizeBytes": 155
+    },
+    {
+      "path": "app/src/main/res/xml/backup_rules.xml",
+      "mode": "100644",
+      "gitBlobSha1": "90529f8308df85b28292e3fbe783198efe9f8dfc",
+      "sizeBytes": 479
+    },
+    {
+      "path": "app/src/main/res/xml/data_extraction_rules.xml",
+      "mode": "100644",
+      "gitBlobSha1": "0c4f95cab912665e8bfd0f0856471908c4d10d5b",
+      "sizeBytes": 552
+    },
+    {
+      "path": "app/src/main/res/xml/file_paths.xml",
+      "mode": "100644",
+      "gitBlobSha1": "1c09551ba40349a2c6192966ce92c6821b0b1248",
+      "sizeBytes": 163
+    },
+    {
+      "path": "app/src/test/java/com/example/BackupEncryptionTest.kt",
+      "mode": "100644",
+      "gitBlobSha1": "3a24e90c7e6aa85503c92167e2fef950440fd33a",
+      "sizeBytes": 7497
+    },
+    {
+      "path": "app/src/test/java/com/example/ExampleRobolectricTest.kt",
+      "mode": "100644",
+      "gitBlobSha1": "845366353651bcf116f1f85f05c31ea1f47eda82",
+      "sizeBytes": 593
+    },
+    {
+      "path": "app/src/test/java/com/example/ExampleUnitTest.kt",
+      "mode": "100644",
+      "gitBlobSha1": "e8edd2c5ce97e52b2aec4264020ba783c24e451d",
+      "sizeBytes": 325
+    },
+    {
+      "path": "app/src/test/java/com/example/GreetingScreenshotTest.kt",
+      "mode": "100644",
+      "gitBlobSha1": "1342795cdc69ad9aca541230d6422de03d732c94",
+      "sizeBytes": 1014
+    },
+    {
+      "path": "app/src/test/screenshots/greeting.png",
+      "mode": "100644",
+      "gitBlobSha1": "e4ddd4d83f8e9f3371ff79553f28d13c82c90d62",
+      "sizeBytes": 2868
+    },
+    {
+      "path": "assets/.aistudio/.gitignore",
+      "mode": "100644",
+      "gitBlobSha1": "72e8ffc0db8aad71a934dd11e5968bd5109e54b4",
+      "sizeBytes": 2
+    },
+    {
+      "path": "build.gradle.kts",
+      "mode": "100644",
+      "gitBlobSha1": "22de50794e5a3f7d851b6ac1e083432230b2490d",
+      "sizeBytes": 405
+    },
+    {
+      "path": "gradle.properties",
+      "mode": "100644",
+      "gitBlobSha1": "bf26ee594cd72b1b12305714ccc42eed92e58f73",
+      "sizeBytes": 1546
+    },
+    {
+      "path": "gradle/libs.versions.toml",
+      "mode": "100644",
+      "gitBlobSha1": "25ea56d03a47716bf1dc82c933d8ace4acd0a5eb",
+      "sizeBytes": 6764
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "mode": "100644",
+      "gitBlobSha1": "0f2e77d8f9481719dbfb580c3185dadba3777fa0",
+      "sizeBytes": 78783
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "mode": "100644",
+      "gitBlobSha1": "37f78a6af8379e9ac907b8527c9c68807bf42d20",
+      "sizeBytes": 252
+    },
+    {
+      "path": "gradlew",
+      "mode": "100644",
+      "gitBlobSha1": "adff685a0348c64b2b64f0b302f1f82b28eeaaea",
+      "sizeBytes": 8618
+    },
+    {
+      "path": "gradlew.bat",
+      "mode": "100644",
+      "gitBlobSha1": "e509b2dd8fe5579a5954a2c28633ad914cd1c225",
+      "sizeBytes": 2896
+    },
+    {
+      "path": "metadata.json",
+      "mode": "100644",
+      "gitBlobSha1": "18d11feecea192e7605489fc0df93090f78c52a7",
+      "sizeBytes": 250
+    },
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "gitBlobSha1": "17caa8561637afc9fdc50c2fe1ef6396412b478d",
+      "sizeBytes": 2004
+    },
+    {
+      "path": "RELEASE_NOTES.md",
+      "mode": "100644",
+      "gitBlobSha1": "0e03248b78da85c8ccf1aa7c668d9d90f4616a8c",
+      "sizeBytes": 2670
+    },
+    {
+      "path": "SECURITY.md",
+      "mode": "100644",
+      "gitBlobSha1": "9a1f82fc76eee584f804a013adee3966a95460b4",
+      "sizeBytes": 1886
+    },
+    {
+      "path": "settings.gradle.kts",
+      "mode": "100644",
+      "gitBlobSha1": "14e08ea1add927f91fa81d601857bb23f2a12fa6",
+      "sizeBytes": 555
+    },
+    {
+      "path": "VERSION_HISTORY.md",
+      "mode": "100644",
+      "gitBlobSha1": "f21304f880c2f7dcd681b51be87b1fbefdab8d3e",
+      "sizeBytes": 1520
+    }
+  ],
+  "browserEvidence": {
+    "runId": 45834494321,
+    "artifactId": 15123747453,
+    "bytes": 3795586,
+    "sha256": "0a33a5b5205475659c1851ab9c142fe7e75b3bd5d0cba4106cbc3b095a74f000",
+    "zipCrc": "PASS",
+    "pngCount": 27,
+    "resultsCount": 27,
+    "workflowWidths": [
+      360,
+      768,
+      1040
+    ],
+    "failures": []
+  },
+  "manualMobileEvidence": [
+    {
+      "filename": "image(20261127-005929).png",
+      "sha256": "0965c22af52bf4b903350b2ddf94ed355a06d487fa29b5cbaa894dc3975ae190",
+      "pixels": [
+        367,
+        777
+      ],
+      "observation": "Open Add tasks editor; revision 8, four records."
+    },
+    {
+      "filename": "image(20261127-005951).png",
+      "sha256": "95650ea9edcb959420113c2e3f6fe35f60e055e1539bfed6497365b03886f970",
+      "pixels": [
+        380,
+        793
+      ],
+      "observation": "Draft title mobile test; revision 8, four records."
+    },
+    {
+      "filename": "image(20261127-010008).png",
+      "sha256": "abd2c7bb0ceb8ce7e40f30c793f3c57b606cdd3c5ac9047f8f04824c3dcb9db6",
+      "pixels": [
+        372,
+        796
+      ],
+      "observation": "Four original task rows; draft not present. Post-cancel revision and exact viewport owner-attested."
+    }
+  ]
+}
