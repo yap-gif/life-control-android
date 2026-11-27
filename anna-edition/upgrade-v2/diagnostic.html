@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Life Control — read-only migration diagnostic</title><link rel="stylesheet" href="../preview-v2/preview.css"></head>
+<body><main id="main" class="stack" style="padding:20px;max-width:760px;margin:auto">
+<header><span class="eyebrow">LIFE CONTROL / APP 908</span><h1>Migration diagnostic</h1></header>
+<section class="panel"><p class="notice">Developer diagnostic only. Not the v0.2.0 product. No records will be created, edited, deleted or sent to an AI model.</p>
+<p>After you explicitly start, this draft connects to Anna and checks the existing v1 and v2 keys once (at most four storage reads). It only displays counts and migration metadata, never record contents.</p>
+<button id="start" type="button" class="primary">Inspect migration (read-only)</button>
+<p id="status" role="status" aria-live="polite">Not started. No storage requests issued.</p></section>
+<section id="result" class="panel" hidden><h2>Inspection result</h2><dl id="summary"></dl><p>These observations are not an exclusive migration lock or permission to write.</p></section>
+</main><script type="module" src="./diagnostic-boot.js"></script></body></html>
