@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Life Control · owner migration</title><link rel="stylesheet" href="../preview-v2/preview.css"></head>
+<body><main id="main" class="stack" style="padding:20px;max-width:800px;margin:auto">
+<header><span class="eyebrow">APP 908 / PRIVATE MIGRATION ONLY</span><h1>Owner migration</h1></header>
+<p class="notice">Not a production release. Unconditional initial upsert has a residual race. No server-side exclusive fence or atomic create. Version identity is not independently attested.</p>
+<section class="panel stack"><h2>1. Prepare from local plan</h2>
+<label class="tick"><input type="checkbox" id="otherClientsClosed">All other Life Control clients are closed.</label>
+<label class="tick"><input type="checkbox" id="backupVerifiedLocally">Encrypted backup verified locally.</label>
+<label class="tick"><input type="checkbox" id="versionUiChecked">App 908 and intended draft checked in Developer Console.</label>
+<label class="tick"><input type="checkbox" id="noOtherWriterKnown">No other writer known.</label>
+<label class="tick"><input type="checkbox" id="residualRaceAccepted">Residual race and uncertain result risk accepted.</label>
+<label class="tick"><input type="checkbox" id="noAutomaticRetry">No retry or refresh after stopping.</label>
+<label>Local migration plan<input id="plan" type="file" accept=".json,application/json"></label>
+<button type="button" id="prepare" class="primary" disabled>Verify live source (2 reads)</button></section>
+<section class="panel stack"><h2>2. Separately authorized initialization</h2>
+<p>Only after PREPARED and explicit live authorization: create the local attempt marker once using the approved local tool. Import it here. It is not a server permission or lock.</p>
+<label>Local attempt marker<input id="marker" type="file" accept=".json,application/json"></label>
+<label class="tick"><input type="checkbox" id="approval">I explicitly authorize this one initial v2 write, accept the residual race, and will not retry.</label>
+<button type="button" id="commit" class="primary" disabled>Initialize v2 once (up to 4 more reads, 1 write)</button></section>
+<section class="panel"><h2>Result</h2><pre id="status" role="status" aria-live="polite">Not started. No APS calls.</pre></section>
+</main><script type="module" src="./owner-handoff-boot.js"></script></body></html>
