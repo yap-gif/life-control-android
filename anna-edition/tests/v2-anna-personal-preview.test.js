@@ -11,6 +11,24 @@ const options={selected:["learning"],focus:"learning",question:"Summarize learni
 function fixture(){const {workspace}=syntheticCoachFixture();return prepareCommand(workspace,{type:"record.add",collection:"journal",id:"private-journal",data:{date:"2026-11-28",reflection:"PRIVATE_JOURNAL_CANARY",tags:[]}},{operationId:"journal-op",expectedRevision:workspace.revision,now:asOf}).next;}
 test("selected learning scope omits journal; typed wire exactly matches verified adapter",()=>{const w=fixture(),p=buildPersonalPreview(w,options);assert.equal(p.payload,canonicalJSON(toHostRequest(JSON.parse(previewRequest(p.request)))));assert.deepEqual(p.request.authorizedCategories,["learning"]);assert.equal(p.request.metrics.find(m=>m.id==="learning.minutes.current").value,60);assert.doesNotMatch(p.payload,/PRIVATE_JOURNAL_CANARY/);assert.equal(p.request.optionalPreviousPlan,null);});
 test("journal opt-in includes reflection only in selected date scope",()=>{const w=fixture();const p=buildPersonalPreview(w,{...options,selected:["journal"],focus:"custom"});assert.match(p.payload,/PRIVATE_JOURNAL_CANARY/);assert.doesNotMatch(p.payload,/Synthetic practice/);const older=buildPersonalPreview(w,{...options,selected:["learning"],spec:{kind:"custom",from:"2026-11-26",through:"2026-11-26"}});assert.equal(older.request.metrics.find(m=>m.id==="learning.minutes.current").value,25);});
-test("no selected scope, future range and blank question rejected",()=>{const w=fixture();for(const patch of [{selected:[]},{question:""},{spec:{kind:"custom",from:"2026-11-28",through:"2026-11-29"}}])assert.throws(()=>buildPersonalPreview(w,{...options,...patch}));});
+test("no selected scope and blank question rejected",()=>{const w=fixture();assert.throws(()=>buildPersonalPreview(w,{...options,selected:[]}),/authorized categories/);assert.throws(()=>buildPersonalPreview(w,{...options,question:""}),/question/);});
+test("personal custom ranges reject future, reversed, invalid, oversized and unsupported periods before report clipping",()=>{
+  const w=fixture();
+  for(const spec of [
+    {kind:"custom",from:"2026-11-28",through:"2026-11-29"},
+    {kind:"custom",from:"2026-11-29",through:"2026-11-29"},
+    {kind:"custom",from:"2026-11-28",through:"2026-11-27"},
+    {kind:"custom",from:"2026-02-30",through:"2026-11-28"},
+    {kind:"custom",from:"2010-01-01",through:"2026-11-28"},
+    {kind:"week"}
+  ])assert.throws(()=>buildPersonalPreview(w,{...options,spec}),/Invalid (personal|calendar)/,JSON.stringify(spec));
+  const p=buildPersonalPreview(w,{...options,spec:{kind:"custom",from:"2026-11-26",through:"2026-11-28"}});
+  assert.deepEqual(p.request.period,{from:"2026-11-26",through:"2026-11-28"});
+});
+test("custom date boundary uses workspace timezone, not UTC date",()=>{
+  const w=fixture(),opts={...options,asOf:"2026-11-27T16:00:00.000Z",spec:{kind:"custom",from:"2026-11-26",through:"2026-11-28"}};
+  assert.equal(buildPersonalPreview(w,opts).request.period.through,"2026-11-28");
+  assert.throws(()=>buildPersonalPreview(w,{...opts,asOf:"2026-11-27T15:59:59.999Z"}),/Invalid personal date range/);
+});
 test("UI defaults empty, no preview until explicit action, edits invalidate; clear erases input",()=>{const {window}=new JSDOM("<body></body>"),d=window.document;let reads=0;const p=createPersonalPreviewPanel(d,()=>{reads++;return fixture();},{now:()=>asOf,id:()=>"fixture"});d.body.append(p);const [preview,clear]=p.querySelectorAll("button"),q=p.querySelector("textarea"),b=p.querySelector('[value="learning"]');assert.equal(reads,0);assert.equal(p.querySelectorAll('input:checked').length,0);preview.click();assert.equal(reads,0);b.checked=true;q.value="Summarize";preview.click();assert.equal(reads,1);assert.match(p.querySelector("pre").textContent,/Synthetic practice/);assert.doesNotMatch(p.querySelector("pre").textContent,/PRIVATE_JOURNAL_CANARY/);q.dispatchEvent(new window.Event("input",{bubbles:true}));assert.equal(p.querySelector("pre").textContent,"");preview.click();clear.click();assert.equal(q.value,"");assert.equal(b.checked,false);assert.equal(p.querySelector("pre").textContent,"");window.close();});
 test("new route panel starts clean and reads current snapshot only on preview",()=>{const {window}=new JSDOM("<body></body>"),d=window.document;let reads=0;const w=fixture(),factory=()=>createPersonalPreviewPanel(d,()=>{reads++;return w;},{now:()=>asOf,id:()=>"fixture"});const first=factory();first.querySelector('[value="journal"]').checked=true;first.querySelector("textarea").value="Reflect";first.querySelector("button").click();assert.match(first.querySelector("pre").textContent,/PRIVATE_JOURNAL_CANARY/);const next=factory();assert.equal(next.querySelector("pre").textContent,"");assert.equal(next.querySelectorAll('input:checked').length,0);assert.equal(reads,1);window.close();});

@@ -2,8 +2,17 @@ import {buildCoachRequest,previewRequest} from "../bundle/v2/ai-coach.js";
 import {CATEGORIES,FOCUS,MAX_REQUEST_BYTES,MAX_TOKENS} from "../bundle/v2/ai-schema.js";
 import {canonicalJSON,utf8Bytes} from "../bundle/v2/workspace.js";
 import {localDay} from "../bundle/v2/domain.js";
+import {dayNumber} from "../bundle/v2/calendar.js";
 /** Pure local preparation. No runtime, transport, persistent ledger or save callback. */
 export function buildPersonalPreview(workspace,{selected,focus,question,spec,asOf,requestId}){
+  // Personal consent scope must be exact. Reports deliberately clip future
+  // endpoints; a personal request must reject them before report construction.
+  if(!spec||!["7days","30days","90days","custom"].includes(spec.kind))throw Error("Invalid personal range kind");
+  if(spec.kind==="custom"){
+    const today=localDay(asOf,workspace.settings.timezone);
+    const from=dayNumber(spec.from),through=dayNumber(spec.through);
+    if(from>through||through>dayNumber(today)||through-from+1>3660)throw Error("Invalid personal date range");
+  }
   const request=buildCoachRequest(workspace,{selected,focus,question,spec,asOf,requestId,previousPlanId:null});
   const body=JSON.parse(previewRequest(request));
   const wire={maxTokens:body.maxTokens,messages:body.messages.map(m=>({role:m.role,content:{type:"text",text:m.content}}))};
