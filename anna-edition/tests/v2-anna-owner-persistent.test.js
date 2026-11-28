@@ -16,7 +16,7 @@ async function fixture({confirmSave=()=>true,checkOwnerConditions=()=>true}={}){
     async set(args){calls.push(["set",args.key]);assert.equal(args.key,WORKSPACE_KEY);assert.equal(args.if_match,map.get(args.key).etag);const r={exists:true,etag:"v2-2",generation:2,value:structuredClone(args.value)};map.set(args.key,r);return {etag:r.etag,generation:r.generation,size_bytes:utf8Bytes(r.value)};}
   }};
   const create=()=>createOwnerPersistentStore(runtime,{localPlan:plan,checkOwnerConditions,confirmSave,now:()=>"2026-11-28T01:00:00.000Z"});
-  return {runtime,map,calls,store:create(),create};
+  return {runtime,map,calls,store:create(),create,plan};
 }
 test("persisted load then exactly one CAS save, readback, legacy unchanged and reopen",async()=>{
   const f=await fixture();assert.equal(f.calls.length,0);await f.store.load();assert.equal(f.store.status().revision,0);
@@ -61,4 +61,36 @@ test("task form explicitly persists and locks further changes",async()=>{
   const form=doc.querySelector("form[data-form]");form.querySelector('[name="title"]').value="From UI";form.dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true}));
   for(let i=0;i<100&&f.store.status().state!=="CONFIRMED";i++)await new Promise(r=>setTimeout(r,5));
   assert.equal(f.store.status().state,"CONFIRMED");assert.equal(f.store.workspace.collections.tasks[0].title,"From UI");await new Promise(r=>setImmediate(r));assert.match(doc.getElementById("status").textContent,/Persisted and verified/);window.close();
+});
+
+test("async consent awaits exact candidate; cancellation consumes zero calls; reentry blocked",async()=>{
+  let resolve,seen;const f=await fixture({confirmSave:c=>{seen=c;return new Promise(r=>{resolve=r;});}});await f.store.load();
+  const task={...cmd};const pending=f.store.apply(task);task.title="Changed after request";
+  assert.equal(seen.command.title,"Synthetic task");assert.equal(f.calls.length,2);await assert.rejects(f.store.apply(cmd),{code:"EDITOR_LOCKED"});
+  resolve(false);await assert.rejects(pending,{code:"SAVE_CANCELLED"});assert.equal(f.calls.length,2);assert.equal(f.store.status().writeAttempts,0);
+});
+test("actual entry uses in-page consent, not native confirm; checkbox, cancel, then single approval",async()=>{
+  const {mountPersistentEntry}=await import("../upgrade-v2/persistent-entry.js");
+  const f=await fixture();const {window}=new JSDOM(readFileSync(new URL("../upgrade-v2/persistent.html",import.meta.url),"utf8"),{url:"https://example.test/#tasks"});const d=window.document;
+  window.confirm=()=>{throw Error("NATIVE_DIALOG_FORBIDDEN");};
+  for(const k of ["versionChecked","otherClientsClosed","pilotAccepted"])d.getElementById(k).checked=true;
+  const plan=d.getElementById("plan");Object.defineProperty(plan,"files",{value:[{name:"APP908-OWNER-MIGRATION-PLAN.json",size:1000,text:async()=>JSON.stringify(f.plan)}]});
+  plan.dispatchEvent(new window.Event("change"));d.getElementById("load").click();
+  const wait=async fn=>{for(let i=0;i<100&&!fn();i++)await new Promise(r=>setTimeout(r,5));assert.ok(fn());};
+  await wait(()=>d.getElementById("load-panel").hidden);
+  [...d.querySelectorAll("#page button")].find(b=>b.textContent==="Add task").click();
+  const form=d.querySelector("form[data-form]");form.querySelector('[name="title"]').value="Host compatible task";
+  const submit=()=>form.dispatchEvent(new window.Event("submit",{cancelable:true,bubbles:true}));
+  submit();await wait(()=>!d.getElementById("save-confirmation").hidden);
+  const approve=d.getElementById("confirm-persistent-save"),tick=d.getElementById("save-consent");
+  assert.equal(approve.disabled,true);approve.click();assert.equal(f.calls.length,2);
+  d.getElementById("cancel-persistent-save").click();await wait(()=>d.getElementById("status").textContent.includes("Save cancelled"));
+  assert.equal(f.calls.length,2);assert.equal(form.querySelector('[name="title"]').value,"Host compatible task");
+  submit();await wait(()=>!d.getElementById("save-confirmation").hidden);
+  assert.match(d.getElementById("save-confirmation").textContent,/Host compatible task/);tick.checked=true;tick.dispatchEvent(new window.Event("change"));approve.click();approve.click();
+  await wait(()=>d.getElementById("status").textContent.includes("Persisted and verified"));assert.equal(f.calls.filter(x=>x[0]==="get").length,6);assert.equal(f.calls.filter(x=>x[0]==="set").length,1);
+  assert.equal(f.map.get(WORKSPACE_KEY).value.collections.tasks[0].title,"Host compatible task");assert.equal(d.getElementById("save-confirmation").hidden,true);window.close();
+});
+test("conditions revoked during async consent stop before any additional read or write",async()=>{
+  let allowed=true,resolve;const f=await fixture({checkOwnerConditions:()=>allowed,confirmSave:()=>new Promise(r=>{resolve=r;})});await f.store.load();const pending=f.store.apply(cmd);allowed=false;resolve(true);await assert.rejects(pending,{code:"OWNER_CONDITIONS_UNCONFIRMED"});assert.equal(f.calls.length,2);assert.equal(f.store.status().writeAttempts,0);
 });

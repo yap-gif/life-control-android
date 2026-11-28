@@ -27,8 +27,7 @@ export function mountPersistent(doc,win,store,{today}){
   const c=()=>ws().collections;
   const notify=(message,error=false)=>{status.textContent=message;status.classList.toggle("error",error);};
   const safeError=e=>({SAVE_CANCELLED:"Save cancelled. No data changed.",PILOT_CAPACITY:"Record exceeds the 6144-byte private pilot limit. No data changed.",INVALID_RECORD:"Invalid record. Check the fields."}[e?.code]??"Operation stopped. No automatic retry. Check Privacy for state.");
-  const confirm=t=>win.confirm(t)===true;
-  const abandon=()=>!dirty||confirm("Discard unsaved edits?");
+  const abandon=()=>{if(!dirty)return true;notify("Unsaved changes. Use Cancel or Discard unsaved changes before leaving.",true);return false;};
   function invalidate(){}
   function clearEditor(){editor=null;dirty=false;dirtyForm=null;}
   function markDirty(form){dirty=true;dirtyForm=form;}
@@ -38,10 +37,10 @@ export function mountPersistent(doc,win,store,{today}){
   async function commit(command){
     if(busy||store.locked)throw new Error("Workspace locked or busy");
     const quickKind=route==="overview"?editor?.kind:null;let confirmed=false;
-    setBusy(true);notify("Checking and saving workspace…");
+    setBusy(true);notify("Review the save confirmation before writing…");
     try{await store.apply(command);invalidate();clearEditor();notify("Persisted and verified · revision "+ws().revision);render();confirmed=true;}
     catch(e){notify(safeError(e),true);if(store.locked)render();}
-    finally{setBusy(false);if(confirmed&&quickKind)focusQuick(quickKind);}
+    finally{setBusy(false);if(confirmed&&quickKind)focusQuick(quickKind);else if(!confirmed&&!store.locked)page.querySelector("form[data-form] button[type=submit]")?.focus();}
   }
   function field(def,form){
     const label=el("label",def.wide?"wide":"");label.append(el("span","",def.label));
@@ -81,7 +80,7 @@ export function mountPersistent(doc,win,store,{today}){
     if(track)form.addEventListener("input",()=>{markDirty(form);});
     const b=el("button","primary",submit);b.type="submit";b.disabled=store.locked;
     const actions=append(el("div","actions"),b);
-    if(cancel)actions.append(button("Cancel",cancel));form.append(actions);
+    if(cancel)actions.append(button("Cancel",cancel));else if(track)actions.append(button("Discard unsaved changes",()=>{clearEditor();render();}));form.append(actions);
     form.addEventListener("submit",async e=>{e.preventDefault();if(busy||store.locked||!guardOtherDraft(form))return;try{await onSubmit(values(form));}catch(err){notify(safeError(err),true);}});
     return section(title,form);
   }
@@ -182,7 +181,7 @@ export function mountPersistent(doc,win,store,{today}){
   }
   const editButton=(kind,row,parent=null)=>button("Edit",()=>openEditor(kind,row,parent),"",store.locked);
   const delButton=()=>null;
-  const commandButton=(label,cmd,confirmation=null)=>button(label,async()=>{if(abandon()&&(!confirmation||confirm(confirmation)))await commit(cmd);},"",store.locked);
+  const commandButton=(label,cmd,confirmation=null)=>button(label,async()=>{if(abandon())await commit(cmd);},"",store.locked);
   const addButton=(kind,label,parent=null)=>button(label,()=>openEditor(kind,null,parent),"primary",store.locked);
   function editorView(){
     if(!editor)return null;const {kind,row,parent}=editor,old=row??{},isEdit=!!row;
@@ -221,7 +220,7 @@ export function mountPersistent(doc,win,store,{today}){
     }else return null;
     return formBox((isEdit?"Edit ":"Add ")+pretty(kind),defs,async v=>{
       const value=make(v),cmd=["transactions","budgets","learning","journal","goals"].includes(kind)?{type:isEdit?"record.edit":"record.add",collection:kind,id:old.id??store.id(kind),data:value}:value;await commit(cmd);
-    },{track:true,cancel:()=>{if(abandon()){clearEditor();render();if(route==="overview")focusQuick(kind);}}});
+    },{track:true,cancel:()=>{clearEditor();render();if(route==="overview")focusQuick(kind);}});
   }
   function focusQuick(kind){[...page.querySelectorAll("[data-quick-kind]")].find(b=>b.dataset.quickKind===kind)?.focus();}
   function quickRecords(){

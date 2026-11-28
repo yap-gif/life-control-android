@@ -59,7 +59,8 @@ export function createOwnerPersistentStore(runtime,{localPlan,checkOwnerConditio
         const bytes=utf8Bytes(change.next);if(bytes>OWNER_PILOT_LIMIT)fail("PILOT_CAPACITY");
         const p=prepareAnnaCasCandidate({current,next:change.next,operationId,labMaxBytes:OWNER_PILOT_LIMIT});
         guard();
-        if(confirmSave(Object.freeze({type:cmd.type,collection:cmd.collection??null,bytes,expectedRevision,nextRevision:change.next.revision}))!==true)fail("SAVE_CANCELLED");
+        if(await confirmSave(Object.freeze({type:cmd.type,collection:cmd.collection??null,bytes,expectedRevision,nextRevision:change.next.revision,command:copy(cmd)}))!==true)fail("SAVE_CANCELLED");
+        guard();
         state="CHECKING";
         const w=await read(WORKSPACE_KEY),l=await read(LEGACY_KEY);
         if(!equal(w,current)||!equal(l,legacy))fail("BASELINE_CHANGED");

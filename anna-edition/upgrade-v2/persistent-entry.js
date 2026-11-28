@@ -1,3 +1,4 @@
+import {createSaveConfirmation} from "./persistent-save-confirmation.js";
 import {createOwnerPersistentStore} from "./owner-persistent-store.js";
 import {mountPersistent} from "./persistent-ui.js";
 import {validateLocalPlan} from "./owner-handoff.js";
@@ -14,7 +15,7 @@ export function mountPersistentEntry(doc,win,connect){
       const f=file.files[0];if(f.name!=="APP908-OWNER-MIGRATION-PLAN.json"||f.size<1||f.size>16384)throw Error("INVALID_FILE");
       const plan=validateLocalPlan(JSON.parse(await f.text()));
       const store=createOwnerPersistentStore(await connect(),{localPlan:plan,checkOwnerConditions:conditions,
-        confirmSave:c=>win.confirm("Save this record to App 908? Revision "+c.expectedRevision+" → "+c.nextRevision+". Candidate "+c.bytes+" / 6144 bytes. One attempt only, no retry.")===true});
+        confirmSave:createSaveConfirmation(doc)});
       await store.load();mountPersistent(doc,win,store,{today:localDay()});panel.hidden=true;
     }catch{status.textContent="Persistent load stopped. No initialization or retry. No writes authorized by load.";status.classList.add("error");}
     finally{file.value="";}
