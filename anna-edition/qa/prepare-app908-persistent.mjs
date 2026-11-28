@@ -1,0 +1,27 @@
+import {execFileSync} from "node:child_process";
+import {existsSync,mkdirSync,readFileSync,writeFileSync,realpathSync} from "node:fs";
+import {resolve,relative,isAbsolute,dirname,join} from "node:path";
+import {createHash} from "node:crypto";
+const [commit,destination]=process.argv.slice(2);
+const git=(args)=>execFileSync("git",args,{maxBuffer:16*1024*1024});
+if(!/^[0-9a-f]{40}$/.test(commit??"")||!destination)throw Error("Expected commit and new destination");
+if(git(["rev-parse","HEAD"]).toString().trim()!==commit||git(["status","--porcelain"]).length)throw Error("Unexpected or dirty source");
+const root=realpathSync(git(["rev-parse","--show-toplevel"]).toString().trim());
+const dest=resolve(destination),parent=realpathSync(dirname(dest)),rel=relative(root,join(parent,dest.split(/[\\/]/).pop()));
+if(rel===""||(!rel.startsWith("..")&&!isAbsolute(rel))||existsSync(dest))throw Error("Destination must be new and outside repository");
+const raw=p=>git(["cat-file","blob",commit+":anna-edition/"+p]);
+const files=new Map();
+const add=(target,source)=>files.set(target,raw(source));
+add("app.json","app.json");
+const m=JSON.parse(raw("manifest.json").toString("utf8"));
+m.ui.bundle.entry="upgrade-v2/persistent.html";
+m.system_prompt_addendum="Developer-only existing v2 editing pilot. One explicit save per loaded session. No initialization, deletion, AI or automatic retry. Do not disclose private records or treat this as a released product.";
+if(m.schema!==4||m.ui.bundle.format!=="static-spa"||m.required_executas.length||m.optional_executas.length||m.ui.bundle.external_origins.length)throw Error("Unexpected manifest");
+files.set("manifest.json",Buffer.from(JSON.stringify(m,null,2)+"\n"));
+for(const p of ["upgrade-v2/persistent.html","upgrade-v2/persistent-boot.js","upgrade-v2/persistent-entry.js","upgrade-v2/persistent-ui.js","upgrade-v2/owner-persistent-store.js","upgrade-v2/owner-handoff.js","upgrade-v2/anna-owner-migration-pilot.js","upgrade-v2/anna-migration-inspection.js","upgrade-v2/anna-storage-read.js","upgrade-v2/anna-cas-protocol.js","upgrade-v2/readonly-entry.js","upgrade-v2/readonly-ui.js","bundle/v2/workspace.js","bundle/v2/calendar.js","bundle/v2/domain.js","bundle/v2/ai-schema.js","bundle/v2/reporting.js","bundle/v2/selectors.js","preview-v2/preview.css"])add("bundle/"+p,p);
+const sha=b=>createHash("sha256").update(b).digest("hex");
+mkdirSync(dest);
+for(const [p,bytes] of files){const target=join(dest,p);mkdirSync(dirname(target),{recursive:true});writeFileSync(target,bytes,{flag:"wx"});if(sha(readFileSync(target))!==sha(bytes))throw Error("Byte mismatch");}
+const report={phase:"09-U3-04A",commit,appSlug:"life-control-anna",entry:m.ui.bundle.entry,persistentPilot:true,liveWriteAuthorized:false,sourceFiles:files.size,remoteCalls:0,files:[...files].map(([path,b])=>({path,bytes:b.length,sha256:sha(b)}))};
+writeFileSync(join(dest,"LOCAL-STAGE-RECEIPT.json"),JSON.stringify(report,null,2)+"\n",{flag:"wx"});
+console.log(JSON.stringify({phase:report.phase,sourceFiles:report.sourceFiles,entry:report.entry,destination:dest,remoteCalls:0,result:"PASS"},null,2));

@@ -1,0 +1,81 @@
+import {LEGACY_KEY,WORKSPACE_KEY,canonicalJSON,utf8Bytes} from "../bundle/v2/workspace.js";
+import {validateDomain,prepareCommand} from "../bundle/v2/domain.js";
+import {normalizeAnnaInspectionRead} from "./anna-migration-inspection.js";
+import {fingerprintLegacyBackup,OWNER_PILOT_LIMIT} from "./anna-owner-migration-pilot.js";
+import {validateLocalPlan,planDigest} from "./owner-handoff.js";
+import {prepareAnnaCasCandidate,inspectAnnaCasReceipt,confirmAnnaCasCandidate} from "./anna-cas-protocol.js";
+const fail=code=>{throw Object.assign(Error(code),{code});};
+const copy=x=>JSON.parse(canonicalJSON(x)),equal=(a,b)=>canonicalJSON(a)===canonicalJSON(b);
+const allowed=new Set(["record.add","record.edit","task.add","task.edit","task.transition","learning.target","milestone.add","milestone.edit","milestone.transition","habit.add","habit.rename","habit.archive","habit.checkin","habit.checkin.edit"]);
+const collections=new Set(["transactions","budgets","learning","journal","goals"]);
+/** Separate private pilot, not a relaxation of the strict production adapter.
+ * One save attempt per loaded instance, six reads total, no initialization.
+ * Owner attestations are not version or server authorization. */
+export function createOwnerPersistentStore(runtime,{localPlan,checkOwnerConditions,confirmSave,now=()=>new Date().toISOString()}={}){
+  const plan=validateLocalPlan(localPlan),wid=runtime?.windowUuid;
+  if(typeof checkOwnerConditions!=="function"||typeof confirmSave!=="function"||typeof now!=="function")fail("CONFIG_INVALID");
+  let current=null,legacy=null,reads=0,attempts=0,busy=false,state="NEW";
+  function identity(){
+    if(typeof wid!=="string"||!wid.trim()||runtime?.windowUuid!==wid||runtime.app?.id!==908||
+      runtime.app?.slug!=="life-control-anna"||runtime.capabilities?.host_api_version!=="0.1.0"||
+      runtime.appId!==undefined||runtime.versionId!==undefined||typeof runtime.storage?.get!=="function"||typeof runtime.storage?.set!=="function")fail("IDENTITY_UNVERIFIED");
+  }
+  identity();
+  function guard(){identity();if(checkOwnerConditions()!==true)fail("OWNER_CONDITIONS_UNCONFIRMED");}
+  async function invoke(method,args){
+    identity();let timer,r;
+    try{r=await Promise.race([runtime.storage[method](args,{timeoutMs:12000}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error("timeout")),12000);})]);}
+    catch(e){fail(e?.code==="precondition_failed"?"CAS_CONFLICT":method==="set"?"WRITE_UNCERTAIN":"READ_UNCONFIRMED");}
+    finally{clearTimeout(timer);}identity();return r;
+  }
+  async function read(key){
+    if(reads>=6)fail("READ_LIMIT");reads++;
+    const r=normalizeAnnaInspectionRead(await invoke("get",{key}));
+    if(!r.exists)fail(key===WORKSPACE_KEY?"V2_MISSING_NO_CREATE":"LEGACY_MISSING");return r;
+  }
+  async function pair(w,l){
+    if(validateDomain(w.value)!==true||w.value.migration.id!==plan.migrationId||w.value.migration.legacyEtag!==l.etag||w.generation!==w.value.revision+1)fail("WORKSPACE_LINEAGE_UNCONFIRMED");
+    const proof=await fingerprintLegacyBackup(l);
+    if(proof.generation!==plan.generation||proof.sha256!==plan.backupSha256)fail("LEGACY_BACKUP_MISMATCH");
+    if(w.value.revision===0&&await planDigest(w.value)!==plan.candidateSha256)fail("INITIAL_CANDIDATE_MISMATCH");
+    if(utf8Bytes(w.value)>OWNER_PILOT_LIMIT)fail("PILOT_CAPACITY");
+  }
+  const status=()=>({state,reads,writeAttempts:attempts,generation:current?.generation??null,revision:current?.value.revision??null,bytes:current?utf8Bytes(current.value):null,maxBytes:OWNER_PILOT_LIMIT,versionAttestation:"UNVERIFIED",productionRelease:"BLOCKED"});
+  return Object.freeze({
+    status,get locked(){return state!=="READY";},get workspace(){if(!current)fail("NOT_LOADED");return copy(current.value);},get bytes(){return current?utf8Bytes(current.value):0;},
+    id(prefix){return prefix+"-"+globalThis.crypto.randomUUID();},
+    async load(){
+      if(state!=="NEW"||busy)fail("LOAD_NOT_ALLOWED");busy=true;state="LOADING";
+      try{guard();const w=await read(WORKSPACE_KEY),l=await read(LEGACY_KEY);await pair(w,l);guard();current=w;legacy=l;state="READY";return status();}
+      catch{state="STOPPED";fail("LOAD_STOPPED");}finally{busy=false;}
+    },
+    async apply(command){
+      if(busy||state!=="READY")fail("EDITOR_LOCKED");busy=true;
+      try{
+        if(!allowed.has(command?.type)||(["record.add","record.edit"].includes(command.type)&&!collections.has(command.collection)))fail("COMMAND_FORBIDDEN");
+        // Freeze command and exact candidate before consent; no mutable callback input.
+        const cmd=copy(command),operationId="edit-"+globalThis.crypto.randomUUID(),expectedRevision=current.value.revision;
+        let change;try{change=prepareCommand(current.value,cmd,{operationId,now:now(),expectedRevision});}catch{fail("INVALID_RECORD");}
+        const bytes=utf8Bytes(change.next);if(bytes>OWNER_PILOT_LIMIT)fail("PILOT_CAPACITY");
+        const p=prepareAnnaCasCandidate({current,next:change.next,operationId,labMaxBytes:OWNER_PILOT_LIMIT});
+        guard();
+        if(confirmSave(Object.freeze({type:cmd.type,collection:cmd.collection??null,bytes,expectedRevision,nextRevision:change.next.revision}))!==true)fail("SAVE_CANCELLED");
+        state="CHECKING";
+        const w=await read(WORKSPACE_KEY),l=await read(LEGACY_KEY);
+        if(!equal(w,current)||!equal(l,legacy))fail("BASELINE_CHANGED");
+        await pair(w,l);guard();
+        state="ATTEMPTED";attempts++;
+        const ack=inspectAnnaCasReceipt(await invoke("set",p.request),p.evidence);
+        if(ack.size_bytes!==bytes||ack.generation!==current.generation+1)fail("RECEIPT_MISMATCH");
+        const back=await read(WORKSPACE_KEY),confirmed=confirmAnnaCasCandidate(p.evidence,ack,back);
+        const after=await read(LEGACY_KEY);
+        if(!equal(after,legacy))fail("LEGACY_CHANGED_AFTER_WRITE");
+        guard();current={exists:true,value:confirmed.workspace,etag:confirmed.etag,generation:confirmed.generation};state="CONFIRMED";return status();
+      }catch(e){
+        if(attempts)state="UNCERTAIN";else if(state==="CHECKING")state="STOPPED";
+        const safe=["COMMAND_FORBIDDEN","INVALID_RECORD","PILOT_CAPACITY","SAVE_CANCELLED","OWNER_CONDITIONS_UNCONFIRMED","BASELINE_CHANGED","CAS_CONFLICT","RECEIPT_MISMATCH","WRITE_UNCERTAIN","LEGACY_CHANGED_AFTER_WRITE"];
+        fail(safe.includes(e?.code)?e.code:"EDIT_STOPPED");
+      }finally{busy=false;}
+    }
+  });
+}
