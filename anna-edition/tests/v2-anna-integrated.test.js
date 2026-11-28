@@ -25,7 +25,7 @@ async function fixture({confirmSave=()=>true,minimumRevision=0,legacyRaw=raw}={}
    async set(a){calls.push(["set",a.key]);assert.equal(record.state,"PENDING");assert.equal(a.key,WORKSPACE_KEY);const old=map.get(a.key);assert.equal(a.if_match,old.etag);const r={exists:true,etag:"v2-"+(old.generation+1),generation:old.generation+1,value:structuredClone(a.value)};map.set(a.key,r);return {etag:r.etag,generation:r.generation,size_bytes:utf8Bytes(r.value)};}
  }};
  const create=()=>createIntegratedStore(runtime,{localPlan:plan,ledger,minimumRevision,checkOwnerConditions:()=>true,confirmSave,now:()=>"2026-11-28T02:00:00.000Z"});
- return {map,calls,ledger,runtime,create,store:create()};
+ return {map,calls,ledger,runtime,create,plan,store:create()};
 }
 
 const now="2026-11-28T02:00:00.000Z";
@@ -66,7 +66,7 @@ test("baseline comparison reports only metadata without reads or writes, preserv
  const f=await fixture();await f.store.load();await f.store.apply(cmd(1));const before=f.calls.length;
  const d=await f.store.baselineDiagnostics();assert.equal(d.receiptFingerprintMatches,true);assert.equal(d.receiptGenerationMatches,true);assert.equal(d.receiptOperationMatches,true);assert.equal(f.calls.length,before);
  assert.doesNotMatch(JSON.stringify(d),/candidateSha256|operationId|Synthetic task/);
- const locked=createIntegratedStore(f.runtime,{localPlan:await buildOwnerLocalPlan(f.map.get(LEGACY_KEY)),ledger:f.ledger,checkOwnerConditions:()=>true,confirmSave:()=>true});
+ const locked=createIntegratedStore(f.runtime,{localPlan:f.plan,ledger:f.ledger,checkOwnerConditions:()=>true,confirmSave:()=>true});
  await locked.load();const n=f.calls.length;const r=await locked.baselineDiagnostics();assert.equal(r.baselineMeetsMinimum,false);assert.equal(r.receiptFingerprintMatches,true);assert.equal(locked.status().state,"BASELINE_REGRESSED");assert.equal(f.calls.length,n);await assert.rejects(locked.apply(cmd(2)),{code:"EDITOR_LOCKED"});
 });
 test("backup distinguishes malformed envelope, invalid password and failed authentication",async()=>{
