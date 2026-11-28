@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {JSDOM} from "jsdom";
+import {validateDomain,prepareCommand} from "../bundle/v2/domain.js";
 import {buildOwnerLocalPlan} from "../qa/owner-migration-local.mjs";
 import {createContinuousStore,EDIT_LIMIT} from "../upgrade-v2/continuous-store.js";
 import {openEditLedger,validateEditMarker} from "../upgrade-v2/continuous-edit-ledger.js";
@@ -34,8 +35,28 @@ test("pending marker survives write uncertainty; reopen only observes exact cand
 test("pending marker with no write observed stays locked; never infer safe retry",async()=>{const f=await fixture();await f.store.load();f.runtime.storage.set=async()=>{throw Error("timeout");};await assert.rejects(f.store.apply(cmd(1)));const next=f.create();await next.load();assert.equal(next.status().state,"RECOVERY_REQUIRED");assert.equal(next.status().writeAttempts,0);await assert.rejects(next.apply(cmd(1)));});
 test("ledger failure blocks writes",async()=>{const f=await fixture();await f.store.load();f.ledger.claim=async()=>{throw Error("unavailable");};await assert.rejects(f.store.apply(cmd(1)));assert.equal(f.store.status().writeAttempts,0);assert.equal(f.calls.filter(x=>x[0]==="set").length,0);});
 test("two loaded instances cannot overwrite new baseline",async()=>{const f=await fixture(),second=f.create();await f.store.load();await second.load();await f.store.apply(cmd(1));await assert.rejects(second.apply(cmd(2)),{code:"BASELINE_CHANGED"});assert.equal(second.status().writeAttempts,0);});
-test("expanded limit allows >6144 bytes but rejects >32768 before extra reads",async()=>{const f=await fixture();const w=f.map.get(WORKSPACE_KEY);w.value.revision=1;w.value.lastOperationId="prior";w.generation=2;w.value.collections.journal=Array.from({length:4},(_,i)=>({id:"j"+i,date:"2026-11-20",reflection:"x".repeat(1800),tags:[]}));await f.store.load();assert.ok(f.store.bytes>6144);await f.store.apply(cmd(1));assert.equal(f.store.status().maxBytes,EDIT_LIMIT);
- const g=await fixture(),v=g.map.get(WORKSPACE_KEY);v.value.revision=1;v.value.lastOperationId="prior";v.generation=2;v.value.collections.journal=Array.from({length:16},(_,i)=>({id:"j"+i,date:"2026-11-20",reflection:"x".repeat(1900),tags:[]}));await g.store.load();await assert.rejects(g.store.apply({type:"record.add",collection:"journal",id:"overflow",data:{date:"2026-11-22",reflection:"x".repeat(2000),tags:[]}}),{code:"PILOT_CAPACITY"});assert.equal(g.calls.length,2);
+// Valid synthetic journals: one record per calendar day. Size the entire
+// canonical Workspace, not merely the sum of reflection lengths.
+function capacityFixture(w,target,count){
+  w.value.revision=1;w.value.lastOperationId="prior";w.generation=2;
+  const rows=Array.from({length:count},(_,i)=>({id:"capacity-j"+i,date:"2026-10-"+String(i+1).padStart(2,"0"),reflection:"x",tags:[]}));
+  w.value.collections.journal=rows;
+  let remaining=target-utf8Bytes(w.value);
+  assert.ok(remaining>=0&&remaining<=count*1999,"fixture target must be achievable");
+  for(const row of rows){const n=Math.min(1999,remaining);row.reflection+="x".repeat(n);remaining-=n;}
+  assert.equal(remaining,0);assert.equal(validateDomain(w.value),true);assert.equal(utf8Bytes(w.value),target);
+}
+test("expanded limit allows >6144 bytes but rejects >32768 before extra reads",async()=>{
+ const f=await fixture();capacityFixture(f.map.get(WORKSPACE_KEY),8000,4);
+ await f.store.load();assert.equal(f.store.bytes,8000);
+ const accepted=await f.store.apply(cmd(1));assert.equal(accepted.lastSave,"CONFIRMED");assert.ok(accepted.bytes>6144&&accepted.bytes<=EDIT_LIMIT);assert.equal(accepted.maxBytes,EDIT_LIMIT);
+ const g=await fixture(),v=g.map.get(WORKSPACE_KEY);capacityFixture(v,32000,16);
+ const overflow={type:"record.add",collection:"journal",id:"overflow",data:{date:"2026-11-22",reflection:"x".repeat(2000),tags:[]}};
+ const candidate=prepareCommand(v.value,overflow,{expectedRevision:1,operationId:"edit-00000000-0000-4000-8000-000000000000",now:"2026-11-28T02:00:00.000Z"}).next;
+ assert.equal(validateDomain(candidate),true);assert.ok(utf8Bytes(candidate)>EDIT_LIMIT);
+ await g.store.load();assert.equal(g.store.bytes,32000);
+ await assert.rejects(g.store.apply(overflow),{code:"PILOT_CAPACITY"});
+ assert.equal(g.calls.length,2);assert.equal(g.store.status().writeAttempts,0);assert.equal(g.store.status().state,"READY");
 });
 test("all nine routes render with expanded capacity and no delete/AI",async()=>{const f=await fixture();await f.store.load();const html=readFileSync(new URL("../upgrade-v2/continuous.html",import.meta.url),"utf8");for(const [route,label] of ROUTES){const {window}=new JSDOM(html,{url:"https://example.test/#"+route});const d=window.document;mountPersistent(d,window,f.store,{today:"2026-11-28"});assert.equal(d.getElementById("page-title").textContent,label);assert.doesNotMatch(d.getElementById("page").textContent,/Unable to render/);if(route==="privacy")assert.match(d.getElementById("page").textContent,/32768 B/);window.close();}assert.equal(f.calls.length,2);});
 test("marker shape rejects raw data and unavailable browser ledger",async()=>{assert.throws(()=>validateEditMarker({schema:1,raw:"private"}));await assert.rejects(openEditLedger(null),{code:"EDIT_LEDGER_UNAVAILABLE"});});
