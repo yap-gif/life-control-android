@@ -73,6 +73,7 @@ test("actual entry uses in-page consent, not native confirm; checkbox, cancel, t
   const {mountPersistentEntry}=await import("../upgrade-v2/persistent-entry.js");
   const f=await fixture();const {window}=new JSDOM(readFileSync(new URL("../upgrade-v2/persistent.html",import.meta.url),"utf8"),{url:"https://example.test/#tasks"});const d=window.document;
   window.confirm=()=>{throw Error("NATIVE_DIALOG_FORBIDDEN");};
+  mountPersistentEntry(d,window,async()=>f.runtime);
   for(const k of ["versionChecked","otherClientsClosed","pilotAccepted"])d.getElementById(k).checked=true;
   const plan=d.getElementById("plan");Object.defineProperty(plan,"files",{value:[{name:"APP908-OWNER-MIGRATION-PLAN.json",size:1000,text:async()=>JSON.stringify(f.plan)}]});
   plan.dispatchEvent(new window.Event("change"));d.getElementById("load").click();
