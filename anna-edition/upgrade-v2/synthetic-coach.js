@@ -35,8 +35,9 @@ export function createSyntheticCoach(runtime,{claim,authorize,timeoutMs=45000}={
   const ctrl=createConsentController({timeoutMs,transport:async body=>{
     guard();if(authorize()!==true||canonicalJSON(toHostRequest(body))!==wire)fail("CONSENT_INVALID");
     if(await claim()!==true)fail("PROBE_ALREADY_RESERVED");
-    guard();if(authorize()!==true)fail("CONSENT_REVOKED");
-    attempts++;const r=readReply(await runtime.llm.complete(JSON.parse(wire)));usage=r.usage;return r.text;
+    guard();if(state!=="RUNNING"||authorize()!==true)fail("CONSENT_REVOKED");
+    attempts++;const r=readReply(await runtime.llm.complete(JSON.parse(wire)));
+    guard();if(state!=="RUNNING")fail("LATE_MODEL_REPLY");usage=r.usage;return r.text;
   }});
   const status=()=>({state,modelAttempts:attempts,usage,syntheticOnly:true,businessReadsByCoach:0,businessWritesByCoach:0,automaticRetry:false,productionRelease:"BLOCKED"});
   return Object.freeze({status,
