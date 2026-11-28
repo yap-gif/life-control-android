@@ -1,4 +1,4 @@
-import {createBackupPanel} from "./integrated-backup.js";
+import {createBackupPanel,createRecoveryBackupPanel} from "./integrated-backup.js";
 import {buildReport,buildTrend,REPORT_CATEGORIES} from "../bundle/v2/reporting.js";
 import {selectPage} from "../bundle/v2/selectors.js";
 import {myrToMinor} from "../bundle/v2/workspace.js";
@@ -358,7 +358,7 @@ export function mountPersistent(doc,win,store,{today,coachPanel=null}){
       const b=button("Reconcile matched marker",async()=>{if(!tick.checked)return;setBusy(true);try{await store.reconcileMatched(true);notify("Matched marker confirmed locally. Reopen before further edits.");}catch{notify("Recovery stopped. Do not retry.",true);}finally{setBusy(false);render();}},"",true);
       tick.addEventListener("change",()=>{b.disabled=!tick.checked;});storage.append(label,b);
     }
-    return stack(section("Privacy & data",small("Existing persisted v2 only. Legacy source is read-only. Personal AI requires exact preview consent and a verified cost bound. No automatic transmission or retry. Deletion and live restore are disabled."),link("insights","View historical analysis →")),storage,createBackupPanel(doc,win,ws));
+    return stack(section("Privacy & data",small("Existing persisted v2 only. Legacy source is read-only. Personal AI requires exact preview consent and a verified cost bound. No automatic transmission or retry. Deletion and live restore are disabled."),link("insights","View historical analysis →")),storage,createRecoveryBackupPanel(doc,win,ws),createBackupPanel(doc,win,ws));
   }
   const views={overview,reports,insights,tasks,money,learning,journal,goals,privacy};
   function render(){

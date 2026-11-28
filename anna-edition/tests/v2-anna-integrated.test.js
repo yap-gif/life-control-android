@@ -1,5 +1,5 @@
 import {reserveBudget,settleBudget} from "../upgrade-v2/integrated-coach-ledger.js";
-import {encryptWorkspace,inspectWorkspaceBackup,createBackupPanel} from "../upgrade-v2/integrated-backup.js";
+import {encryptWorkspace,inspectWorkspaceBackup,createBackupPanel,generateBackupRecoveryKey,generateBackupPassword,encryptRecoveryBackup,inspectRecoveryBackup,reencryptBackup,createRecoveryBackupPanel} from "../upgrade-v2/integrated-backup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -89,4 +89,58 @@ test("backup button preserves self-checked ciphertext fallback when download una
  const output=panel.querySelector("textarea");assert.ok(output.value);assert.equal((await inspectWorkspaceBackup(output.value,p,w)).sameWorkspace,true);
  assert.equal(inputs[0].value,"");assert.equal(inputs[1].value,"");assert.doesNotMatch(output.value,/collections|synthetic backup passphrase/);
  buttons.find(b=>b.textContent==="Clear encrypted output").click();assert.equal(output.value,"");assert.equal(f.calls.length,2);window.close();
+});
+
+test("v2 backup password and independent recovery key both unlock, randomized and no writes",async()=>{
+ const f=await fixture({minimumRevision:4});await f.store.load();const w=f.store.workspace,p=generateBackupPassword(),r=generateBackupRecoveryKey();
+ assert.match(r,/^[0-9a-f]{8}(?:-[0-9a-f]{8}){7}$/);assert.equal(p.length,32);
+ const text=await encryptRecoveryBackup(w,p,r),again=await encryptRecoveryBackup(w,p,r);
+ assert.notEqual(text,again);assert.ok(!text.includes(p)&&!text.includes(r));assert.doesNotMatch(text,/collections|migration/);
+ for(const [secret,method] of [[p,"password"],[r,"recovery"]]){
+  const proof=await inspectRecoveryBackup(text,secret,method,w);assert.equal(proof.sameWorkspace,true);assert.equal(proof.sameMigration,true);assert.equal(proof.restorePerformed,false);
+ }
+ assert.equal(f.calls.length,2);assert.equal(f.store.status().state,"BASELINE_REGRESSED");
+});
+test("v2 rejects wrong secrets, malformed headers, extra fields and tampering of either slot",async()=>{
+ const f=await fixture();await f.store.load();const w=f.store.workspace,p="synthetic long password",r=generateBackupRecoveryKey(),text=await encryptRecoveryBackup(w,p,r);
+ await assert.rejects(inspectRecoveryBackup(text,"wrong valid password","password",w),{code:"AUTHENTICATION_FAILED"});
+ await assert.rejects(inspectRecoveryBackup(text,generateBackupRecoveryKey(),"recovery",w),{code:"AUTHENTICATION_FAILED"});
+ await assert.rejects(inspectRecoveryBackup(text,"bad","recovery",w),{code:"RECOVERY_KEY_INVALID"});
+ for(const mutate of [x=>x.iterations=1,x=>x.extra=true,x=>x.password.iv="invalid"]){const x=JSON.parse(text);mutate(x);await assert.rejects(inspectRecoveryBackup(JSON.stringify(x),r,"recovery",w),{code:"INVALID_ENVELOPE"});}
+ for(const mutate of [x=>x.password.wrapped=(x.password.wrapped[0]==="A"?"B":"A")+x.password.wrapped.slice(1),x=>x.ciphertext=(x.ciphertext[0]==="A"?"B":"A")+x.ciphertext.slice(1)]){
+  const x=JSON.parse(text);mutate(x);await assert.rejects(inspectRecoveryBackup(JSON.stringify(x),r,"recovery",w),{code:"AUTHENTICATION_FAILED"});
+ }
+ assert.equal(f.calls.length,2);
+});
+test("v2 password reset and key rotation preserve original file and snapshot, old credentials rejected on new file",async()=>{
+ const f=await fixture();await f.store.load();const w=f.store.workspace,p="synthetic old password",r=generateBackupRecoveryKey(),text=await encryptRecoveryBackup(w,p,r);
+ const nextP="synthetic new password",nextR=generateBackupRecoveryKey(),out=await reencryptBackup(text,r,"recovery",nextP,nextR);
+ assert.equal(out.restorePerformed,false);assert.equal(out.revision,w.revision);assert.notEqual(out.text,text);
+ assert.equal((await inspectRecoveryBackup(out.text,nextP,"password",w)).sameWorkspace,true);
+ assert.equal((await inspectRecoveryBackup(out.text,nextR,"recovery",w)).sameWorkspace,true);
+ await assert.rejects(inspectRecoveryBackup(out.text,p,"password",w),{code:"AUTHENTICATION_FAILED"});
+ await assert.rejects(inspectRecoveryBackup(out.text,r,"recovery",w),{code:"AUTHENTICATION_FAILED"});
+ assert.equal((await inspectRecoveryBackup(text,p,"password",w)).sameWorkspace,true);assert.equal(f.calls.length,2);
+});
+test("legacy v1 remains verifiable and converts only with original password",async()=>{
+ const f=await fixture();await f.store.load();const w=f.store.workspace,p="legacy synthetic password",text=await encryptWorkspace(w,p),r=generateBackupRecoveryKey();
+ assert.equal((await inspectRecoveryBackup(text,p,"password",w)).sameWorkspace,true);
+ await assert.rejects(reencryptBackup(text,r,"recovery","synthetic next password",r),{code:"LEGACY_PASSWORD_REQUIRED"});
+ const out=await reencryptBackup(text,p,"password","synthetic next password",r);
+ assert.equal((await inspectRecoveryBackup(out.text,r,"recovery",w)).sameWorkspace,true);assert.equal((await inspectWorkspaceBackup(text,p,w)).sameWorkspace,true);assert.equal(f.calls.length,2);
+});
+test("recovery panel requires saved key confirmation and preserves verified ciphertext on download failure",async()=>{
+ const f=await fixture({minimumRevision:4});await f.store.load();const w=f.store.workspace,{window}=new JSDOM("<main></main>",{url:"https://example.test"}),d=window.document;
+ const panel=createRecoveryBackupPanel(d,window,()=>f.store.workspace);d.querySelector("main").append(panel);window.URL.createObjectURL=()=>{throw Error("unavailable");};
+ const btn=name=>[...panel.querySelectorAll("button")].find(b=>b.textContent===name);
+ const input=name=>[...panel.querySelectorAll("label")].find(l=>l.firstChild.textContent===name).querySelector("input");
+ const go=btn("Export recovery-protected snapshot"),p="synthetic UI password";
+ const wait=async()=>{for(let i=0;i<800&&go.disabled;i++)await new Promise(r=>setTimeout(r,10));assert.equal(go.disabled,false);};
+ const fill=()=>{input("New backup passphrase").value=input("Repeat new passphrase").value=p;};
+ fill();go.click();await wait();assert.match(panel.querySelector("pre").textContent,/RECOVERY_KEY_CONFIRMATION_REQUIRED/);
+ btn("Generate new recovery key").click();const r=input("Recovery key (save separately)").value;fill();input("Re-enter saved recovery key").value=r;go.click();await wait();
+ assert.match(panel.querySelector("pre").textContent,/DOWNLOAD_UNAVAILABLE/);const text=panel.querySelector("textarea").value;assert.ok(text);
+ assert.equal((await inspectRecoveryBackup(text,r,"recovery",w)).sameWorkspace,true);
+ assert.equal(input("Recovery key (save separately)").value,"");assert.equal(input("New backup passphrase").value,"");assert.equal(input("Re-enter saved recovery key").value,"");
+ btn("Clear recovery panel secrets and output").click();assert.equal(panel.querySelector("textarea").value,"");assert.equal(f.calls.length,2);window.close();
 });
