@@ -65,6 +65,17 @@ export function createIntegratedStore(runtime,{localPlan,ledger,checkOwnerCondit
       }
       catch{state="STOPPED";fail("LOAD_STOPPED");}finally{busy=false;}
     },
+    async reconcileMatched(confirmed){
+      if(busy||state!=="RECOVERY_MATCHED"||confirmed!==true)fail("RECOVERY_NOT_ALLOWED");
+      busy=true;state="RECOVERY_CHECKING";
+      try{
+        guard();const w=await read(WORKSPACE_KEY),l=await read(LEGACY_KEY);await pair(w,l);
+        if(w.value.revision<minimumRevision||!equal(w,current)||!equal(l,legacy)||ledgerRecord?.state!=="PENDING"||await planDigest(w.value)!==ledgerRecord.candidateSha256||w.generation!==ledgerRecord.nextGeneration||w.value.lastOperationId!==ledgerRecord.operationId)fail("RECOVERY_MISMATCH");
+        guard();const done={...ledgerRecord,state:"CONFIRMED"};
+        if(!equal(await ledger.confirm(ledgerRecord),done))fail("EDIT_LEDGER_CONFLICT");
+        ledgerRecord=done;state="RECOVERY_RESOLVED";lastSave="CONFIRMED";return status();
+      }catch{state="RECOVERY_REQUIRED";fail("RECOVERY_STOPPED");}finally{busy=false;}
+    },
     async apply(command){
       if(busy||state!=="READY"||attempts>=MAX_SAVES)fail("EDITOR_LOCKED");busy=true;let reserved=false,attempted=false;
       try{
