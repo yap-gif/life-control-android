@@ -18,14 +18,14 @@ export function parseHostReply(reply){
 }
 /** One user-consented request. No agent or tools. An externally verified
  * conservative cost bound is required; this is not a provider-enforced cap. */
-export function createPersonalRun(runtime,{readWorkspace,claim,authorize,timeoutMs=45000}){
+export function createPersonalRun(runtime,{readWorkspace,claim,settle,authorize,timeoutMs=45000}){
  const wid=runtime?.windowUuid;
  let state="NEW",attempts=0,usage=null,preview=null,snapshot=null,budget=null;
  const guard=()=>{if(typeof wid!=="string"||!wid.trim()||runtime.windowUuid!==wid||runtime.app?.id!==908||runtime.app?.slug!=="life-control-anna"||runtime.capabilities?.host_api_version!=="0.1.0"||runtime.appId!==undefined||runtime.versionId!==undefined||typeof runtime.llm?.complete!=="function")fail("IDENTITY_UNVERIFIED");};
  const still=()=>state==="RUNNING"&&authorize()===true&&canonicalJSON(readWorkspace())===snapshot;
  const ctrl=createConsentController({timeoutMs,transport:async body=>{
    guard();if(!still()||canonicalJSON(typedWire(body))!==preview.wire)fail("CONSENT_INVALID");
-   if(await claim()!==true)fail("MODEL_ATTEMPT_RESERVED");
+   if(await claim({requestId:preview.request.requestId,maxCost:budget.maxCost})!==true)fail("MODEL_ATTEMPT_RESERVED");
    guard();if(!still())fail("CONSENT_REVOKED");
    attempts++;const result=parseHostReply(await runtime.llm.complete(JSON.parse(preview.wire)));
    if(!still())fail("LATE_OR_STALE_REPLY");usage=result.usage;
@@ -43,6 +43,8 @@ export function createPersonalRun(runtime,{readWorkspace,claim,authorize,timeout
     if(state!=="PREVIEWED"||!checkBudget(cost)||authorize()!==true||canonicalJSON(readWorkspace())!==snapshot)fail("AUTHORIZATION_REQUIRED");
     budget={...cost};state="RUNNING";
     try{ctrl.consent(preview.digest,true);const receipt=await ctrl.run({digest:preview.digest,request:preview.request,workspace:readWorkspace()});
+      if(!still())fail("STALE_RESULT");
+      if(await settle({requestId:preview.request.requestId,quotaConsumed:usage.quotaConsumed})!==true)fail("COST_SETTLEMENT_UNCONFIRMED");
       if(!still())fail("STALE_RESULT");state="CONFIRMED";return receipt;
     }catch{state=attempts?"UNCERTAIN":"STOPPED";throw Error("MODEL_NOT_CONFIRMED");}
   }

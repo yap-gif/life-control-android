@@ -1,5 +1,5 @@
 import {createPersonalRun,checkBudget} from "./integrated-coach-transport.js";
-import {claimPersonalCoach} from "./integrated-coach-ledger.js";
+import {openPersonalBudgetLedger} from "./integrated-coach-ledger.js";
 import {buildCoachRequest,previewRequest} from "../bundle/v2/ai-coach.js";
 import {CATEGORIES,FOCUS,MAX_REQUEST_BYTES,MAX_TOKENS} from "../bundle/v2/ai-schema.js";
 import {canonicalJSON,utf8Bytes} from "../bundle/v2/workspace.js";
@@ -26,7 +26,7 @@ export function createIntegratedCoachPanel(doc,readWorkspace,{runtime,win,canWri
   const el=(tag,text)=>{const n=doc.createElement(tag);if(text)n.textContent=text;return n;};
   const root=el("section");root.className="panel stack";
   const title=el("h2","AI Personal Coach");
-  const notice=el("p","Choose the exact categories and date range. Preview is local only. Sending to Anna LLM is a separate explicit action; saving the result retains a copy of selected evidence in APS. Only one personal model attempt in this private pilot. Journal includes reflection text and tags when selected. Learning includes topics; money includes amounts and categories; goals include titles and progress; tasks and habits include record identifiers. Review the full request before any future transmission.");
+  const notice=el("p","Choose the exact categories and date range. Preview is local only. Sending to Anna LLM is a separate explicit action; saving the result retains a copy of selected evidence in APS. At most three distinct personal requests in this private pilot, within a conservatively reserved total of 5 Credits and the account stop line. Unconfirmed outcomes lock further calls. Journal includes reflection text and tags when selected. Learning includes topics; money includes amounts and categories; goals include titles and progress; tasks and habits include record identifiers. Review the full request before any future transmission.");
   const categories=el("fieldset");categories.append(el("legend","Data categories (none selected by default)"));
   const names={money:"Money",learning:"Learning",tasks:"Tasks",journal:"Journal — includes private reflection text",goals:"Goals",habits:"Habits"};
   const boxes=CATEGORIES.map(k=>{const l=el("label");l.className="tick";const b=el("input");b.type="checkbox";b.name="coach-category";b.value=k;l.append(b,doc.createTextNode(names[k]));categories.append(l);return b;});
@@ -58,7 +58,8 @@ export function createIntegratedCoachPanel(doc,readWorkspace,{runtime,win,canWri
   function invalidate(){current=null;receipt=null;consent.checked=false;costBox.hidden=true;send.disabled=true;body.textContent="";scope.replaceChildren();result.replaceChildren();status.textContent="No current preview. No data sent by preview.";}
   send.addEventListener("click",async()=>{
     if(send.disabled||busy||used)return;const p=current,approved=budget();used=true;busy=true;sync();
-    const run=createPersonalRun(runtime,{readWorkspace,claim:()=>claimPersonalCoach(win.indexedDB),authorize:()=>root.isConnected&&current===p&&consent.checked&&canWrite()&&checkBudget(budget())&&canonicalJSON(budget())===canonicalJSON(approved)});
+    let modelLedger=null;
+    const run=createPersonalRun(runtime,{readWorkspace,claim:async x=>{modelLedger=await openPersonalBudgetLedger(win.indexedDB);return modelLedger.claim(x);},settle:x=>modelLedger.settle(x),authorize:()=>root.isConnected&&current===p&&consent.checked&&canWrite()&&checkBudget(budget())&&canonicalJSON(budget())===canonicalJSON(approved)});
     try{
       await run.prepare(p);receipt=await run.run(approved);if(!root.isConnected||current!==p)return;
       result.replaceChildren(el("h3","Validated model output (not independently fact-checked)"),el("p",receipt.result.summary));
@@ -69,7 +70,7 @@ export function createIntegratedCoachPanel(doc,readWorkspace,{runtime,win,canWri
       save.addEventListener("click",async()=>{if(!receipt||!canWrite()||current!==p)return;save.disabled=true;try{await commit({type:"analysis.save",receipt,confirm:true});}finally{if(root.isConnected&&current===p)save.disabled=!canWrite();}});
       status.textContent="Model result confirmed. Saving is a separate operation.";
     }catch{status.textContent="Model not confirmed. No automatic retry. "+JSON.stringify(run.status());}
-    finally{busy=false;consent.checked=false;sync();}
+    finally{modelLedger?.close();busy=false;consent.checked=false;sync();}
   });
   root.addEventListener("input",invalidate);root.addEventListener("change",()=>{dates.hidden=range.value!=="custom";invalidate();});
   clear.addEventListener("click",()=>{boxes.forEach(b=>b.checked=false);question.value="";focus.value="custom";prior.value="";range.value="7days";from.value=through.value="";dates.hidden=true;invalidate();});
