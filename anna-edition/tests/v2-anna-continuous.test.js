@@ -39,3 +39,25 @@ test("expanded limit allows >6144 bytes but rejects >32768 before extra reads",a
 });
 test("all nine routes render with expanded capacity and no delete/AI",async()=>{const f=await fixture();await f.store.load();const html=readFileSync(new URL("../upgrade-v2/continuous.html",import.meta.url),"utf8");for(const [route,label] of ROUTES){const {window}=new JSDOM(html,{url:"https://example.test/#"+route});const d=window.document;mountPersistent(d,window,f.store,{today:"2026-11-28"});assert.equal(d.getElementById("page-title").textContent,label);assert.doesNotMatch(d.getElementById("page").textContent,/Unable to render/);if(route==="privacy")assert.match(d.getElementById("page").textContent,/32768 B/);window.close();}assert.equal(f.calls.length,2);});
 test("marker shape rejects raw data and unavailable browser ledger",async()=>{assert.throws(()=>validateEditMarker({schema:1,raw:"private"}));await assert.rejects(openEditLedger(null),{code:"EDIT_LEDGER_UNAVAILABLE"});});
+
+// Transaction API mock: validates the actual ledger's strict durability and CAS
+// logic, not physical browser storage durability.
+function mockIDB(durability="strict"){
+ let record,commits=0;const trace=[];
+ const db={close(){},transaction(name,mode,opts){
+   assert.equal(name,"edits");if(mode==="readwrite")assert.equal(opts.durability,"strict");
+   let aborted=false,staged=record;const tx={durability,abort(){aborted=true;queueMicrotask(()=>tx.onabort?.());},
+     objectStore(){return {get(key){assert.equal(key,"app908-v2-edit");const req={};queueMicrotask(()=>{if(aborted)return;req.result=structuredClone(record);req.onsuccess?.();queueMicrotask(()=>{if(aborted)return;if(mode==="readwrite"){record=staged;commits++;}trace.push("complete");tx.oncomplete?.();});});return req;},
+     put(value,key){assert.equal(key,"app908-v2-edit");staged=structuredClone(value);trace.push("put");}};}};
+   return tx;
+ }};
+ return {idb:{open(){const r={};queueMicrotask(()=>{r.result=db;r.onsuccess();});return r;}},trace,get commits(){return commits;}};
+}
+test("actual ledger API checks strict durability and marker CAS, commits before acknowledgment",async()=>{
+ const f=mockIDB(),l=await openEditLedger(f.idb);
+ const marker={schema:1,appId:908,state:"PENDING",operationId:"edit-"+globalThis.crypto.randomUUID(),previousSha256:"a".repeat(64),candidateSha256:"b".repeat(64),previousGeneration:2,nextGeneration:3};
+ assert.equal(await l.read(),null);assert.deepEqual(await l.claim(null,marker),marker);assert.equal(f.commits,1);
+ assert.deepEqual(f.trace.slice(-2),["put","complete"]);await assert.rejects(l.claim(null,marker));assert.equal(f.commits,1);
+ assert.deepEqual(await l.confirm(marker),{...marker,state:"CONFIRMED"});assert.equal(f.commits,2);assert.equal((await l.read()).state,"CONFIRMED");
+ const weak=mockIDB("relaxed"),w=await openEditLedger(weak.idb);await assert.rejects(w.claim(null,marker),{code:"EDIT_LEDGER_DURABILITY_UNVERIFIED"});assert.equal(weak.commits,0);l.close();w.close();
+});
