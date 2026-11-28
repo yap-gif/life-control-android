@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Life Control · v0.2.0 private editor</title><link rel="stylesheet" href="../preview-v2/preview.css"></head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+<aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark" aria-hidden="true">LC</span><span>Life Control<small>PERSONAL WORKSPACE</small></span></a><nav id="nav" aria-label="Workspace pages"></nav><div class="sidebar-footer"><span class="dot"></span> Private editing pilot<br><small>Synthetic AI QA only; no deletion</small></div></aside>
+<main id="main" tabindex="-1"><header class="topbar"><div><span class="eyebrow">WORKSPACE / V0.2.0 PRIVATE EDITOR</span><h1 id="page-title">Overview</h1></div><div class="date-pill" id="demo-date"></div></header>
+<div class="notice" role="note">Developer draft · Existing persisted v2 only. Up to three individually approved saves per load. Synthetic AI QA only; no personal AI, deletion or initialization. Production release blocked.</div>
+<p id="status" class="status" role="status" aria-live="polite">Not started. No storage reads issued.</p><section id="load-panel" class="panel"><p>Load existing v2 and verify unchanged legacy source (two reads). Do not reload to retry.</p><label class="tick"><input type="checkbox" id="versionChecked">App 908 and intended draft checked.</label><label class="tick"><input type="checkbox" id="otherClientsClosed">Other Life Control clients closed.</label><label class="tick"><input type="checkbox" id="pilotAccepted">Private pilot limits, unverified version identity and three saves per load, durable pending-save ledger and recovery lock accepted.</label><label>Local migration plan<input id="plan" type="file" accept=".json,application/json"></label><button id="load" class="primary" type="button" disabled>Open persisted workspace</button></section><div id="page" aria-labelledby="page-title" aria-busy="false"></div>
+</main></div>
+<script type="module" src="./coach-pilot-boot.js"></script>
+</body></html>
