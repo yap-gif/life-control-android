@@ -5,7 +5,7 @@ import {performance} from "node:perf_hooks";
 const base="http://127.0.0.1:8080",routes=["overview","reports","insights","tasks","money","learning","journal","goals","privacy"];
 const out=process.env.QA_ARTIFACT_DIR||"qa-artifacts";await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true});
-const results=[];const failures=[];const workflowChecks=[];
+const results=[];const failures=[];const workflowChecks=[];const recoveryChecks=[];
 try{
   for(const width of [360,768,1040]){
     const context=await browser.newContext({viewport:{width,height:900},deviceScaleFactor:1});
@@ -96,9 +96,43 @@ try{
       await page.locator('#page[aria-busy="false"]').waitFor();
       if(errors.length||external.length)failures.push({width,errors,external});
       else workflowChecks.push({width,task:true,coach:true});
+      // Real Chromium, actual production backup module, synthetic workspace only.
+      // No Anna runtime, no account or personal fixture, no screenshots of secrets.
+      stage="recovery panel mount";
+      await page.evaluate(async()=>{
+        const {createRecoveryBackupPanel}=await import("/upgrade-v2/integrated-backup.js");
+        const {migrateLegacy}=await import("/bundle/v2/workspace.js");
+        const w=migrateLegacy({version:1,tasks:[],money:[],learning:[],journal:[],goal:{goal:1000,saved:0,monthly:0},lastReview:null,savedPlan:null},{timezone:"Asia/Kuching",legacyEtag:"synthetic",migrationId:"browser-recovery-fixture"});
+        document.body.replaceChildren(createRecoveryBackupPanel(document,window,()=>w));
+      });
+      const root=page.locator("section.panel"),status=root.getByRole("status"),pass=root.getByLabel("New backup passphrase",{exact:true}),repeat=root.getByLabel("Repeat new passphrase",{exact:true}),confirm=root.getByLabel("Re-enter saved recovery key",{exact:true});
+      const go=root.getByRole("button",{name:"Export recovery-protected snapshot",exact:true}),password="Synthetic browser backup password";
+      const fill=async()=>{await pass.fill(password);await repeat.fill(password);};
+      stage="recovery confirmation required";
+      await fill();await go.click();await status.filter({hasText:"RECOVERY_KEY_CONFIRMATION_REQUIRED"}).waitFor();
+      stage="recovery key generation and export";
+      await root.getByRole("button",{name:"Generate new recovery key",exact:true}).click();
+      const key=await root.getByLabel("Recovery key (save separately)",{exact:true}).inputValue();assert.match(key,/^[0-9a-f]{8}(?:-[0-9a-f]{8}){7}$/);
+      await fill();await confirm.fill(key);
+      const downloadPromise=page.waitForEvent("download");await go.click();const download=await downloadPromise;
+      assert.match(download.suggestedFilename(),/^life-control-recovery-r\d+-[0-9a-f]{32}\.json$/);
+      await status.filter({hasText:"Both password and recovery key self-checks passed"}).waitFor();
+      const output=root.getByLabel("Verified encrypted JSON (manual save fallback)",{exact:true}),cipher=await output.inputValue();
+      assert.ok(cipher.length>0);assert.equal(await pass.inputValue(),"");assert.equal(await confirm.inputValue(),"");
+      stage="recovery verification";
+      const file=root.getByLabel("Encrypted backup file (v1 or v2)",{exact:true}),method=root.getByLabel("Unlock using",{exact:true}),secret=root.getByLabel("Existing backup password or recovery key",{exact:true}),verify=root.getByRole("button",{name:"Verify recovery or legacy backup",exact:true});
+      await file.setInputFiles({name:"synthetic.json",mimeType:"application/json",buffer:Buffer.from(cipher)});
+      await method.selectOption("recovery");await secret.fill(key);await verify.click();
+      await status.filter({hasText:'"sameWorkspace": true'}).waitFor();
+      assert.equal(JSON.parse(await status.textContent()).restorePerformed,false);
+      stage="recovery stale output rejection";
+      await fill();await go.click();await status.filter({hasText:"RECOVERY_KEY_CONFIRMATION_REQUIRED"}).waitFor();
+      assert.equal(await output.inputValue(),"");assert.equal(await root.getByRole("button",{name:"Download verified recovery backup again",exact:true}).isDisabled(),true);
+      if(errors.length||external.length)failures.push({width,stage,errors,external});
+      else recoveryChecks.push({width,recoveryExport:true,recoveryVerify:true,staleOutputRejected:true});
     }catch(e){failures.push({width,stage,error:String(e),stack:String(e?.stack??"")});}
     finally{await context.close();}
   }
-}finally{await browser.close();await writeFile(out+"/browser-results.json",JSON.stringify({results,workflowChecks,failures},null,2));}
-console.log("BROWSER_QA "+JSON.stringify({routeChecks:results.length,workflowChecks:workflowChecks.length,failures}));
-assert.equal(results.length,27);assert.deepEqual(failures,[]);assert.equal(workflowChecks.length,3);
+}finally{await browser.close();await writeFile(out+"/browser-results.json",JSON.stringify({results,workflowChecks,recoveryChecks,failures},null,2));}
+console.log("BROWSER_QA "+JSON.stringify({routeChecks:results.length,workflowChecks:workflowChecks.length,recoveryChecks:recoveryChecks.length,failures}));
+assert.equal(results.length,27);assert.deepEqual(failures,[]);assert.equal(workflowChecks.length,3);assert.equal(recoveryChecks.length,3);

@@ -144,3 +144,25 @@ test("recovery panel requires saved key confirmation and preserves verified ciph
  assert.equal(input("Recovery key (save separately)").value,"");assert.equal(input("New backup passphrase").value,"");assert.equal(input("Re-enter saved recovery key").value,"");
  btn("Clear recovery panel secrets and output").click();assert.equal(panel.querySelector("textarea").value,"");assert.equal(f.calls.length,2);window.close();
 });
+
+test("recovery export uses paired unique filenames and clears stale ciphertext on failed new export",async()=>{
+ const f=await fixture({minimumRevision:4});await f.store.load();const {window}=new JSDOM("<main></main>",{url:"https://example.test"}),d=window.document;
+ const panel=createRecoveryBackupPanel(d,window,()=>f.store.workspace);d.querySelector("main").append(panel);
+ const names=[];window.URL.createObjectURL=()=>"blob:synthetic";window.URL.revokeObjectURL=()=>{};window.HTMLAnchorElement.prototype.click=function(){names.push(this.download);};
+ const btn=name=>[...panel.querySelectorAll("button")].find(b=>b.textContent===name);
+ const input=name=>[...panel.querySelectorAll("label")].find(l=>l.firstChild.textContent===name).querySelector("input");
+ const go=btn("Export recovery-protected snapshot"),down=btn("Download verified recovery backup again"),p="synthetic UI password";
+ const wait=async()=>{for(let i=0;i<800&&go.disabled;i++)await new Promise(r=>setTimeout(r,10));assert.equal(go.disabled,false);};
+ const fill=()=>{input("New backup passphrase").value=input("Repeat new passphrase").value=p;};
+ assert.equal(down.disabled,true);
+ for(let i=0;i<2;i++){
+  btn("Generate new recovery key").click();btn("Download recovery key separately").click();
+  fill();input("Re-enter saved recovery key").value=input("Recovery key (save separately)").value;go.click();await wait();
+  assert.equal(down.disabled,false);assert.ok(panel.querySelector("textarea").value);
+  const id=names[i*2].match(/^life-control-recovery-key-([0-9a-f]{32})\.txt$/)?.[1];assert.ok(id);
+  assert.equal(names[i*2+1],"life-control-recovery-r"+f.store.workspace.revision+"-"+id+".json");
+ }
+ assert.notEqual(names[0],names[2]);assert.notEqual(names[1],names[3]);
+ fill();go.click();await wait();assert.match(panel.querySelector("pre").textContent,/RECOVERY_KEY_CONFIRMATION_REQUIRED/);
+ assert.equal(panel.querySelector("textarea").value,"");assert.equal(down.disabled,true);assert.equal(f.calls.length,2);window.close();
+});
