@@ -120,9 +120,9 @@ try{
       const output=root.getByLabel("Verified encrypted JSON (manual save fallback)",{exact:true}),cipher=await output.inputValue();
       assert.ok(cipher.length>0);assert.equal(await pass.inputValue(),"");assert.equal(await confirm.inputValue(),"");
       stage="recovery verification";
-      const file=root.getByLabel("Encrypted backup file (v1 or v2)",{exact:true}),method=root.getByLabel("Unlock using",{exact:true}),secret=root.getByLabel("Existing backup password or recovery key",{exact:true}),verify=root.getByRole("button",{name:"Verify recovery or legacy backup",exact:true});
+      const file=root.getByLabel("Encrypted backup file (v1 or v2)",{exact:true}),method=root.getByRole("combobox",{name:"Unlock using",exact:true}),secret=root.getByLabel("Existing backup password or recovery key",{exact:true}),verify=root.getByRole("button",{name:"Verify recovery or legacy backup",exact:true});
       await file.setInputFiles({name:"synthetic.json",mimeType:"application/json",buffer:Buffer.from(cipher)});
-      await method.selectOption("recovery");await secret.fill(key);await verify.click();
+      assert.equal(await method.count(),1);await method.selectOption("recovery");assert.equal(await method.inputValue(),"recovery");await secret.fill(key);await verify.click();
       await status.filter({hasText:'"sameWorkspace": true'}).waitFor();
       assert.equal(JSON.parse(await status.textContent()).restorePerformed,false);
       stage="recovery stale output rejection";

@@ -166,3 +166,9 @@ test("recovery export uses paired unique filenames and clears stale ciphertext o
  fill();go.click();await wait();assert.match(panel.querySelector("pre").textContent,/RECOVERY_KEY_CONFIRMATION_REQUIRED/);
  assert.equal(panel.querySelector("textarea").value,"");assert.equal(down.disabled,true);assert.equal(f.calls.length,2);window.close();
 });
+
+test("recovery unlock selector has stable accessible name and both choices",()=>{
+ const {window}=new JSDOM("<main></main>",{url:"https://example.test"}),d=window.document;
+ const panel=createRecoveryBackupPanel(d,window,()=>{throw Error("unexpected read");});d.querySelector("main").append(panel);
+ const selector=panel.querySelector("select");assert.equal(selector.getAttribute("aria-label"),"Unlock using");assert.deepEqual([...selector.options].map(o=>o.value),["password","recovery"]);assert.equal(selector.value,"password");window.close();
+});

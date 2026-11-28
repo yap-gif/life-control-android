@@ -223,7 +223,7 @@ export function createRecoveryBackupPanel(doc,win,readWorkspace){
  const saveKey=button("Download recovery key separately",()=>{try{if(!recoveryKey)fail("RECOVERY_KEY_CONFIRMATION_REQUIRED");saveFile(recoveryKey+"\n","life-control-recovery-key-"+recoveryId+".txt","text/plain");result.textContent="UNENCRYPTED recovery key download requested. Move it to a secure location separate from the backup. Confirm by re-entering the saved key.";}catch(e){report(e);}});
  const exportBtn=button("Export recovery-protected snapshot",()=>run("export"));
  const fileLabel=el("label","Encrypted backup file (v1 or v2)"),file=el("input");file.type="file";file.accept=".json,application/json";fileLabel.append(file);root.append(fileLabel);
- const methodLabel=el("label","Unlock using"),method=el("select");for(const [v,t] of [["password","Password"],["recovery","Recovery key"]]){const o=el("option",t);o.value=v;method.append(o);}methodLabel.append(method);root.append(methodLabel);
+ const methodLabel=el("label","Unlock using"),method=el("select");method.setAttribute("aria-label","Unlock using");for(const [v,t] of [["password","Password"],["recovery","Recovery key"]]){const o=el("option",t);o.value=v;method.append(o);}methodLabel.append(method);root.append(methodLabel);
  const unlock=field("Existing backup password or recovery key");unlock.maxLength=256;
  const verifyBtn=button("Verify recovery or legacy backup",()=>run("verify"));
  root.append(el("p","Forgot password? Select the old file, choose Recovery key and enter it. Generate a new recovery key and new password above, then re-encrypt. Legacy v1 needs its original password."));
