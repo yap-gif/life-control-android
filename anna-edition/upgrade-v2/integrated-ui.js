@@ -225,8 +225,8 @@ export function mountPersistent(doc,win,store,{today,coachPanel=null}){
   }
   function focusQuick(kind){[...page.querySelectorAll("[data-quick-kind]")].find(b=>b.dataset.quickKind===kind)?.focus();}
   function quickRecords(){
-    const today=c().journal.find(j=>j.date===today);
-    const actions=[["tasks","Add task",null],["transactions","Add transaction",null],["learning","Log session",null],["journal",today?"Edit today's reflection":"Add reflection",today??null]];
+    const todayReflection=c().journal.find(j=>j.date===today);
+    const actions=[["tasks","Add task",null],["transactions","Add transaction",null],["learning","Log session",null],["journal",todayReflection?"Edit today's reflection":"Add reflection",todayReflection??null]];
     return append(el("section","panel quick-records"),el("h2","","Quick record"),small("Record directly here. Up to three individually confirmed saves per loaded private pilot session."),
       append(el("div","quick-record-grid"),actions.map(([kind,label,row])=>{
         const b=button(label,()=>openEditor(kind,row),"primary",store.locked);b.dataset.quickKind=kind;return b;
@@ -345,6 +345,13 @@ export function mountPersistent(doc,win,store,{today,coachPanel=null}){
   function privacy(){
     const s=store.status();
     const storage=section("Storage status",metrics([["Revision",ws().revision],["Generation",s.generation],["Used",store.bytes+" B"],["Pilot limit",s.maxBytes+" B"]]),small("State: "+s.state+" · reads "+s.reads+" / "+s.maxReads+" · write attempts "+s.writeAttempts+" / "+s.maxWriteAttempts+" · last save "+s.lastSave),small("Version attestation unverified. Private pilot only; production release blocked. 32 KiB private limit based on a 64 KiB synthetic roundtrip. Pending recovery and baseline regression are read-only; do not clear browser data or retry."));
+    const diagnostic=el("pre","muted","No baseline comparison performed.");
+    diagnostic.style.whiteSpace="pre-wrap";diagnostic.setAttribute("role","status");
+    const diagnose=button("Compare loaded snapshot and local receipt",async()=>{
+      try{diagnostic.textContent=JSON.stringify(await store.baselineDiagnostics(),null,2);}
+      catch{diagnostic.textContent="Baseline comparison unavailable. No data changed.";}
+    });
+    storage.append(diagnose,diagnostic);
     if(s.state==="BASELINE_REGRESSED")storage.append(el("p","notice","Loaded revision is below the previously accepted revision 4. Do not edit, run AI, restore or bypass this lock. Compare with prior evidence."));
     if(s.state==="RECOVERY_MATCHED"){
       const tick=el("input");tick.type="checkbox";const label=el("label","tick");label.append(tick,el("span","","I approve read-only reconciliation of the exact matched prior candidate (two reads, zero APS writes)."));
@@ -365,7 +372,7 @@ export function mountPersistent(doc,win,store,{today,coachPanel=null}){
   function navigate(){const next=resolve();if(next===route)return;if(busy||!abandon()){win.history.replaceState(null,"","#"+route);return;}invalidate();clearEditor();route=next;render();heading.tabIndex=-1;heading.focus();}
   nav.replaceChildren(...ROUTES.map(([key,label],i)=>{const a=link(key,"");a.dataset.route=key;append(a,el("span","nav-num",String(i+1).padStart(2,"0")),el("span","",label));return a;}));
   doc.getElementById("demo-date").textContent="As of · "+today;
-  route=resolve();render();notify("Persistent workspace ready · revision "+ws().revision);
+  route=resolve();render();if(!page.textContent.includes("Unable to render this view."))notify("Persistent workspace "+(store.locked?"read-only":"ready")+" · revision "+ws().revision);
   doc.querySelector(".skip")?.addEventListener("click",e=>{e.preventDefault();doc.getElementById("main").focus();});
   win.addEventListener("hashchange",navigate);
   win.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue="";}});

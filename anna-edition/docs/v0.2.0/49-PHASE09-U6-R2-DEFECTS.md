@@ -1,0 +1,3 @@
+# Phase 09-U6-R2 — consolidated private candidate
+
+Baseline: 59ceeab. LC-F01: fix Overview journal date shadowing, including locked non-empty journal. LC-F02: compare loaded snapshot with the in-memory copy of the local receipt; no new APS or IndexedDB calls, no raw fingerprint output, minimum revision 4 unchanged. A matching receipt does not establish recovery of historical revision 4. LC-F03: classified backup failures, self-check before download, manual ciphertext fallback and explicit file download. Existing encrypted-v1 format unchanged. Earlier intermittent failure root cause unconfirmed. No data recovery, no live write authorization, no production release. Full source QA and Browser QA plus private host revalidation required before acceptance.

@@ -1,5 +1,5 @@
 import {reserveBudget,settleBudget} from "../upgrade-v2/integrated-coach-ledger.js";
-import {encryptWorkspace,inspectWorkspaceBackup} from "../upgrade-v2/integrated-backup.js";
+import {encryptWorkspace,inspectWorkspaceBackup,createBackupPanel} from "../upgrade-v2/integrated-backup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
@@ -15,9 +15,9 @@ import {createIntegratedCoachPanel} from "../upgrade-v2/integrated-coach-panel.j
 import {LEGACY_KEY,WORKSPACE_KEY,migrateLegacy,utf8Bytes,canonicalJSON} from "../bundle/v2/workspace.js";
 const raw={version:1,tasks:[],money:[],learning:[],journal:[],goal:{goal:1000,saved:0,monthly:0},lastReview:null,savedPlan:null};
 const cmd=n=>({type:"task.add",id:"task-"+n,title:"Synthetic task "+n,dueDate:null,priority:"normal"});
-async function fixture({confirmSave=()=>true,minimumRevision=0}={}){
- const l={exists:true,value:raw,etag:"legacy",generation:17},plan=await buildOwnerLocalPlan(l);
- const map=new Map([[LEGACY_KEY,structuredClone(l)],[WORKSPACE_KEY,{exists:true,etag:"v2-1",generation:1,value:migrateLegacy(raw,{timezone:"Asia/Kuching",legacyEtag:l.etag,migrationId:plan.migrationId})}]]),calls=[];
+async function fixture({confirmSave=()=>true,minimumRevision=0,legacyRaw=raw}={}){
+ const l={exists:true,value:legacyRaw,etag:"legacy",generation:17},plan=await buildOwnerLocalPlan(l);
+ const map=new Map([[LEGACY_KEY,structuredClone(l)],[WORKSPACE_KEY,{exists:true,etag:"v2-1",generation:1,value:migrateLegacy(legacyRaw,{timezone:"Asia/Kuching",legacyEtag:l.etag,migrationId:plan.migrationId})}]]),calls=[];
  let record=null;
  const ledger={async read(){return structuredClone(record);},async claim(expected,pending){if(canonicalJSON(expected)!==canonicalJSON(record)||record?.state==="PENDING")throw Error("conflict");record=structuredClone(pending);return structuredClone(record);},async confirm(pending){assert.deepEqual(record,pending);record={...pending,state:"CONFIRMED"};return structuredClone(record);}};
  const runtime={app:{id:908,slug:"life-control-anna"},windowUuid:"fixture",capabilities:{host_api_version:"0.1.0"},storage:{
@@ -50,3 +50,43 @@ test("matched pending recovery uses two reads, no new writes, and requires reope
 
 test("budget reservation locks uncertain outcomes, rejects duplicate and total ceiling",()=>{let e=reserveBudget([],{requestId:"first",maxCost:2});assert.throws(()=>reserveBudget(e,{requestId:"second",maxCost:1}));e=settleBudget(e,{requestId:"first",quotaConsumed:.2});assert.throws(()=>reserveBudget(e,{requestId:"first",maxCost:1}));assert.throws(()=>reserveBudget(e,{requestId:"second",maxCost:3.000001}));e=reserveBudget(e,{requestId:"second",maxCost:3});assert.throws(()=>settleBudget(e,{requestId:"second",quotaConsumed:3.1}));e=settleBudget(e,{requestId:"second",quotaConsumed:1});assert.throws(()=>reserveBudget(e,{requestId:"third",maxCost:.001}));});
 test("late durable model claim after timeout never sends",async()=>{const f=await fixture();await f.store.load();const p=preview(f.store.workspace),calls=model(f,p);let release;const r=createPersonalRun(f.runtime,{readWorkspace:()=>f.store.workspace,claim:()=>new Promise(resolve=>{release=resolve}),settle:async()=>true,authorize:()=>true,timeoutMs:15});await r.prepare(p);await assert.rejects(r.run(cost));release(true);await new Promise(resolve=>setTimeout(resolve,15));assert.equal(calls.length,0);});
+
+test("overview renders nonempty journal on current and historical dates, including locked baseline",async()=>{
+ for(const date of ["2026-11-27","2026-11-28"])for(const minimumRevision of [0,4]){
+  const f=await fixture({minimumRevision,legacyRaw:{...raw,journal:[{id:"journal-qa",date,text:"Synthetic reflection"}]}});await f.store.load();
+  const {window}=new JSDOM(readFileSync(new URL("../upgrade-v2/integrated.html",import.meta.url),"utf8"),{url:"https://example.test/#overview"});
+  const d=window.document;mountPersistent(d,window,f.store,{today:"2026-11-28"});
+  assert.doesNotMatch(d.getElementById("page").textContent,/Unable to render/);
+  const b=[...d.querySelectorAll("button")].find(b=>b.dataset.quickKind==="journal");assert.ok(b);
+  assert.equal(b.textContent,date==="2026-11-28"?"Edit today's reflection":"Add reflection");
+  assert.equal(b.disabled,minimumRevision===4);assert.equal(f.calls.length,2);window.close();
+ }
+});
+test("baseline comparison reports only metadata without reads or writes, preserves regression lock",async()=>{
+ const f=await fixture();await f.store.load();await f.store.apply(cmd(1));const before=f.calls.length;
+ const d=await f.store.baselineDiagnostics();assert.equal(d.receiptFingerprintMatches,true);assert.equal(d.receiptGenerationMatches,true);assert.equal(d.receiptOperationMatches,true);assert.equal(f.calls.length,before);
+ assert.doesNotMatch(JSON.stringify(d),/candidateSha256|operationId|Synthetic task/);
+ const locked=createIntegratedStore(f.runtime,{localPlan:await buildOwnerLocalPlan(f.map.get(LEGACY_KEY)),ledger:f.ledger,checkOwnerConditions:()=>true,confirmSave:()=>true});
+ await locked.load();const n=f.calls.length;const r=await locked.baselineDiagnostics();assert.equal(r.baselineMeetsMinimum,false);assert.equal(r.receiptFingerprintMatches,true);assert.equal(locked.status().state,"BASELINE_REGRESSED");assert.equal(f.calls.length,n);await assert.rejects(locked.apply(cmd(2)),{code:"EDITOR_LOCKED"});
+});
+test("backup distinguishes malformed envelope, invalid password and failed authentication",async()=>{
+ const f=await fixture();await f.store.load();const w=f.store.workspace,p="synthetic backup passphrase";
+ await assert.rejects(encryptWorkspace(w,"short"),{code:"PASSPHRASE_INVALID"});
+ await assert.rejects(inspectWorkspaceBackup("{}",p,w),{code:"INVALID_ENVELOPE"});
+ const text=await encryptWorkspace(w,p);await assert.rejects(inspectWorkspaceBackup(text,"different valid password",w),{code:"AUTHENTICATION_FAILED"});
+ assert.equal(f.calls.length,2);
+});
+test("backup button preserves self-checked ciphertext fallback when download unavailable",async()=>{
+ const f=await fixture({minimumRevision:4});await f.store.load();const w=f.store.workspace;
+ const {window}=new JSDOM("<main></main>",{url:"https://example.test"});const d=window.document;
+ const panel=createBackupPanel(d,window,()=>f.store.workspace);d.querySelector("main").append(panel);
+ window.URL.createObjectURL=()=>{throw Error("synthetic unavailable");};
+ const buttons=[...panel.querySelectorAll("button")],inputs=panel.querySelectorAll('input[type="password"]'),p="synthetic backup passphrase";
+ const wait=async()=>{for(let i=0;i<200&&buttons[0].disabled;i++)await new Promise(r=>setTimeout(r,10));assert.equal(buttons[0].disabled,false);};
+ inputs[0].value=p;inputs[1].value="different valid password";buttons[0].click();await wait();assert.match(panel.querySelector("pre").textContent,/PASSPHRASE_MISMATCH/);
+ inputs[0].value=inputs[1].value=p;buttons[0].click();await wait();
+ assert.match(panel.querySelector("pre").textContent,/DOWNLOAD_UNAVAILABLE/);
+ const output=panel.querySelector("textarea");assert.ok(output.value);assert.equal((await inspectWorkspaceBackup(output.value,p,w)).sameWorkspace,true);
+ assert.equal(inputs[0].value,"");assert.equal(inputs[1].value,"");assert.doesNotMatch(output.value,/collections|synthetic backup passphrase/);
+ buttons.find(b=>b.textContent==="Clear encrypted output").click();assert.equal(output.value,"");assert.equal(f.calls.length,2);window.close();
+});

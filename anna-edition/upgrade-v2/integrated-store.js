@@ -47,7 +47,22 @@ export function createIntegratedStore(runtime,{localPlan,ledger,checkOwnerCondit
   }
   const status=()=>({state,lastSave,reads,writeAttempts:attempts,maxReads:MAX_READS,maxWriteAttempts:MAX_SAVES,generation:current?.generation??null,revision:current?.value.revision??null,bytes:current?utf8Bytes(current.value):null,maxBytes:EDIT_LIMIT,versionAttestation:"UNVERIFIED",productionRelease:"BLOCKED"});
   return Object.freeze({
-    status,get locked(){return busy||state!=="READY";},get workspace(){if(!current)fail("NOT_LOADED");return copy(current.value);},get bytes(){return current?utf8Bytes(current.value):0;},
+    status,
+    async baselineDiagnostics(){
+      if(!current||busy)fail("DIAGNOSTIC_UNAVAILABLE");
+      const w=current,marker=ledgerRecord;
+      const sha=await planDigest(w.value);
+      if(current!==w||ledgerRecord!==marker||busy)fail("DIAGNOSTIC_STALE");
+      return Object.freeze({revision:w.value.revision,generation:w.generation,minimumRevision,
+        baselineMeetsMinimum:w.value.revision>=minimumRevision,lineageValidated:true,
+        receiptState:marker?.state??"ABSENT",receiptPreviousGeneration:marker?.previousGeneration??null,
+        receiptNextGeneration:marker?.nextGeneration??null,
+        receiptGenerationMatches:marker?w.generation===marker.nextGeneration:null,
+        receiptFingerprintMatches:marker?sha===marker.candidateSha256:null,
+        receiptOperationMatches:marker?w.value.lastOperationId===marker.operationId:null,
+        scope:"LOADED_SNAPSHOT_AND_LOAD_LOCAL_RECEIPT",historicalRecoveryConfirmed:false});
+    },
+    get locked(){return busy||state!=="READY";},get workspace(){if(!current)fail("NOT_LOADED");return copy(current.value);},get bytes(){return current?utf8Bytes(current.value):0;},
     id(prefix){return prefix+"-"+globalThis.crypto.randomUUID();},
     async load(){
       if(state!=="NEW"||busy)fail("LOAD_NOT_ALLOWED");busy=true;state="LOADING";
